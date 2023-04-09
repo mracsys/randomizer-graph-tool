@@ -9,6 +9,9 @@ def read_json(file_path):
         for line in file.readlines():
             json_string += line.split('#')[0].replace('\n', ' ')
     json_string = re.sub(' +', ' ', json_string)
+    json_string = re.sub(' and ', ' && ', json_string)
+    json_string = re.sub(' or ', ' || ', json_string)
+    json_string = re.sub(' not ', ' ! ', json_string)
     try:
         test_json = json.loads(json_string)
         with io.open(file_path, 'w') as file:

@@ -14,17 +14,31 @@ const kwarg_defaults = {
     'tod': TimeOfDay.NONE
 };
 
-const allowed_globals = { 'TimeOfDay': TimeOfDay };
+var allowed_globals = { 'TimeOfDay': TimeOfDay };
 
-const escaped_items = {};
+var escaped_items = {};
+var solver_ids = {};
 Object.keys(item_table).map((item) => {
-    escaped_items[item.replace(/\s/g, '_').replace(/[\'()[\]-]/g, '')] = item
+    var esc = escape_name(item);
+    escaped_items[esc] = item;
+    if (!(Object.keys(solver_ids).includes(esc))) {
+        create_solver_ids(esc);
+    }
 });
 
 var event_name = new RegExp(/\w+/);
 
 var rule_aliases = {};
 var nonaliases = {};
+
+function escape_name(name) {
+    return name.replace(/\s/g, '_').replace(/[\'()[\]-]/g, '');
+}
+
+function create_solver_ids(esc) {
+    allowed_globals[esc] = Object.keys(solver_ids).length;
+    solver_ids[esc] = Object.keys(solver_ids).length;
+}
 
 function load_aliases() {
     j = read_json('LogicHelpers.json');
@@ -65,7 +79,11 @@ class RuleParser {
                         Identifier(path) {
                             console.log('transforming '+ path);
                             self.visit_Name(self, t, path);
-                        }
+                        },
+                        Literal(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Constant(self, t, path);
+                        },
                     }
                 };
             }]
@@ -122,6 +140,31 @@ class RuleParser {
                 )
             );
             path.skip();
+        } else {
+            throw 'Parse error: invalid node name ' + path.node.name;
+        }
+    }
+
+    visit_Str(self, t, path) {
+        var esc = escape_name(path.node.value);
+        if (!(Object.keys(solver_ids).includes(esc))) {
+            self.events.push(esc.replace(/_/g, ' '))
+            create_solver_ids(esc);
+        }
+        path.replaceWith(
+            t.callExpression(
+                t.memberExpression(
+                    t.identifier('worldState'),
+                    t.identifier('has')),
+                [t.stringLiteral(esc)]
+            )
+        );
+        path.skip();
+    }
+
+    visit_Constant(self, t, path) {
+        if (typeof(path.node.value) === 'string') {
+            self.visit_Str(self, t, path);
         }
     }
 
