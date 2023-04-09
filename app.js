@@ -8,38 +8,16 @@ const RuleParser = require("./RuleParser.js");
 var world = new World();
 var state = new WorldState(world);
 var parser = new RuleParser(world);
-state.collect('Boomerang')
 var logic;
 
-//const jabu = "Boomerang && age == 'child'";
-//
-//const output = parser.parse_rule(jabu);
-//logic = eval(output);
-//
-//console.log('Jabu testing');
-//console.log(output);
-//console.log(logic(state, {}));
-//console.log(logic(state, { age: 'child' }));
-//state.remove('Boomerang');
-//console.log(logic(state, { age: 'child' }));
+const skeys = "(Small_Key_Fire_Temple, 2)";
+const output = parser.parse_rule(skeys);
+logic = eval(output);
 
-//const hook = "Hookshot";
-//const hook_output = parser.parse_rule(hook);
-//logic = eval(hook_output);
-//
-//console.log('Hookshot testing');
-//console.log(hook_output);
-//console.log(logic(state, { age: 'adult' }));
-//state.collect('Progressive_Hookshot');
-//console.log(logic(state, { age: 'adult' }));
-
-const th_hook = "Hookshot && triforce_hunt";
-const th_hook_output = parser.parse_rule(th_hook);
-logic = eval(th_hook_output);
-
-console.log('Hookshot testing');
-console.log(th_hook_output);
+console.log('Small key testing');
+console.log(output);
 console.log(logic(state, { age: 'adult' }));
-state.collect('Progressive_Hookshot');
+state.collect('Small_Key_Fire_Temple');
 console.log(logic(state, { age: 'adult' }));
-
+state.collect('Small_Key_Fire_Temple');
+console.log(logic(state, { age: 'adult' }));

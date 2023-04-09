@@ -80,9 +80,13 @@ class RuleParser {
                             console.log('transforming '+ path);
                             self.visit_Name(self, t, path);
                         },
-                        Literal(path) {
+                        StringLiteral(path) {
                             console.log('transforming '+ path);
-                            self.visit_Constant(self, t, path);
+                            self.visit_Str(self, t, path);
+                        },
+                        SequenceExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Tuple(self, t, path);
                         },
                     }
                 };
@@ -141,7 +145,7 @@ class RuleParser {
             );
             path.skip();
         } else {
-            throw 'Parse error: invalid node name ' + path.node.name;
+            throw 'Parse error: invalid node name: ' + path.node.name;
         }
     }
 
@@ -166,6 +170,42 @@ class RuleParser {
         if (typeof(path.node.value) === 'string') {
             self.visit_Str(self, t, path);
         }
+    }
+
+    visit_Tuple(self, t, path) {
+        if (path.node.expressions.length != 2) {
+            throw 'Parse error: Tuple must have 2 values: ' + path;
+        }
+
+        let [item, num] = path.node.expressions;
+
+        if (!(t.isIdentifier(item) || t.isStringLiteral(item))) {
+            throw 'Parse error: Tuple first value must be an item: ' + item;
+        }
+        if (t.isIdentifier(item)) {
+            item = t.StringLiteral(item.name);
+        }
+
+        if (!(t.isIdentifier(num) || t.isNumericLiteral(num))) {
+            throw 'Parse error: Tuple second value must be a number: ' + num;
+        }
+        if (t.isIdentifier(num)) {
+            num = t.NumericLiteral(self.world.settings[num.name]);
+        }
+
+        if (!(Object.keys(solver_ids).includes(item.value))) {
+            self.events.push(item.value.replace(/_/g, ' '));
+        }
+
+        path.replaceWith(
+            t.callExpression(
+                t.memberExpression(
+                    t.identifier('worldState'),
+                    t.identifier('has')),
+                [item, num]
+            )
+        );
+        path.skip();
     }
 
     make_call(self, node, name, args, keywords) {
