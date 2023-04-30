@@ -291,12 +291,12 @@ class RuleParser {
                     t.MemberExpression(
                         t.MemberExpression(
                             t.identifier('worldState'),
-                            t.identifier('has')
+                            t.identifier('world')
                         ),
                         path.node.object
                     ),
                     t.StringLiteral(s.replace('_', ' ')),
-                    computed = true
+                    true // preserve computed property
                 )
             );
             path.skip();
