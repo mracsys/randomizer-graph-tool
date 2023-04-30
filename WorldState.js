@@ -1,3 +1,5 @@
+const TimeOfDay = require("./Region");
+
 class WorldState {
     constructor(parent) {
         this.prog_items = {};
@@ -20,6 +22,22 @@ class WorldState {
 
     has(item, count=1) {
         return this.prog_items[item] >= count;
+    }
+
+    item_count(item) {
+        return this.prog_items[item];
+    }
+
+    has_hearts(count) {
+        return this.heart_count() >= count;
+    }
+
+    heart_count() {
+        return (~~(this.item_count('Piece of Heart') / 4) + 3);
+    }
+
+    can_reach(region, age = null, tod = TimeOfDay.NONE) {
+        return age == 'child';
     }
 
     collect(item) {

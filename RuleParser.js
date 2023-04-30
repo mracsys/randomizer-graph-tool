@@ -88,6 +88,14 @@ class RuleParser {
                             console.log('transforming '+ path);
                             self.visit_Tuple(self, t, path);
                         },
+                        CallExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Call(self, t, path);
+                        },
+                        MemberExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Subscript(self, t, path);
+                        },
                     }
                 };
             }]
@@ -103,12 +111,12 @@ class RuleParser {
             var args = rule_aliases[path.node.name]['args'];
             var repl = rule_aliases[path.node.name]['repl'];
             if (args.length > 0) {
-                throw "non-zero args required, but none supplied"
+                throw "non-zero args required for " + path
             }
             // traverse repl and return
             var repl_parsed = babel.parse(self.visit(self, repl));
             path.replaceWith(repl_parsed.program.body[0]);
-            path.skip()
+            path.skip();
         } else if (path.node.name in escaped_items) {
             path.replaceWith(
                 t.callExpression(
@@ -122,19 +130,19 @@ class RuleParser {
         } else if (Object.getOwnPropertyNames(self.world).includes(path.node.name)) {
             var world_parsed = babel.parse(self.world[path.node.name].toString());
             path.replaceWith(world_parsed.program.body[0]);
-            path.skip()
+            path.skip();
         } else if (Object.getOwnPropertyNames(self.world.settings).includes(path.node.name)) {
             var worldsettings_parsed = babel.parse(self.world.settings[path.node.name].toString());
             path.replaceWith(worldsettings_parsed.program.body[0]);
-            path.skip()
+            path.skip();
         } else if (Object.getOwnPropertyNames(WorldState.prototype).includes(path.node.name)) {
-            var worldstate_prop = self.make_call(self, path, path.node.name, [], []);
+            var worldstate_prop = self.make_call(self, t, path, path.node.name, [], []);
             path.replaceWith(worldstate_prop.program.body[0]);
             path.skip();
         } else if (path.node.name in kwarg_defaults || path.node.name in allowed_globals) {
             // do nothing
         } else if (event_name[Symbol.match](path.node.name)) {
-            self.events.push(path.node.name.replace('_',' '));
+            self.events.push(path.node.name.replace('_', ' '));
             path.replaceWith(
                 t.callExpression(
                     t.memberExpression(
@@ -208,7 +216,107 @@ class RuleParser {
         path.skip();
     }
 
-    make_call(self, node, name, args, keywords) {
+    visit_Call(self, t, path) {
+        if (!(t.isIdentifier(path.node.callee))) {
+            return;
+        }
+
+        if (Object.getOwnPropertyNames(RuleParser.prototype).includes(path.node.callee.name)) {
+            self[path.node.callee.name](self, path);
+        } else if (path.node.callee.name in rule_aliases) {
+            var args = rule_aliases[path.node.callee.name]['args'];
+            var repl = rule_aliases[path.node.callee.name]['repl'];
+            if (args.length !== path.node.arguments.length) {
+                throw `Parse error: expected $(args.length) args for $(path), not $(path.node.arguments.length)`;
+            }
+            args.forEach((arg_re, idx) => {
+                var val;
+                var arg_val = path.node.arguments[idx];
+                if (t.isIdentifier(arg_val)) {
+                    val = arg_val.name;
+                } else if (t.isStringLiteral(arg_val)) {
+                    val = arg_val.value;
+                } else {
+                    throw `Parse error: invalid argument $(arg_val)`;
+                }
+                repl = arg_re[Symbol.replace](repl, val);
+            });
+            var repl_parsed = babel.parse(self.visit(self, repl));
+            path.replaceWith(repl_parsed.program.body[0]);
+            path.skip();
+        } else {
+            let new_args = [];
+            let kwargs = [];
+            path.node.arguments.forEach((child) => {
+                if (t.isIdentifier(child)) {
+                    if (Object.getOwnPropertyNames(self.world).includes(child.name)) {
+                        child = babel.parse(self.world[child.name].toString()).program.body[0];
+                    } else if (Object.getOwnPropertyNames(self.world.settings).includes(child.name)) {
+                        child = babel.parse(self.world.settings[child.name].toString()).program.body[0];
+                    } else if (child.name in rule_aliases) {
+                        child = babel.parse(self.visit(self, child.toString())).program.body[0];
+                    } else if (child.name in escaped_items) {
+                        child = t.stringLiteral(escaped_items[child.name]);
+                    } else {
+                        child = t.stringLiteral(child.name.replace('_', ' '));
+                    }
+                // JS-exclusive condition to filter out keyword arguments.
+                // Python automatically separates these to node.keywords from node.args.
+                } else if (t.isAssignmentExpression(child)) {
+                    kwargs.push(child);
+                } else if (!(t.isStringLiteral(child)) && !(t.isNumericLiteral(child))) {
+                    child = babel.parse(self.visit(self, child.toString())).program.body[0];
+                }
+                new_args.push(child);
+            });
+            path.replaceWith(self.make_call(self, t, path.node, path.node.callee.name, new_args, kwargs));
+            path.skip();
+        }
+    }
+
+    visit_Subscript(self, t, path) {
+        // Javascript MemberExpressions are not distinct
+        // between object.property and object[property] like
+        // in Python (Attribute and Subscript, respectively).
+        // However, the 'computed' property of the node will
+        // be true if square brackets are used, which is used
+        // here to filter for the same nodes Python would transform.
+        if (!path.node.computed) {
+            return;
+        }
+        if (t.isIdentifier(path.node.object)) {
+            let s = (t.isIdentifier(path.node.property)) ? path.node.property.name : path.node.property.value;
+            path.replaceWith(
+                t.MemberExpression(
+                    t.MemberExpression(
+                        t.MemberExpression(
+                            t.identifier('worldState'),
+                            t.identifier('has')
+                        ),
+                        path.node.object
+                    ),
+                    t.StringLiteral(s.replace('_', ' ')),
+                    computed = true
+                )
+            );
+            path.skip();
+        }
+    }
+
+    make_call(self, t, node, name, args, kwargs) {
+        if (!Object.getOwnPropertyNames(WorldState.prototype).includes(name)) {
+            throw `Parse error: No such function State.$(name)`;
+        }
+        // Convert separate AssignmentExpression keyword args to
+        // one combined ObjectExpression for use with parameter
+        // destructuring to simulate Python **kwargs
+        let objargs = [];
+        kwargs.forEach((kwarg) => {
+            objargs.push(t.ObjectProperty(kwarg.left, kwarg.right));
+        });
+        if (objargs.length > 0) {
+            //args.push(t.ObjectExpression(objargs));
+        }
         return t.callExpression(
             t.memberExpression(
                 t.identifier('worldState'),
@@ -292,7 +400,7 @@ class RuleParser {
 
     at_day(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAY) : (state.has_all_of(['Ocarina', 'Suns Song']) || state.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAY))"));
+            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAY))"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -301,7 +409,7 @@ class RuleParser {
 
     at_dampe_time(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : state.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
+            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -309,10 +417,10 @@ class RuleParser {
     }
 
     at_night(self, path) {
-        if (self.current_spot.type === 'GS Toekn' && self.world.logic_no_night_tokens_without_suns_song) {
+        if (self.current_spot.type === 'GS Token' && self.world.logic_no_night_tokens_without_suns_song) {
             path.replaceWith(self.visit(self, 'can_play(Suns_Song)'));
         } else if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : state.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
+            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
