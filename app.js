@@ -7,11 +7,11 @@ var state = new WorldState(world);
 var parser = new RuleParser(world);
 var logic;
 
-const compare = "bridge === 'vanilla'";
+const unary = "!(bridge === 'stones')";
 
-const output = parser.parse_rule(compare);
+const output = parser.parse_rule(unary);
 logic = eval(output);
 
-console.log('Skipped trials testing');
+console.log('not testing');
 console.log(output);
 console.log(logic(state, {}));

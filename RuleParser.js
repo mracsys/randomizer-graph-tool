@@ -68,39 +68,6 @@ class RuleParser {
         }
         this.rule_cache = new Set();
         this.current_spot = null;
-        this.visit_options = {
-            sourceType: 'script',
-            plugins: [function ootrLogicPlugin({ types: t }) {
-                return {
-                    visitor: {
-                        Identifier(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Name(this, t, path);
-                        },
-                        StringLiteral(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Str(this, t, path);
-                        },
-                        SequenceExpression(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Tuple(this, t, path);
-                        },
-                        CallExpression(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Call(this, t, path);
-                        },
-                        MemberExpression(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Subscript(this, t, path);
-                        },
-                        BinaryExpression(path) {
-                            console.log('transforming '+ path);
-                            this.visit_Compare(this, t, path);
-                        }
-                    }
-                };
-            }]
-        };
     }
 
     visit(self, rule_string) {
@@ -132,6 +99,10 @@ class RuleParser {
                         BinaryExpression(path) {
                             console.log('transforming '+ path);
                             self.visit_Compare(self, t, path);
+                        },
+                        UnaryExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_UnaryOp(self, t, path);
                         }
                     }
                 };
@@ -169,6 +140,10 @@ class RuleParser {
                         BinaryExpression(path) {
                             console.log('transforming '+ path);
                             self.visit_Compare(self, t, path);
+                        },
+                        UnaryExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_UnaryOp(self, t, path);
                         }
                     }
                 };
@@ -416,14 +391,6 @@ class RuleParser {
             return n;
         }
 
-        function isLiteral(n, t) {
-            if (t.isBinaryExpression(n)) {
-                return isLiteral(n.left, t) && isLiteral(n.right, t);
-            } else {
-                return t.isNumericLiteral(n) || t.isStringLiteral(n) || t.isBooleanLiteral(n);
-            }
-        }
-
         // Python splits multiple comparisons from one expression
         // into multiple node.ops and node.comparators properties.
         // JS nests BinaryExpressions from left to right.
@@ -444,12 +411,21 @@ class RuleParser {
         }
         path.node.right = escape_or_string(path.node.right, t);
 
-        if (isLiteral(path.node.right, t) && isLiteral(path.node.left, t)) {
+        if (self.isLiteral(t, path.node.right) && self.isLiteral(t, path.node.left)) {
             let res = eval(generate(path.node, {}, '').code);
             path.replaceWith(t.booleanLiteral(res));
             path.skip();
         }
         //path.skip();
+    }
+
+    visit_UnaryOp(self, t, path) {
+        path.node.argument = self.visit_AST(self, path.node.argument);
+        if (self.isLiteral(t, path.node.argument)) {
+            let res = eval(generate(path.node, {}, '').code);
+            path.replaceWith(t.booleanLiteral(res));
+        }
+        path.skip();
     }
 
     make_call(self, t, node, name, args, kwargs) {
@@ -559,6 +535,14 @@ class RuleParser {
             } else {
                 return ast.program.directives[0].value;
             }
+        }
+    }
+
+    isLiteral(t, n) {
+        if (t.isBinaryExpression(n)) {
+            return self.isLiteral(t, n.left) && isLiteral(t, n.right);
+        } else {
+            return t.isNumericLiteral(n) || t.isStringLiteral(n) || t.isBooleanLiteral(n);
         }
     }
 
