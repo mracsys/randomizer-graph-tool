@@ -68,10 +68,43 @@ class RuleParser {
         }
         this.rule_cache = new Set();
         this.current_spot = null;
+        this.visit_options = {
+            sourceType: 'script',
+            plugins: [function ootrLogicPlugin({ types: t }) {
+                return {
+                    visitor: {
+                        Identifier(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Name(this, t, path);
+                        },
+                        StringLiteral(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Str(this, t, path);
+                        },
+                        SequenceExpression(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Tuple(this, t, path);
+                        },
+                        CallExpression(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Call(this, t, path);
+                        },
+                        MemberExpression(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Subscript(this, t, path);
+                        },
+                        BinaryExpression(path) {
+                            console.log('transforming '+ path);
+                            this.visit_Compare(this, t, path);
+                        }
+                    }
+                };
+            }]
+        };
     }
 
     visit(self, rule_string) {
-        var output = babel.transformSync(rule_string, {
+        return babel.transformSync(rule_string, {
             sourceType: 'script',
             plugins: [function ootrLogicPlugin({ types: t }) {
                 return {
@@ -96,11 +129,53 @@ class RuleParser {
                             console.log('transforming '+ path);
                             self.visit_Subscript(self, t, path);
                         },
+                        BinaryExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Compare(self, t, path);
+                        }
                     }
                 };
             }]
-        });
-        return output.code;
+        }).code;
+    }
+
+    visit_AST(self, ast) {
+        let file = self.make_file(babel.types, ast);
+        let new_code = babel.transformFromAstSync(file, undefined, {
+            sourceType: 'script',
+            plugins: [function ootrLogicPlugin({ types: t }) {
+                return {
+                    visitor: {
+                        Identifier(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Name(self, t, path);
+                        },
+                        StringLiteral(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Str(self, t, path);
+                        },
+                        SequenceExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Tuple(self, t, path);
+                        },
+                        CallExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Call(self, t, path);
+                        },
+                        MemberExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Subscript(self, t, path);
+                        },
+                        BinaryExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_Compare(self, t, path);
+                        }
+                    }
+                };
+            }]
+        }).code;
+        let visited_ast = babel.parse(new_code);
+        return self.get_visited_node(babel.types, visited_ast);
     }
 
     visit_Name(self, t, path) {
@@ -115,7 +190,7 @@ class RuleParser {
             }
             // traverse repl and return
             var repl_parsed = babel.parse(self.visit(self, repl));
-            path.replaceWith(repl_parsed.program.body[0]);
+            path.replaceWith(repl_parsed.program.body[0].expression);
             path.skip();
         } else if (path.node.name in escaped_items) {
             path.replaceWith(
@@ -128,16 +203,44 @@ class RuleParser {
             );
             path.skip();
         } else if (Object.getOwnPropertyNames(self.world).includes(path.node.name)) {
-            var world_parsed = babel.parse(self.world[path.node.name].toString());
-            path.replaceWith(world_parsed.program.body[0]);
+            let world_parsed = self.world[path.node.name]
+            let new_node;
+            switch(typeof(world_parsed)) {
+                case 'string':
+                    new_node = t.stringLiteral(world_parsed);
+                    break;
+                case 'boolean':
+                    new_node = t.booleanLiteral(world_parsed);
+                    break;
+                case 'number':
+                    new_node = t.NumericLiteral(world_parsed);
+                    break;
+                default:
+                    throw 'Unhandled world property type: ' + typeof(world_parsed);
+            }
+            path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(self.world.settings).includes(path.node.name)) {
-            var worldsettings_parsed = babel.parse(self.world.settings[path.node.name].toString());
-            path.replaceWith(worldsettings_parsed.program.body[0]);
+            var worldsettings_parsed = self.world.settings[path.node.name];
+            let new_node;
+            switch(typeof(worldsettings_parsed)) {
+                case 'string':
+                    new_node = t.stringLiteral(worldsettings_parsed);
+                    break;
+                case 'boolean':
+                    new_node = t.booleanLiteral(worldsettings_parsed);
+                    break;
+                case 'number':
+                    new_node = t.NumericLiteral(worldsettings_parsed);
+                    break;
+                default:
+                    throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
+            }
+            path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(WorldState.prototype).includes(path.node.name)) {
             var worldstate_prop = self.make_call(self, t, path, path.node.name, [], []);
-            path.replaceWith(worldstate_prop.program.body[0]);
+            path.replaceWith(worldstate_prop);
             path.skip();
         } else if (path.node.name in kwarg_defaults || path.node.name in allowed_globals) {
             // do nothing
@@ -242,7 +345,7 @@ class RuleParser {
                 repl = arg_re[Symbol.replace](repl, val);
             });
             var repl_parsed = babel.parse(self.visit(self, repl));
-            path.replaceWith(repl_parsed.program.body[0]);
+            path.replaceWith(repl_parsed.program.body[0].expression);
             path.skip();
         } else {
             let new_args = [];
@@ -250,11 +353,11 @@ class RuleParser {
             path.node.arguments.forEach((child) => {
                 if (t.isIdentifier(child)) {
                     if (Object.getOwnPropertyNames(self.world).includes(child.name)) {
-                        child = babel.parse(self.world[child.name].toString()).program.body[0];
+                        child = babel.parse(self.world[child.name].toString()).program.body[0].expression;
                     } else if (Object.getOwnPropertyNames(self.world.settings).includes(child.name)) {
-                        child = babel.parse(self.world.settings[child.name].toString()).program.body[0];
+                        child = babel.parse(self.world.settings[child.name].toString()).program.body[0].expression;
                     } else if (child.name in rule_aliases) {
-                        child = babel.parse(self.visit(self, child.toString())).program.body[0];
+                        child = self.visit_AST(self, child);
                     } else if (child.name in escaped_items) {
                         child = t.stringLiteral(escaped_items[child.name]);
                     } else {
@@ -265,7 +368,7 @@ class RuleParser {
                 } else if (t.isAssignmentExpression(child)) {
                     kwargs.push(child);
                 } else if (!(t.isStringLiteral(child)) && !(t.isNumericLiteral(child))) {
-                    child = babel.parse(self.visit(self, child.toString())).program.body[0];
+                    child = self.visit_AST(self, child);
                 }
                 new_args.push(child);
             });
@@ -301,6 +404,52 @@ class RuleParser {
             );
             path.skip();
         }
+    }
+
+    visit_Compare(self, t, path) {
+        function escape_or_string(n, t) {
+            if (t.isIdentifier(n) && n.name in escaped_items) {
+                return t.StringLiteral(n.name);
+            } else if (!t.isStringLiteral(n)) {
+                return self.visit_AST(self, n);
+            }
+            return n;
+        }
+
+        function isLiteral(n, t) {
+            if (t.isBinaryExpression(n)) {
+                return isLiteral(n.left, t) && isLiteral(n.right, t);
+            } else {
+                return t.isNumericLiteral(n) || t.isStringLiteral(n) || t.isBooleanLiteral(n);
+            }
+        }
+
+        // Python splits multiple comparisons from one expression
+        // into multiple node.ops and node.comparators properties.
+        // JS nests BinaryExpressions from left to right.
+        if (t.isIdentifier(path.node.left) && path.node.operator === '===' && t.isIdentifier(path.node.right)) {
+            if (!Object.getOwnPropertyNames(self.world).includes(path.node.left.name) &&
+                !Object.getOwnPropertyNames(self.world).includes(path.node.right.name) &&
+                !Object.getOwnPropertyNames(self.world.settings).includes(path.node.left.name) &&
+                !Object.getOwnPropertyNames(self.world.settings).includes(path.node.right.name)) {
+                    path.replaceWith(t.booleanLiteral(path.node.left.name === path.node.right.name))
+                    path.skip();
+            }
+        }
+
+        if (t.isBinaryExpression(path.node.left)) {
+            path.node.left = self.visit_AST(self, path.node.left);
+        } else {
+            path.node.left = escape_or_string(path.node.left, t);
+        }
+        path.node.right = escape_or_string(path.node.right, t);
+
+        if (isLiteral(path.node.right, t) && isLiteral(path.node.left, t)) {
+            let res = eval(generate(path.node, {}, '').code);
+            path.replaceWith(t.booleanLiteral(res));
+            path.skip();
+        }
+        //path.skip();
     }
 
     make_call(self, t, node, name, args, kwargs) {
@@ -384,6 +533,35 @@ class RuleParser {
         return generate(p, {}, rule_str).code;
     }
 
+    make_file(t, ast) {
+        let p = ast;
+        if (!t.isFile(ast)) {
+            if (!t.isProgram(ast)) {
+                if (!t.isExpressionStatement(ast)) {
+                    p = t.expressionStatement(p);
+                }
+                p = t.program([p]);
+            }
+            p = t.file(p);
+        }
+        return p;
+    }
+
+    get_visited_node(t, ast) {
+        if (ast.program.body.length > 0) {
+            // non-literals
+            return ast.program.body[0].expression;
+        } else {
+            // literals
+            if (t.isDirectiveLiteral(ast.program.directives[0].value)) {
+                // string literal gets converted to a directive literal for whatever reason
+                return t.stringLiteral(ast.program.directives[0].value.value);
+            } else {
+                return ast.program.directives[0].value;
+            }
+        }
+    }
+
     at(self, path) {
         if (!(path.node.hasOwnProperty('arguments'))) {
             // no argument supplied
@@ -418,7 +596,7 @@ class RuleParser {
 
     at_night(self, path) {
         if (self.current_spot.type === 'GS Token' && self.world.logic_no_night_tokens_without_suns_song) {
-            path.replaceWith(self.visit(self, 'can_play(Suns_Song)'));
+            path.replaceWith(babel.parse(self.visit(self, 'can_play(Suns_Song)')).program.body[0].expression);
         } else if (self.world.ensure_tod_access) {
             path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
         } else {

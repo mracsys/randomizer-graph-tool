@@ -12,6 +12,7 @@ class World {
             'Spirit': false,
             'Light': false,
         }
+        this.bridge = 'vanilla'
     }
 }
 
