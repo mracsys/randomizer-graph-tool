@@ -103,6 +103,10 @@ class RuleParser {
                         UnaryExpression(path) {
                             console.log('transforming '+ path);
                             self.visit_UnaryOp(self, t, path);
+                        },
+                        LogicalExpression(path) {
+                            console.log('transforming '+ path);
+                            self.visit_BoolOp(self, t, path);
                         }
                     }
                 };
@@ -391,6 +395,13 @@ class RuleParser {
             return n;
         }
 
+        // Python BinOp nodes (e.g. "+", "-") are also BinaryExpressions in JS,
+        // so need to filter them out to route to the correct transformer
+        if (!(['===', '!==', '>=', '<=', '>', '<'].includes(path.node.operator))) {
+            // Python visit_BinOp exists, but does not appear to be used
+            return;
+        }
+
         // Python splits multiple comparisons from one expression
         // into multiple node.ops and node.comparators properties.
         // JS nests BinaryExpressions from left to right.
@@ -425,6 +436,96 @@ class RuleParser {
             let res = eval(generate(path.node, {}, '').code);
             path.replaceWith(t.booleanLiteral(res));
         }
+        path.skip();
+    }
+
+    visit_BoolOp(self, t, path) {
+        function traverse_logic(n, t, op) {
+            // Python groups all elements with common operators
+            // outside of parentheses. JS nests LogicalExpressions
+            // such that there is always one left and one right.
+            // The first condition here unwraps the nested logic
+            // for the has_any_of and has_all_of arguments to be
+            // roughly equivalent to the Python transform.
+            if (t.isLogicalExpression(n) && n.operator === op) {
+                traverse_logic(n.left, t, op);
+                traverse_logic(n.right, t, op);
+            } else if (t.isStringLiteral(n)) {
+                item_set.add(escape_name(n.value));
+            } else if (t.isIdentifier(n) && !!n.id && !rule_aliases.includes(n.id)
+                        && !Object.getOwnPropertyNames(self.world).includes(n.id)
+                        && !Object.getOwnPropertyNames(self.world.settings).includes(n.id)
+                        && !Object.getOwnPropertyNames(RuleParser.prototype).includes(n.id)
+                        && !Object.getOwnPropertyNames(WorldState.prototype).includes(n.id)) {
+                item_set.add(n.id);
+            } else {
+                let elt = self.visit_AST(self, n);
+                if (t.isBooleanLiteral(elt)) {
+                    if (elt.value === early_return) {
+                        path.replaceWith(elt);
+                        path.skip();
+                        return;
+                    }
+                } else if (t.isCallExpression(elt) && t.isMemberExpression(elt.callee)
+                            && ['has', groupable].includes(elt.callee.property.name) && elt.arguments.length === 1) {
+                    let args = elt.arguments[0];
+                    if (t.isStringLiteral(args)) {
+                        item_set.add(escape_name(args.value));
+                    } else if (t.isIdentifier(args)) {
+                        item_set.add(args.name);
+                    } else {
+                        // assumed to be an array of identifiers
+                        args.elements.forEach((i) => {
+                            item_set.add(i.name);
+                        });
+                    }
+                // Python adds elements for logical expressions with
+                // the same operator directly to new_values. Instead of
+                // trying to unwrap nested JS logic expressions, treat them
+                // the same regardless of operator.
+                } else {
+                    new_values.push(elt);
+                }
+            }
+        }
+
+        // repack logic back into nested logical expressions
+        function rebuild_logic(t, e, op) {
+            let right = e.pop();
+            let left;
+            if (e.length > 1) {
+                left = rebuild_logic(t, e, op);
+            } else {
+                left = e.pop();
+            }
+            return t.logicalExpression(op, left, right);
+        }
+
+        let early_return = path.node.operator === '||';
+        let groupable = early_return ? 'has_any_of' : 'has_all_of';
+        let item_set = new Set();
+        let new_values = [];
+        traverse_logic(path.node.left, t, path.node.operator);
+        traverse_logic(path.node.right, t, path.node.operator);
+        let expressions = [];
+        if (item_set.size > 0) {
+            let call = t.callExpression(
+                t.memberExpression(
+                    t.identifier('worldState'),
+                    t.identifier(groupable)
+                ),
+                [t.ArrayExpression(Array.from(item_set).map((i) => { return t.stringLiteral(i); }))]
+            );
+            expressions = [call].concat(new_values);
+        } else {
+            expressions = new_values;
+        }
+        if (expressions.length === 1) {
+            path.replaceWith(expressions[0]);
+            path.skip();
+            return;
+        }
+        path.replaceWith(rebuild_logic(t, expressions, path.node.operator));
         path.skip();
     }
 

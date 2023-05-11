@@ -24,6 +24,26 @@ class WorldState {
         return this.prog_items[item] >= count;
     }
 
+    has_any_of(items) {
+        items.foreach((item) => {
+            if (item in this.prog_items) {
+                if (this.prog_items[item] > 0) return true;
+            }
+        });
+        return false;
+    }
+
+    has_all_of(items) {
+        items.foreach((item) => {
+            if (item in this.prog_items) {
+                if (this.prog_items[item] <= 0) return false;
+            } else {
+                return false;
+            }
+        });
+        return true;
+    }
+
     item_count(item) {
         return this.prog_items[item];
     }

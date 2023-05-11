@@ -7,11 +7,12 @@ var state = new WorldState(world);
 var parser = new RuleParser(world);
 var logic;
 
-const unary = "!(bridge === 'stones')";
+const rule = "Boomerang || Slingshot || (is_adult && Bow)";
 
-const output = parser.parse_rule(unary);
+const output = parser.parse_rule(rule);
+console.log('done transforming\n')
 logic = eval(output);
 
-console.log('not testing');
+console.log('BoolOp testing');
 console.log(output);
 console.log(logic(state, {}));
