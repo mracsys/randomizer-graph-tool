@@ -223,6 +223,7 @@ class RuleParser {
             path.skip();
         } else if (path.node.name in kwarg_defaults || path.node.name in allowed_globals) {
             // do nothing
+            return;
         } else if (event_name[Symbol.match](path.node.name)) {
             self.events.push(path.node.name.replace('_', ' '));
             path.replaceWith(
@@ -427,7 +428,7 @@ class RuleParser {
             path.replaceWith(t.booleanLiteral(res));
             path.skip();
         }
-        //path.skip();
+        path.skip();
     }
 
     visit_UnaryOp(self, t, path) {
@@ -479,10 +480,11 @@ class RuleParser {
                             item_set.add(i.name);
                         });
                     }
-                // Python adds elements for logical expressions with
-                // the same operator directly to new_values. Instead of
-                // trying to unwrap nested JS logic expressions, treat them
-                // the same regardless of operator.
+                } else if (t.isLogicalExpression(elt) && elt.operator !== op) {
+                    if (n.extra) {
+                        elt.extra = n.extra;
+                    }
+                    new_values.push(elt);
                 } else {
                     new_values.push(elt);
                 }

@@ -25,23 +25,24 @@ class WorldState {
     }
 
     has_any_of(items) {
-        items.foreach((item) => {
+        let ret = false;
+        return items.some((item) => {
             if (item in this.prog_items) {
-                if (this.prog_items[item] > 0) return true;
+                if (this.prog_items[item] > 0) {
+                    return true;
+                }
             }
         });
-        return false;
     }
 
     has_all_of(items) {
-        items.foreach((item) => {
+        return items.every((item) => {
             if (item in this.prog_items) {
                 if (this.prog_items[item] <= 0) return false;
             } else {
                 return false;
             }
         });
-        return true;
     }
 
     item_count(item) {
@@ -61,10 +62,12 @@ class WorldState {
     }
 
     collect(item) {
+        console.log('collected '+ item);
         (item in this.prog_items) ? this.prog_items[item] += 1 : this.prog_items[item] = 1;
     }
 
     remove(item) {
+        console.log('disposed of '+ item);
         (this.prog_items[item] > 1) ? this.prog_items[item] -= 1 : delete this.prog_items[item];
     }
 }
