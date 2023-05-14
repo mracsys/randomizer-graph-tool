@@ -4,7 +4,7 @@ const WorldState = require("./WorldState.js");
 const World = require("./World.js");
 const Location = require("./Location.js");
 const item_table = require("./ItemList.js");
-const TimeOfDay = require("./Region.js");
+const { TimeOfDay } = require("./Region.js");
 const read_json = require("./Utils.js");
 
 const access_proto = "(worldState, { age = null, spot = null, tod = null } = {}) => true";
@@ -47,7 +47,7 @@ function load_aliases() {
             var [rule, temp_args] = s.substring(0,s.length-1).split('(')
             var args = [];
             temp_args.split(',').map((arg) => {
-                args.push(new RegExp('\\b' + arg + '\\b'));
+                args.push(new RegExp('\\b' + arg + '\\b', 'g'));
             });
         } else {
             var [rule, args] = [s, []];
@@ -68,49 +68,51 @@ class RuleParser {
         }
         this.rule_cache = new Set();
         this.current_spot = null;
+        let self = this;
+        this.logicVisitor = [function ootrLogicPlugin({ types: t }) {
+            return {
+                visitor: {
+                    Identifier(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Name(self, t, path);
+                    },
+                    StringLiteral(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Str(self, t, path);
+                    },
+                    SequenceExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Tuple(self, t, path);
+                    },
+                    CallExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Call(self, t, path);
+                    },
+                    MemberExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Subscript(self, t, path);
+                    },
+                    BinaryExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_Compare(self, t, path);
+                    },
+                    UnaryExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_UnaryOp(self, t, path);
+                    },
+                    LogicalExpression(path) {
+                        console.log('transforming '+ path);
+                        self.visit_BoolOp(self, t, path);
+                    }
+                }
+            };
+        }]
     }
 
     visit(self, rule_string) {
         return babel.transformSync(rule_string, {
             sourceType: 'script',
-            plugins: [function ootrLogicPlugin({ types: t }) {
-                return {
-                    visitor: {
-                        Identifier(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Name(self, t, path);
-                        },
-                        StringLiteral(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Str(self, t, path);
-                        },
-                        SequenceExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Tuple(self, t, path);
-                        },
-                        CallExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Call(self, t, path);
-                        },
-                        MemberExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Subscript(self, t, path);
-                        },
-                        BinaryExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Compare(self, t, path);
-                        },
-                        UnaryExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_UnaryOp(self, t, path);
-                        },
-                        LogicalExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_BoolOp(self, t, path);
-                        }
-                    }
-                };
-            }]
+            plugins: self.logicVisitor
         }).code;
     }
 
@@ -118,40 +120,7 @@ class RuleParser {
         let file = self.make_file(babel.types, ast);
         let new_code = babel.transformFromAstSync(file, undefined, {
             sourceType: 'script',
-            plugins: [function ootrLogicPlugin({ types: t }) {
-                return {
-                    visitor: {
-                        Identifier(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Name(self, t, path);
-                        },
-                        StringLiteral(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Str(self, t, path);
-                        },
-                        SequenceExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Tuple(self, t, path);
-                        },
-                        CallExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Call(self, t, path);
-                        },
-                        MemberExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Subscript(self, t, path);
-                        },
-                        BinaryExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_Compare(self, t, path);
-                        },
-                        UnaryExpression(path) {
-                            console.log('transforming '+ path);
-                            self.visit_UnaryOp(self, t, path);
-                        }
-                    }
-                };
-            }]
+            plugins: self.logicVisitor
         }).code;
         let visited_ast = babel.parse(new_code);
         return self.get_visited_node(babel.types, visited_ast);
@@ -413,6 +382,7 @@ class RuleParser {
                 !Object.getOwnPropertyNames(self.world.settings).includes(path.node.right.name)) {
                     path.replaceWith(t.booleanLiteral(path.node.left.name === path.node.right.name))
                     path.skip();
+                    return;
             }
         }
 
@@ -450,6 +420,10 @@ class RuleParser {
             // roughly equivalent to the Python transform.
             if (t.isLogicalExpression(n) && n.operator === op) {
                 traverse_logic(n.left, t, op);
+                // test if the early return was hit before parsing the next comparator in the chain
+                if (t.isBooleanLiteral(path.node)) {
+                    return;
+                }
                 traverse_logic(n.right, t, op);
             } else if (t.isStringLiteral(n)) {
                 item_set.add(escape_name(n.value));
@@ -508,7 +482,18 @@ class RuleParser {
         let item_set = new Set();
         let new_values = [];
         traverse_logic(path.node.left, t, path.node.operator);
+        // test if the early return was hit before parsing the last comparator in the chain
+        if (t.isBooleanLiteral(path.node)) {
+            return;
+        }
         traverse_logic(path.node.right, t, path.node.operator);
+
+        if (item_set.size === 0 && new_values.length === 0) {
+            path.replaceWith(t.booleanLiteral(!early_return));
+            path.skip();
+            return;
+        }
+
         let expressions = [];
         if (item_set.size > 0) {
             let call = t.callExpression(
@@ -553,15 +538,18 @@ class RuleParser {
         );
     }
 
-    replace_subrule(self, target, path) {
-        const rule = babel.generate(node).code;
+    replace_subrule(self, path, target, node) {
+        const rule = generate(node, {}, '').code;
         const t = babel.types;
-        if (rule in self.replaced_rules[target]) {
+        if (target in self.replaced_rules && rule in self.replaced_rules[target]) {
             path.replaceWith(self.replaced_rules[target][rule]);
         } else {
-            var subrule_name = target + 'Subrule ' + String(1 + length(self.replaced_rules[target]));
+            if (!(target in self.replaced_rules)) {
+                self.replaced_rules[target] = {};
+            }
+            var subrule_name = target + ' Subrule ' + String(1 + Object.keys(self.replaced_rules[target]).length);
             self.delayed_rules.push({"target": target, "path": path, "subrule_name": subrule_name});
-            item_rule = t.callExpression(
+            var item_rule = t.callExpression(
                 t.memberExpression(
                     t.identifier('worldState'),
                     t.identifier('has')),
@@ -573,13 +561,13 @@ class RuleParser {
         path.skip();
     }
 
-    create_delayed_rules() {
+    create_delayed_rules(self) {
         self = this;
-        this.delayed_rules.map((rule) => {
+        self.delayed_rules.map((rule) => {
             var region_name = rule['target'];
             var path = rule['path'];
             var subrule_name = rule['subrule_name'];
-            var region = this.world.get_region(region_name);
+            var region = self.world.get_region(region_name);
             var event = Location({name: subrule_name, type: 'Event', parent: region, internal: true});
             event.world = self.world;
             self.current_spot = event;
@@ -597,7 +585,7 @@ class RuleParser {
                 MakeEventItem(subrule_name, event);
             }
         });
-        this.delayed_rules = [];
+        self.delayed_rules = [];
     }
 
     make_access_rule(rule_str) {
@@ -650,17 +638,17 @@ class RuleParser {
     }
 
     at(self, path) {
-        if (!(path.node.hasOwnProperty('arguments'))) {
-            // no argument supplied
+        if (path.node.arguments.length !== 2) {
+            throw(`Parse error: invalid at() arguments ($(path.node.arguments)) for spot $(self.current_spot.name)`);
         }
-        this.replace_subrule(self, path.node.arguments[1].value, path.node.arguments[1]);
+        self.replace_subrule(self, path, path.node.arguments[1].value, path.node.arguments[1]);
     }
 
     here(self, path) {
-        if (!(path.node.hasOwnProperty('arguments'))) {
-            // no argument supplied
+        if (path.node.arguments.length !== 1) {
+            throw(`Parse error: invalid here() arguments ($(path.node.arguments)) for spot $(self.current_spot.name)`);
         }
-        this.replace_subrule(self, self.current_spot.parent_region.name, path.node.arguments[0]);
+        self.replace_subrule(self, path, self.current_spot.parent_region.name, path.node.arguments[0]);
     }
 
     at_day(self, path) {
