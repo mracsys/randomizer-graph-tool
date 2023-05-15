@@ -3,9 +3,13 @@ const generate = require('@babel/generator').default;
 const WorldState = require("./WorldState.js");
 const World = require("./World.js");
 const Location = require("./Location.js");
-const item_table = require("./ItemList.js");
+//const item_table = require("./ItemList.js");
+var { ItemInfo, _ItemInfo, Item, MakeEventItem } = require("./Item.js");
 const { TimeOfDay } = require("./Region.js");
 const read_json = require("./Utils.js");
+var { allowed_globals, escape_name } = require("./RulesCommon.js");
+const merge = require("lodash/merge");
+
 
 const access_proto = "(worldState, { age = null, spot = null, tod = null } = {}) => true";
 const kwarg_defaults = {
@@ -14,11 +18,12 @@ const kwarg_defaults = {
     'tod': TimeOfDay.NONE
 };
 
-var allowed_globals = { 'TimeOfDay': TimeOfDay };
+var special_globals = { 'TimeOfDay': TimeOfDay };
+allowed_globals = merge(allowed_globals, special_globals);
 
 var escaped_items = {};
 var solver_ids = {};
-Object.keys(item_table).map((item) => {
+Object.keys(ItemInfo.items).map((item) => {
     var esc = escape_name(item);
     escaped_items[esc] = item;
     if (!(Object.keys(solver_ids).includes(esc))) {
@@ -116,6 +121,10 @@ class RuleParser {
         }).code;
     }
 
+    // Babel will not visit AST subtrees. This method works
+    // around the issue by creating a dummy program with the
+    // subtree as the only expression, transforming, re-parsing
+    // back to AST, then extracting the changed expression.
     visit_AST(self, ast) {
         let file = self.make_file(babel.types, ast);
         let new_code = babel.transformFromAstSync(file, undefined, {
@@ -561,8 +570,8 @@ class RuleParser {
         path.skip();
     }
 
-    create_delayed_rules(self) {
-        self = this;
+    create_delayed_rules() {
+        let self = this;
         self.delayed_rules.map((rule) => {
             var region_name = rule['target'];
             var path = rule['path'];

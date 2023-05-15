@@ -5,10 +5,22 @@ const DisableType = {
 }
 
 class Location {
-    constructor({name='', address=null, address2=null, _default=null, type='Chest', scene=null, parent=null, filter_tags=null, internal=false} = {}) {
+    constructor({
+            name='',
+            address=null,
+            address2=null,
+            _default=null,
+            type='Chest',
+            scene=null,
+            parent=null,
+            filter_tags=null,
+            internal=false,
+            vanilla_item=null,
+        } = {}) {
         this.name = name;
         this.parent_region = parent;
         this.item = null;
+        this.vanilla_item = vanilla_item;
         this.address = address;
         this.address2 = address2;
         this._default = _default;
@@ -28,6 +40,8 @@ class Location {
         this.never = false;
         if (filter_tags === null) {
             this.filter_tags = null;
+        } else if (typeof(filter_tags) === 'String') {
+            this.filter_tags = [filter_tags];
         } else {
             this.filter_tags = [...filter_tags];
         }
