@@ -1,4 +1,5 @@
-const TimeOfDay = require("./Region");
+const { ItemInfo } = require("./Item");
+const { escape_name } = require("./RulesCommon");
 
 class WorldState {
     constructor(parent) {
@@ -21,32 +22,35 @@ class WorldState {
     }
 
     has(item, count=1) {
-        return this.prog_items[item] >= count;
+        return !!this.prog_items[item] && this.prog_items[item] >= count;
     }
 
     has_any_of(items) {
-        let ret = false;
         return items.some((item) => {
-            if (item in this.prog_items) {
-                if (this.prog_items[item] > 0) {
-                    return true;
-                }
-            }
+            return !!this.prog_items[item] && this.prog_items[item] > 0;
         });
     }
 
     has_all_of(items) {
         return items.every((item) => {
-            if (item in this.prog_items) {
-                if (this.prog_items[item] <= 0) return false;
-            } else {
-                return false;
-            }
+            return !!this.prog_items[item] && this.prog_items[item] > 0;
         });
+    }
+
+    count_of(items) {
+        let s = 0;
+        items.forEach((i) => {
+            s += !!this.prog_items[i] ? this.prog_items[i] : 0;
+        });
+        return s;
     }
 
     item_count(item) {
         return this.prog_items[item];
+    }
+
+    has_bottle() {
+        return this.has_any_of(ItemInfo.bottles) || this.has('Rutos Letter', 2);
     }
 
     has_hearts(count) {
@@ -57,18 +61,92 @@ class WorldState {
         return (~~(this.item_count('Piece of Heart') / 4) + 3);
     }
 
-    can_reach(region, age = null, tod = TimeOfDay.NONE) {
-        return age == 'child';
+    has_medallions(count) {
+        return this.count_of(ItemInfo.medallions) >= count;
+    }
+
+    has_stones(count) {
+        return this.count_of(ItemInfo.stones) >= count;
+    }
+
+    has_dungeon_rewards(count) {
+        return (this.count_of(ItemInfo.medallions) + this.count_of(ItemInfo.stones)) >= count;
+    }
+
+    had_night_start() {
+        let stod = this.world.settings.starting_tod;
+        // These are all not between 6:30 and 18:00
+        if (stod == 'sunset' ||         // 18
+            stod == 'evening' ||        // 21
+            stod == 'midnight' ||       // 00
+            stod == 'witching-hour') {  // 03
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    can_live_dmg(hearts) {
+        let mult = this.world.settings.damage_multiplier;
+        if (hearts*4 >= 3) {
+            return mult != 'ohko' && mult != 'quadruple';
+        } else if (hearts*4 < 3) {
+            return mult != 'ohko';
+        } else {
+            return true;
+        }
+    }
+
+    guarantee_hint() {
+        return this.world.parser.parse_rule('guarantee_hint')(this);
     }
 
     collect(item) {
-        console.log('collected '+ item);
-        (item in this.prog_items) ? this.prog_items[item] += 1 : this.prog_items[item] = 1;
+        if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
+            let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
+            if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].contains(dungeon_name)) {
+                let bk = `Boss Key (${dungeon_name})`;
+                this.prog_items[`Boss Key (${dungeon_name})`] = 1;
+            }
+        }
+        if (!!item.alias) {
+            if (!!this.prog_items[item.alias[0]]) {
+                this.prog_items[item.alias[0]] += item.alias[1];
+            } else {
+                this.prog_items[item.alias[0]] = item.alias[1];
+            }
+        }
+        if (item.advancement) {
+            if (!!this.prog_items[item.name]) {
+                this.prog_items[item.name] += 1;
+            } else {
+                this.prog_items[item.name] = 1;
+            }
+        }
+        console.log(`collected ${item.name}`);
+        //(item in this.prog_items) ? this.prog_items[item] += 1 : this.prog_items[item] = 1;
     }
 
     remove(item) {
-        console.log('disposed of '+ item);
-        (this.prog_items[item] > 1) ? this.prog_items[item] -= 1 : delete this.prog_items[item];
+        if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
+            let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
+            if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].contains(dungeon_name)) {
+                this.prog_items[`Boss Key (${dungeon_name})`] = 0;
+            }
+        }
+        if (!!item.alias && this.prog_items[item.alias[0]] > 0) {
+            this.prog_items[item.alias[0]] -= item.alias[1];
+            if (this.prog_items[item.alias[0]] <= 0) {
+                delete this.prog_items[item.alias[0]];
+            }
+        }
+        if (this.prog_items[item.name] > 0) {
+            this.prog_items[item.name] -= 1;
+            if (this.prog_items[item.alias[0]] <= 0) {
+                delete this.prog_items[item.name];
+            }
+        }
+        console.log(`disposed of ${item.name}`);
     }
 }
 

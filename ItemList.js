@@ -154,6 +154,7 @@ const item_table = {
     'Shadow Trial Clear':               ['Event',    true,  null, null],
     'Spirit Trial Clear':               ['Event',    true,  null, null],
     'Light Trial Clear':                ['Event',    true,  null, null],
+    'Epona':                            ['Event',    true,  null, null],
 
     'Deku Stick Drop':                  ['Drop',     true,  null, null],
     'Deku Nut Drop':                    ['Drop',     true,  null, null],

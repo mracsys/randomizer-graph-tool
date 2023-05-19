@@ -22,28 +22,15 @@ var special_globals = { 'TimeOfDay': TimeOfDay };
 allowed_globals = merge(allowed_globals, special_globals);
 
 var escaped_items = {};
-var solver_ids = {};
 Object.keys(ItemInfo.items).map((item) => {
     var esc = escape_name(item);
     escaped_items[esc] = item;
-    if (!(Object.keys(solver_ids).includes(esc))) {
-        create_solver_ids(esc);
-    }
 });
 
-var event_name = new RegExp(/\w+/);
+var event_name = new RegExp(/\w+/g);
 
 var rule_aliases = {};
-var nonaliases = {};
-
-function escape_name(name) {
-    return name.replace(/\s/g, '_').replace(/[\'()[\]-]/g, '');
-}
-
-function create_solver_ids(esc) {
-    allowed_globals[esc] = Object.keys(solver_ids).length;
-    solver_ids[esc] = Object.keys(solver_ids).length;
-}
+var nonaliases = new Set();
 
 function load_aliases() {
     j = read_json('LogicHelpers.json');
@@ -52,7 +39,7 @@ function load_aliases() {
             var [rule, temp_args] = s.substring(0,s.length-1).split('(')
             var args = [];
             temp_args.split(',').map((arg) => {
-                args.push(new RegExp('\\b' + arg + '\\b', 'g'));
+                args.push(new RegExp('\\b' + arg.trim() + '\\b', 'g'));
             });
         } else {
             var [rule, args] = [s, []];
@@ -65,7 +52,7 @@ function load_aliases() {
 class RuleParser {
     constructor(world) {
         this.world = world;
-        this.events = [];
+        this.events = new Set();
         this.replaced_rules = {};
         this.delayed_rules = [];
         if (Object.keys(rule_aliases).length === 0) {
@@ -115,6 +102,7 @@ class RuleParser {
     }
 
     visit(self, rule_string) {
+        console.log(`start transforming rule ${rule_string}`);
         return babel.transformSync(rule_string, {
             sourceType: 'script',
             plugins: self.logicVisitor
@@ -155,7 +143,7 @@ class RuleParser {
                     t.memberExpression(
                         t.identifier('worldState'),
                         t.identifier('has')),
-                    [t.stringLiteral(path.node.name)]
+                    [t.stringLiteral(escaped_items[path.node.name])]
                 )
             );
             path.skip();
@@ -203,13 +191,13 @@ class RuleParser {
             // do nothing
             return;
         } else if (event_name[Symbol.match](path.node.name)) {
-            self.events.push(path.node.name.replace('_', ' '));
+            self.events.add(path.node.name.replaceAll('_', ' '));
             path.replaceWith(
                 t.callExpression(
                     t.memberExpression(
                         t.identifier('worldState'),
                         t.identifier('has')),
-                    [t.stringLiteral(path.node.name.replace('_', ' '))]
+                    [t.stringLiteral(path.node.name.replaceAll('_', ' '))]
                 )
             );
             path.skip();
@@ -219,17 +207,12 @@ class RuleParser {
     }
 
     visit_Str(self, t, path) {
-        var esc = escape_name(path.node.value);
-        if (!(Object.keys(solver_ids).includes(esc))) {
-            self.events.push(esc.replace(/_/g, ' '))
-            create_solver_ids(esc);
-        }
         path.replaceWith(
             t.callExpression(
                 t.memberExpression(
                     t.identifier('worldState'),
                     t.identifier('has')),
-                [t.stringLiteral(esc)]
+                [t.stringLiteral(path.node.value)]
             )
         );
         path.skip();
@@ -262,8 +245,12 @@ class RuleParser {
             num = t.NumericLiteral(self.world.settings[num.name]);
         }
 
-        if (!(Object.keys(solver_ids).includes(item.value))) {
-            self.events.push(item.value.replace(/_/g, ' '));
+        if (item.value in escaped_items) {
+            item = t.StringLiteral(escaped_items[item.value]);
+        }
+
+        if (!(Object.keys(ItemInfo.items).includes(item.value))) {
+            self.events.add(item.value);
         }
 
         path.replaceWith(
@@ -288,7 +275,7 @@ class RuleParser {
             var args = rule_aliases[path.node.callee.name]['args'];
             var repl = rule_aliases[path.node.callee.name]['repl'];
             if (args.length !== path.node.arguments.length) {
-                throw `Parse error: expected $(args.length) args for $(path), not $(path.node.arguments.length)`;
+                throw `Parse error: expected ${args.length} args for ${path}, not ${path.node.arguments.length}`;
             }
             args.forEach((arg_re, idx) => {
                 var val;
@@ -298,7 +285,7 @@ class RuleParser {
                 } else if (t.isStringLiteral(arg_val)) {
                     val = arg_val.value;
                 } else {
-                    throw `Parse error: invalid argument $(arg_val)`;
+                    throw `Parse error: invalid argument ${arg_val}`;
                 }
                 repl = arg_re[Symbol.replace](repl, val);
             });
@@ -319,7 +306,7 @@ class RuleParser {
                     } else if (child.name in escaped_items) {
                         child = t.stringLiteral(escaped_items[child.name]);
                     } else {
-                        child = t.stringLiteral(child.name.replace('_', ' '));
+                        child = t.stringLiteral(child.name.replaceAll('_', ' '));
                     }
                 // JS-exclusive condition to filter out keyword arguments.
                 // Python automatically separates these to node.keywords from node.args.
@@ -356,7 +343,7 @@ class RuleParser {
                         ),
                         path.node.object
                     ),
-                    t.StringLiteral(s.replace('_', ' ')),
+                    t.StringLiteral(s.replaceAll('_', ' ')),
                     true // preserve computed property
                 )
             );
@@ -367,7 +354,7 @@ class RuleParser {
     visit_Compare(self, t, path) {
         function escape_or_string(n, t) {
             if (t.isIdentifier(n) && n.name in escaped_items) {
-                return t.StringLiteral(n.name);
+                return t.StringLiteral(escaped_items[n.name]);
             } else if (!t.isStringLiteral(n)) {
                 return self.visit_AST(self, n);
             }
@@ -435,13 +422,9 @@ class RuleParser {
                 }
                 traverse_logic(n.right, t, op);
             } else if (t.isStringLiteral(n)) {
-                item_set.add(escape_name(n.value));
-            } else if (t.isIdentifier(n) && !!n.id && !rule_aliases.includes(n.id)
-                        && !Object.getOwnPropertyNames(self.world).includes(n.id)
-                        && !Object.getOwnPropertyNames(self.world.settings).includes(n.id)
-                        && !Object.getOwnPropertyNames(RuleParser.prototype).includes(n.id)
-                        && !Object.getOwnPropertyNames(WorldState.prototype).includes(n.id)) {
-                item_set.add(n.id);
+                item_set.add(n.value);
+            } else if (t.isIdentifier(n) && !!n.id && nonaliases.includes(n.id)) {
+                item_set.add(escaped_items[n.id]);
             } else {
                 let elt = self.visit_AST(self, n);
                 if (t.isBooleanLiteral(elt)) {
@@ -454,7 +437,7 @@ class RuleParser {
                             && ['has', groupable].includes(elt.callee.property.name) && elt.arguments.length === 1) {
                     let args = elt.arguments[0];
                     if (t.isStringLiteral(args)) {
-                        item_set.add(escape_name(args.value));
+                        item_set.add(args.value);
                     } else if (t.isIdentifier(args)) {
                         item_set.add(args.name);
                     } else {
@@ -527,7 +510,7 @@ class RuleParser {
 
     make_call(self, t, node, name, args, kwargs) {
         if (!Object.getOwnPropertyNames(WorldState.prototype).includes(name)) {
-            throw `Parse error: No such function State.$(name)`;
+            throw `Parse error: No such function State.${name}`;
         }
         // Convert separate AssignmentExpression keyword args to
         // one combined ObjectExpression for use with parameter
@@ -556,8 +539,8 @@ class RuleParser {
             if (!(target in self.replaced_rules)) {
                 self.replaced_rules[target] = {};
             }
-            var subrule_name = target + ' Subrule ' + String(1 + Object.keys(self.replaced_rules[target]).length);
-            self.delayed_rules.push({"target": target, "path": path, "subrule_name": subrule_name});
+            var subrule_name = `${target} Subrule ${1 + Object.keys(self.replaced_rules[target]).length}`;
+            self.delayed_rules.push({"target": target, "node": node, "subrule_name": subrule_name});
             var item_rule = t.callExpression(
                 t.memberExpression(
                     t.identifier('worldState'),
@@ -574,19 +557,18 @@ class RuleParser {
         let self = this;
         self.delayed_rules.map((rule) => {
             var region_name = rule['target'];
-            var path = rule['path'];
+            var node = rule['node'];
             var subrule_name = rule['subrule_name'];
             var region = self.world.get_region(region_name);
-            var event = Location({name: subrule_name, type: 'Event', parent: region, internal: true});
+            var event = new Location({name: subrule_name, type: 'Event', parent: region, internal: true});
             event.world = self.world;
             self.current_spot = event;
-            var access_rule = self.make_access_rule(self.visit(self, path));
-            if (access_rule === self.rule_cache) {
-                // add test for constant false
+            var access_rule = self.make_access_rule(generate(self.visit_AST(self, node), {}, '').code);
+            if (access_rule === self.rule_cache['false;']) {
                 event.access_rule = null;
                 event.never = true;
             } else {
-                if (access_rule === self.rule_cache) {
+                if (access_rule === self.rule_cache['true;']) {
                     event.always = true;
                 }
                 event.set_rule(access_rule);
@@ -598,15 +580,24 @@ class RuleParser {
     }
 
     make_access_rule(rule_str) {
-        var t = babel.types;
-        var proto = babel.parse(access_proto);
-        var params = proto.program.body[0].expression.params;
-        var rule_ast = babel.parse(rule_str);
-        var body = rule_ast.program.body[0].expression;
-        var exp = t.arrowFunctionExpression(params,body,false);
-        var stmt = t.expressionStatement(exp);
-        var p = t.program([stmt]);
-        return generate(p, {}, rule_str).code;
+        let self = this;
+        console.log(`done transforming rule`);
+        if (!(rule_str in self.rule_cache)) {
+            var t = babel.types;
+            var proto = babel.parse(access_proto);
+            var params = proto.program.body[0].expression.params;
+            var rule_ast = babel.parse(rule_str);
+            var body = rule_ast.program.body[0].expression;
+            var exp = t.arrowFunctionExpression(params,body,false);
+            var stmt = t.expressionStatement(exp);
+            var p = t.program([stmt]);
+            var code = generate(p, {}, rule_str).code;
+            self.rule_cache[rule_str] = eval(code);
+            console.log(`final logic function:\n ${code}\n`);
+        } else {
+            console.log('using cached rule');
+        }
+        return self.rule_cache[rule_str];
     }
 
     make_file(t, ast) {
@@ -648,21 +639,21 @@ class RuleParser {
 
     at(self, path) {
         if (path.node.arguments.length !== 2) {
-            throw(`Parse error: invalid at() arguments ($(path.node.arguments)) for spot $(self.current_spot.name)`);
+            throw(`Parse error: invalid at() arguments (${path.node.arguments}) for spot ${self.current_spot.name}`);
         }
         self.replace_subrule(self, path, path.node.arguments[1].value, path.node.arguments[1]);
     }
 
     here(self, path) {
         if (path.node.arguments.length !== 1) {
-            throw(`Parse error: invalid here() arguments ($(path.node.arguments)) for spot $(self.current_spot.name)`);
+            throw(`Parse error: invalid here() arguments (${path.node.arguments}) for spot ${self.current_spot.name}`);
         }
         self.replace_subrule(self, path, self.current_spot.parent_region.name, path.node.arguments[0]);
     }
 
     at_day(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAY))"));
+            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAY))"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -671,7 +662,7 @@ class RuleParser {
 
     at_dampe_time(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
+            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -682,7 +673,7 @@ class RuleParser {
         if (self.current_spot.type === 'GS Token' && self.world.logic_no_night_tokens_without_suns_song) {
             path.replaceWith(babel.parse(self.visit(self, 'can_play(Suns_Song)')).program.body[0].expression);
         } else if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
+            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE))"));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }

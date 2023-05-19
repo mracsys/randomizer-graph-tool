@@ -7,8 +7,15 @@ class TimeOfDay {
     ALL() { return this.DAY | this. DAMPE }
 }
 
+const RegionType = {
+    OVERWORLD: 1,
+    INTERIOR: 2,
+    DUNGEON: 3,
+    GROTTO: 4,
+}
+
 class Region {
-    constructor({name='', type=null} = {}) {
+    constructor(name='', { type=RegionType.OVERWORLD } = {}) {
         this.name = name;
         this.type = type;
         this.entrances = [];
@@ -19,7 +26,6 @@ class Region {
         this.hint_name = null;
         this.alt_hint_name = null;
         this.price = null;
-        this.world = null;
         this.time_passes = false;
         this.provides_time = TimeOfDay.NONE;
         this.scene = null;

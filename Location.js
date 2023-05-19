@@ -40,11 +40,35 @@ class Location {
         this.never = false;
         if (filter_tags === null) {
             this.filter_tags = null;
-        } else if (typeof(filter_tags) === 'String') {
+        } else if (typeof(filter_tags) === 'string') {
             this.filter_tags = [filter_tags];
         } else {
             this.filter_tags = [...filter_tags];
         }
+    }
+
+    add_rule(rule) {
+        if (this.always) {
+            this.set_rule(rule);
+            this.always = false;
+            return;
+        }
+        if (this.never) {
+            return;
+        }
+        this.access_rules.push(rule);
+        this.access_rule = this._run_rules;
+    }
+
+    _run_rules(worldState, kwargs) {
+        return this.access_rules.every((rule) => {
+            rule(worldState, kwargs);
+        });
+    }
+
+    set_rule(rule) {
+        this.access_rule = rule;
+        this.access_rules = [rule];
     }
 }
 
