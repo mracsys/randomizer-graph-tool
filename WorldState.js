@@ -1,4 +1,4 @@
-const { ItemInfo } = require("./Item");
+const { ItemInfo, ItemFactory } = require("./Item");
 const { escape_name } = require("./RulesCommon");
 
 class WorldState {
@@ -26,22 +26,24 @@ class WorldState {
     }
 
     has_any_of(items) {
-        return items.some((item) => {
-            return !!this.prog_items[item] && this.prog_items[item] > 0;
-        });
+        for (const item of items) {
+            if (!!this.prog_items[item] && this.prog_items[item]) return true;
+        }
+        return false;
     }
 
     has_all_of(items) {
-        return items.every((item) => {
-            return !!this.prog_items[item] && this.prog_items[item] > 0;
-        });
+        for (const item of items) {
+            if (!(!!this.prog_items[item] && this.prog_items[item])) return false;
+        }
+        return true;
     }
 
     count_of(items) {
         let s = 0;
-        items.forEach((i) => {
+        for (const i of items) {
             s += !!this.prog_items[i] ? this.prog_items[i] : 0;
-        });
+        };
         return s;
     }
 
@@ -50,7 +52,7 @@ class WorldState {
     }
 
     has_bottle() {
-        return this.has_any_of(ItemInfo.bottles) || this.has('Rutos Letter', 2);
+        return this.has_any_of(ItemInfo.bottles.values()) || this.has('Rutos Letter', 2);
     }
 
     has_hearts(count) {
@@ -62,15 +64,15 @@ class WorldState {
     }
 
     has_medallions(count) {
-        return this.count_of(ItemInfo.medallions) >= count;
+        return this.count_of(ItemInfo.medallions.values()) >= count;
     }
 
     has_stones(count) {
-        return this.count_of(ItemInfo.stones) >= count;
+        return this.count_of(ItemInfo.stones.values()) >= count;
     }
 
     has_dungeon_rewards(count) {
-        return (this.count_of(ItemInfo.medallions) + this.count_of(ItemInfo.stones)) >= count;
+        return (this.count_of(ItemInfo.medallions.values()) + this.count_of(ItemInfo.stones.values())) >= count;
     }
 
     had_night_start() {
@@ -127,6 +129,16 @@ class WorldState {
         //(item in this.prog_items) ? this.prog_items[item] += 1 : this.prog_items[item] = 1;
     }
 
+    collect_starting_items() {
+        let starting_item;
+        for (let item_name of Object.keys(this.world.settings.starting_items)) {
+            starting_item = ItemFactory(item_name === 'Bottle with Milk (Half)' ? 'Bottle' : item_name, this.world);
+            for (let i = 0; i < this.world.settings.starting_items[item_name]; i++) {
+                this.collect(starting_item);
+            }
+        }
+    }
+
     remove(item) {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
@@ -147,6 +159,10 @@ class WorldState {
             }
         }
         console.log(`disposed of ${item.name}`);
+    }
+
+    region_has_shortcuts(region_name) {
+        return this.world.region_has_shortcuts(region_name);
     }
 }
 

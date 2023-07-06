@@ -1,14 +1,11 @@
 const babel = require("@babel/core");
 const generate = require('@babel/generator').default;
 const WorldState = require("./WorldState.js");
-const World = require("./World.js");
-const Location = require("./Location.js");
-//const item_table = require("./ItemList.js");
-var { ItemInfo, _ItemInfo, Item, MakeEventItem } = require("./Item.js");
+const { Location } = require("./Location.js");
+var { ItemInfo, MakeEventItem } = require("./Item.js");
 const { TimeOfDay } = require("./Region.js");
-const read_json = require("./Utils.js");
-var { allowed_globals, escape_name } = require("./RulesCommon.js");
-const merge = require("lodash/merge");
+const { read_json, replace_python_booleans } = require("./Utils.js");
+var { escape_name } = require("./RulesCommon.js");
 
 
 const access_proto = "(worldState, { age = null, spot = null, tod = null } = {}) => true";
@@ -18,8 +15,7 @@ const kwarg_defaults = {
     'tod': TimeOfDay.NONE
 };
 
-var special_globals = { 'TimeOfDay': TimeOfDay };
-allowed_globals = merge(allowed_globals, special_globals);
+allowed_globals = { 'TimeOfDay': TimeOfDay };
 
 var escaped_items = {};
 Object.keys(ItemInfo.items).map((item) => {
@@ -44,13 +40,13 @@ function load_aliases() {
         } else {
             var [rule, args] = [s, []];
         }
-        rule_aliases[rule] = { 'args': args, 'repl': j[s] };
+        rule_aliases[rule] = { 'args': args, 'repl': replace_python_booleans(j[s]) };
     });
     nonaliases = Object.keys(escaped_items).filter(x => !(Object.keys(rule_aliases).includes(x)));
 }
 
 class RuleParser {
-    constructor(world) {
+    constructor(world, debug=true) {
         this.world = world;
         this.events = new Set();
         this.replaced_rules = {};
@@ -58,42 +54,50 @@ class RuleParser {
         if (Object.keys(rule_aliases).length === 0) {
             load_aliases();
         }
-        this.rule_cache = new Set();
+        this.rule_cache = {};
+        this.subrule_cache = {};
+        this.subrule_ast_cache = {};
         this.current_spot = null;
+        this.original_rule = '';
+        this.debug = debug;
         let self = this;
         this.logicVisitor = [function ootrLogicPlugin({ types: t }) {
             return {
                 visitor: {
                     Identifier(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Name(self, t, path);
                     },
                     StringLiteral(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Str(self, t, path);
                     },
+                    Program(path) {
+                        if (self.debug) console.log('transforming '+ path);
+                        self.visit_Program(self, t, path);
+                    },
                     SequenceExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Tuple(self, t, path);
                     },
                     CallExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Call(self, t, path);
                     },
                     MemberExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Subscript(self, t, path);
                     },
                     BinaryExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_Compare(self, t, path);
                     },
                     UnaryExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_UnaryOp(self, t, path);
                     },
                     LogicalExpression(path) {
-                        console.log('transforming '+ path);
+                        if (self.debug) console.log('transforming '+ path);
                         self.visit_BoolOp(self, t, path);
                     }
                 }
@@ -102,11 +106,16 @@ class RuleParser {
     }
 
     visit(self, rule_string) {
-        console.log(`start transforming rule ${rule_string}`);
-        return babel.transformSync(rule_string, {
-            sourceType: 'script',
-            plugins: self.logicVisitor
-        }).code;
+        if (self.debug) console.log(`start transforming rule ${rule_string}`);
+        if (!(rule_string in self.subrule_cache) || rule_string.includes('here(') || rule_string.includes('at(')) {
+            self.subrule_cache[rule_string] = babel.transformSync(rule_string, {
+                    sourceType: 'script',
+                    plugins: self.logicVisitor
+                }).code;
+        } else {
+            if (self.debug) console.log('using cached rule\n');
+        }
+        return self.subrule_cache[rule_string];
     }
 
     // Babel will not visit AST subtrees. This method works
@@ -114,13 +123,19 @@ class RuleParser {
     // subtree as the only expression, transforming, re-parsing
     // back to AST, then extracting the changed expression.
     visit_AST(self, ast) {
-        let file = self.make_file(babel.types, ast);
-        let new_code = babel.transformFromAstSync(file, undefined, {
-            sourceType: 'script',
-            plugins: self.logicVisitor
-        }).code;
-        let visited_ast = babel.parse(new_code);
-        return self.get_visited_node(babel.types, visited_ast);
+        let ast_code = generate(ast, {}, '').code;
+        if (!(ast_code in self.subrule_ast_cache) || ast_code.includes('here(') || ast_code.includes('at(')) {
+            let file = self.make_file(babel.types, ast);
+            let new_code = babel.transformFromAstSync(file, undefined, {
+                sourceType: 'script',
+                plugins: self.logicVisitor
+            }).code;
+            let visited_ast = babel.parse(new_code);
+            self.subrule_ast_cache[ast_code] = self.get_visited_node(babel.types, visited_ast);
+        } else {
+            if (self.debug) console.log('using cached rule\n');
+        }
+        return self.subrule_ast_cache[ast_code];
     }
 
     visit_Name(self, t, path) {
@@ -160,6 +175,13 @@ class RuleParser {
                 case 'number':
                     new_node = t.NumericLiteral(world_parsed);
                     break;
+                case 'object':
+                    if (Array.isArray(world_parsed)) {
+                        new_node = t.ArrayExpression(Array.from(world_parsed).map((i) => { return t.stringLiteral(i); }));
+                    } else {
+                        throw 'Unhandled world property type: ' + typeof(world_parsed);
+                    }
+                    break;
                 default:
                     throw 'Unhandled world property type: ' + typeof(world_parsed);
             }
@@ -177,6 +199,13 @@ class RuleParser {
                     break;
                 case 'number':
                     new_node = t.NumericLiteral(worldsettings_parsed);
+                    break;
+                case 'object':
+                    if (Array.isArray(worldsettings_parsed)) {
+                        new_node = t.ArrayExpression(Array.from(worldsettings_parsed).map((i) => { return t.stringLiteral(i); }));
+                    } else {
+                        throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
+                    }
                     break;
                 default:
                     throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
@@ -203,6 +232,22 @@ class RuleParser {
             path.skip();
         } else {
             throw 'Parse error: invalid node name: ' + path.node.name;
+        }
+    }
+
+    // Rules that are just a string get processed as a directive
+    // instead of an expression, which prevents transformation
+    // through visit_Str to state.has(literal). This function
+    // converts the directives back to expressions for further
+    // transformation.
+    visit_Program(self, t, path) {
+        if (path.node.directives.length > 0) {
+            if (path.node.body.length > 0) {
+                throw('Found directives in program with non-null expression');
+            }
+            path.replaceWith(t.program(
+                [t.expressionStatement(t.stringLiteral(path.node.directives[0].value.value))]
+            ));
         }
     }
 
@@ -363,7 +408,7 @@ class RuleParser {
 
         // Python BinOp nodes (e.g. "+", "-") are also BinaryExpressions in JS,
         // so need to filter them out to route to the correct transformer
-        if (!(['===', '!==', '>=', '<=', '>', '<'].includes(path.node.operator))) {
+        if (!(['===', '!==', '>=', '<=', '>', '<', 'in'].includes(path.node.operator))) {
             // Python visit_BinOp exists, but does not appear to be used
             return;
         }
@@ -389,7 +434,7 @@ class RuleParser {
         }
         path.node.right = escape_or_string(path.node.right, t);
 
-        if (self.isLiteral(t, path.node.right) && self.isLiteral(t, path.node.left)) {
+        if (self.isLiteral(self, t, path.node.right) && self.isLiteral(self, t, path.node.left)) {
             let res = eval(generate(path.node, {}, '').code);
             path.replaceWith(t.booleanLiteral(res));
             path.skip();
@@ -399,7 +444,7 @@ class RuleParser {
 
     visit_UnaryOp(self, t, path) {
         path.node.argument = self.visit_AST(self, path.node.argument);
-        if (self.isLiteral(t, path.node.argument)) {
+        if (self.isLiteral(self, t, path.node.argument)) {
             let res = eval(generate(path.node, {}, '').code);
             path.replaceWith(t.booleanLiteral(res));
         }
@@ -443,7 +488,7 @@ class RuleParser {
                     } else {
                         // assumed to be an array of identifiers
                         args.elements.forEach((i) => {
-                            item_set.add(i.name);
+                            item_set.add(i.value);
                         });
                     }
                 } else if (t.isLogicalExpression(elt) && elt.operator !== op) {
@@ -479,6 +524,10 @@ class RuleParser {
             return;
         }
         traverse_logic(path.node.right, t, path.node.operator);
+        // test if the early return was hit before parsing the last comparator in the chain
+        if (t.isBooleanLiteral(path.node)) {
+            return;
+        }
 
         if (item_set.size === 0 && new_values.length === 0) {
             path.replaceWith(t.booleanLiteral(!early_return));
@@ -540,7 +589,7 @@ class RuleParser {
                 self.replaced_rules[target] = {};
             }
             var subrule_name = `${target} Subrule ${1 + Object.keys(self.replaced_rules[target]).length}`;
-            self.delayed_rules.push({"target": target, "node": node, "subrule_name": subrule_name});
+            self.delayed_rules.push({"target": target, "node": node, "subrule": rule, "subrule_name": subrule_name});
             var item_rule = t.callExpression(
                 t.memberExpression(
                     t.identifier('worldState'),
@@ -555,20 +604,24 @@ class RuleParser {
 
     create_delayed_rules() {
         let self = this;
+        console.log('parsing delayed rules');
         self.delayed_rules.map((rule) => {
             var region_name = rule['target'];
             var node = rule['node'];
             var subrule_name = rule['subrule_name'];
+            //console.log(`parsing event ${subrule_name} in ${region_name}`);
             var region = self.world.get_region(region_name);
             var event = new Location({name: subrule_name, type: 'Event', parent: region, internal: true});
+            event.rule_string = rule['subrule'].trim();
             event.world = self.world;
             self.current_spot = event;
-            var access_rule = self.make_access_rule(generate(self.visit_AST(self, node), {}, '').code);
-            if (access_rule === self.rule_cache['false;']) {
+            var access_rule_str = generate(self.visit_AST(self, node), {}, '').code;
+            var access_rule = self.make_access_rule(access_rule_str);
+            if (access_rule_str === 'false') {
                 event.access_rule = null;
                 event.never = true;
             } else {
-                if (access_rule === self.rule_cache['true;']) {
+                if (access_rule_str === 'true') {
                     event.always = true;
                 }
                 event.set_rule(access_rule);
@@ -581,7 +634,8 @@ class RuleParser {
 
     make_access_rule(rule_str) {
         let self = this;
-        console.log(`done transforming rule`);
+        if (!!(this.current_spot)) this.current_spot.transformed_rule = rule_str;
+        if (this.debug) console.log(`done transforming rule`);
         if (!(rule_str in self.rule_cache)) {
             var t = babel.types;
             var proto = babel.parse(access_proto);
@@ -593,9 +647,9 @@ class RuleParser {
             var p = t.program([stmt]);
             var code = generate(p, {}, rule_str).code;
             self.rule_cache[rule_str] = eval(code);
-            console.log(`final logic function:\n ${code}\n`);
+            if (this.debug) console.log(`final logic function:\n ${code}\n`);
         } else {
-            console.log('using cached rule');
+            if (this.debug) console.log('using cached rule\n');
         }
         return self.rule_cache[rule_str];
     }
@@ -629,9 +683,9 @@ class RuleParser {
         }
     }
 
-    isLiteral(t, n) {
+    isLiteral(self, t, n) {
         if (t.isBinaryExpression(n)) {
-            return self.isLiteral(t, n.left) && isLiteral(t, n.right);
+            return self.isLiteral(self, t, n.left) && self.isLiteral(self, t, n.right);
         } else {
             return t.isNumericLiteral(n) || t.isStringLiteral(n) || t.isBooleanLiteral(n);
         }
@@ -641,7 +695,7 @@ class RuleParser {
         if (path.node.arguments.length !== 2) {
             throw(`Parse error: invalid at() arguments (${path.node.arguments}) for spot ${self.current_spot.name}`);
         }
-        self.replace_subrule(self, path, path.node.arguments[1].value, path.node.arguments[1]);
+        self.replace_subrule(self, path, path.node.arguments[0].value, path.node.arguments[1]);
     }
 
     here(self, path) {
@@ -653,7 +707,7 @@ class RuleParser {
 
     at_day(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAY))"));
+            path.replaceWith(self.get_visited_node(babel.types, babel.parse("!!tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAY))")));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -662,7 +716,7 @@ class RuleParser {
 
     at_dampe_time(self, path) {
         if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE)"));
+            path.replaceWith(self.get_visited_node(babel.types, babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAMPE)")));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -671,9 +725,9 @@ class RuleParser {
 
     at_night(self, path) {
         if (self.current_spot.type === 'GS Token' && self.world.logic_no_night_tokens_without_suns_song) {
-            path.replaceWith(babel.parse(self.visit(self, 'can_play(Suns_Song)')).program.body[0].expression);
+            path.replaceWith(self.get_visited_node(babel.types, babel.parse(self.visit(self, 'can_play(Suns_Song)'))));
         } else if (self.world.ensure_tod_access) {
-            path.replaceWith(babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age=age, tod=TimeOfDay.DAMPE))"));
+            path.replaceWith(self.get_visited_node(babel.types, babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAMPE))")));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
         }
@@ -682,7 +736,21 @@ class RuleParser {
 
     parse_rule(rule_string, spot=null) {
         this.current_spot = spot;
+        this.original_rule = rule_string;
         return this.make_access_rule(this.visit(this, rule_string))
+    }
+
+    parse_spot_rule(spot) {
+        let rule = spot.rule_string.split('#', 1)[0].trim();
+
+        let access_rule = this.parse_rule(rule, spot);
+        spot.set_rule(access_rule);
+        if (access_rule === this.rule_cache['false;']) {
+            spot.never = true;
+        }
+        if (access_rule === this.rule_cache['true;']) {
+            spot.always = true;
+        }
     }
 }
 

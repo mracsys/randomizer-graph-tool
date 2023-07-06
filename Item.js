@@ -112,5 +112,6 @@ module.exports = {
     ItemInfo,
     _ItemInfo,
     Item,
-    MakeEventItem
+    MakeEventItem,
+    ItemFactory
 };

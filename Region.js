@@ -1,10 +1,10 @@
-class TimeOfDay {
-    constructor() {}
+const { HintAreas } = require("./Hints");
 
-    NONE() { return 0; }
-    DAY() { return 1; }
-    DAMPE() { return 2; }
-    ALL() { return this.DAY | this. DAMPE }
+class TimeOfDay {
+    static NONE =  0;
+    static DAY = 1;
+    static DAMPE = 2;
+    static ALL = this.DAY | this.DAMPE;
 }
 
 const RegionType = {
@@ -31,7 +31,23 @@ class Region {
         this.scene = null;
         this.is_boss_room = false;
         this.savewarp = null;
+    }
 
+    hint() {
+        if (!!this.hint_name) {
+            return HintAreas[this.hint_name];
+        }
+        if (this.dungeon) {
+            return this.dungeon.hint;
+        }
+        return null;
+    }
+
+    alt_hint() {
+        if (!!this.alt_hint_name) {
+            return HintAreas[this.alt_hint_name];
+        }
+        return null;
     }
 }
 

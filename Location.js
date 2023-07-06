@@ -1,3 +1,6 @@
+const { location_table } = require('./LocationList.js');
+const { ItemFactory } = require('./Item.js')
+
 const DisableType = {
     ENABLED: 0,
     PENDING: 1,
@@ -20,7 +23,7 @@ class Location {
         this.name = name;
         this.parent_region = parent;
         this.item = null;
-        this.vanilla_item = vanilla_item;
+        this.vanilla_item = !!vanilla_item ? ItemFactory(vanilla_item) : null;
         this.address = address;
         this.address2 = address2;
         this._default = _default;
@@ -62,7 +65,7 @@ class Location {
 
     _run_rules(worldState, kwargs) {
         return this.access_rules.every((rule) => {
-            rule(worldState, kwargs);
+            return rule(worldState, kwargs);
         });
     }
 
@@ -70,6 +73,41 @@ class Location {
         this.access_rule = rule;
         this.access_rules = [rule];
     }
+
+    dungeon() {
+        return !!(this.parent_region) ? this.parent_region.dungeon : null; 
+    }
 }
 
-module.exports = Location;
+function LocationFactory(locations, world=null) {
+    let ret = [];
+    let singleton = false;
+    let locations_to_build = locations;
+    if (typeof(locations_to_build) === 'string') {
+        locations_to_build = [locations_to_build];
+        singleton = true;
+    }
+    for (let location of locations_to_build) {
+        let match_location;
+        if (Object.keys(location_table).includes(location)) {
+            match_location = location;
+        } else {
+            match_location = location_table.filter((k) => k.toLowerCase() === location.toLowerCase())[0];
+        }
+        if (match_location) {
+            [type, scene, def, addresses, vanilla_item, filter_tags] = location_table[match_location];
+            ret.push(new Location({ name: match_location, _default: def, type: type, scene: scene, filter_tags: filter_tags, vanilla_item: vanilla_item }));
+        } else {
+            throw `Unknown location ${location}`;
+        }
+    }
+    if (singleton) {
+        return ret[0];
+    }
+    return ret;
+}
+
+module.exports = {
+    Location,
+    LocationFactory
+};
