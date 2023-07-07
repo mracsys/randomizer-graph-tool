@@ -14,7 +14,7 @@ const path = require('path');
 class World {
     constructor(id=0, settings=null) {
         if (Object.keys(settings).includes('randomized_settings')) {
-            if (settings.world_count > 1) {
+            if (settings.settings.world_count > 1) {
                 this.settings = merge(settings.settings, settings.randomized_settings[`World ${id+1}`]);
             } else {
                 this.settings = merge(settings.settings, settings.randomized_settings);
@@ -40,7 +40,7 @@ class World {
 
         if (Object.keys(settings).includes('trials')) {
             let trials_settings;
-            if (settings.world_count > 1) {
+            if (settings.settings.world_count > 1) {
                 trials_settings = settings.trials[`World ${id+1}`];
             } else {
                 trials_settings = settings.trials;
@@ -62,7 +62,7 @@ class World {
 
         if (Object.keys(settings).includes('dungeons')) {
             let dungeon_settings;
-            if (settings.world_count > 1) {
+            if (settings.settings.world_count > 1) {
                 dungeon_settings = settings.dungeons[`World ${id+1}`];
             } else {
                 dungeon_settings = settings.dungeons;

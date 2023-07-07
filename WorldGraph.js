@@ -228,7 +228,12 @@ class WorldGraph {
                     world.get_location(location).item = world_item;
                 } else {
                     // dict-style for ice traps and shop items
-                    let world_item = ItemFactory(item.item, world);
+                    let world_item
+                    if (Object.keys(item).includes('player')) {
+                        world_item = ItemFactory(item.item, this.worlds[item.player-1]);
+                    } else {
+                        world_item = ItemFactory(item.item, world);
+                    }
                     if (Object.keys(item).includes('price')) {
                         world_item.price = item.price;
                     }
