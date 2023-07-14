@@ -103,6 +103,43 @@ class WorldState {
         return this.world.parser.parse_rule('guarantee_hint')(this);
     }
 
+    has_ocarina_buttons(count) {
+        return this.count_of(ItemInfo.ocarina_buttons.values()) >= count;
+    }
+
+    has_all_notes_for_song(song) {
+        if (song === 'Scarecrow Song') {
+            return this.has_ocarina_buttons(2);
+        }
+        let notes = this.world.song_notes[song];
+        if (notes.includes('A')) {
+            if (!(this.has('Ocarina A Button'))) {
+                return false;
+            }
+        }
+        if (notes.includes('<')) {
+            if (!(this.has('Ocarina C left Button'))) {
+                return false;
+            }
+        }
+        if (notes.includes('^')) {
+            if (!(this.has('Ocarina C up Button'))) {
+                return false;
+            }
+        }
+        if (notes.includes('v')) {
+            if (!(this.has('Ocarina C down Button'))) {
+                return false;
+            }
+        }
+        if (notes.includes('>')) {
+            if (!(this.has('Ocarina C right Button'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     collect(item) {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];

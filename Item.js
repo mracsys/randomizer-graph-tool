@@ -20,6 +20,7 @@ class _ItemInfo {
         this.bottle = ('bottle' in this.special) ? this.special['bottle'] : false;
         this.medallion = ('medallion' in this.special) ? this.special['medallion'] : false;
         this.stone = ('stone' in this.special) ? this.special['stone'] : false;
+        this.ocarina_button = ('ocarina_button' in this.special) ? this.special['ocarina_button'] : false;
         this.alias = ('alias' in this.special) ? this.special['alias'] : null;
         this.junk = ('junk' in this.special) ? this.special['junk'] : null;
         this.trade = ('trade' in this.special) ? this.special['trade'] : false;
@@ -32,6 +33,7 @@ var ItemInfo = {
     bottles: new Set(),
     medallions: new Set(),
     stones: new Set(),
+    ocarina_buttons: new Set(),
     junk: {},
 };
 
@@ -45,6 +47,9 @@ Object.keys(item_table).map((item_name) => {
     }
     if (ItemInfo.items[item_name].stone) {
         ItemInfo.stones.add(item_name);
+    }
+    if (ItemInfo.items[item_name].ocarina_button) {
+        ItemInfo.ocarina_buttons.add(item_name);
     }
     if (ItemInfo.items[item_name].junk !== null) {
         ItemInfo.junk[item_name] = ItemInfo.items[item_name].junk;

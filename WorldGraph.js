@@ -1,14 +1,16 @@
 const { merge, fill, shuffle } = require("lodash");
-const { settings_list } = require('./SettingsList.js');
+const SettingsList = require('./SettingsList.js');
 const World = require("./World");
 const entrance_shuffle_table = require('./EntranceList.js');
 const { business_scrub_prices } = require('./LocationList.js');
 const Search = require("./Search");
 const { ItemFactory } = require("./Item");
+const OotrVersion = require('./OotrVersion.js');
 
 class WorldGraph {
-    constructor(user_overrides=null, debug=false) {
-        let settings = {settings: settings_list};
+    constructor(user_overrides=null, ootr_version=new OotrVersion('7.1.143'), debug=false) {
+        let settings_list = new SettingsList(ootr_version);
+        let settings = {settings: settings_list.settings};
         settings.settings.debug_parser = debug;
         this.worlds = [];
         if (!!user_overrides) {
@@ -19,7 +21,7 @@ class WorldGraph {
                 }
             }
         }
-        this.build_world_graphs(settings);
+        this.build_world_graphs(settings, ootr_version);
         if (Object.keys(settings).includes('locations')) {
             this.fill_items(settings.locations);
         }
@@ -37,10 +39,10 @@ class WorldGraph {
         this.search = new Search(this.worlds.map((world) => world.state));
     }
 
-    build_world_graphs(settings) {
+    build_world_graphs(settings, ootr_version) {
         this.worlds = [];
         for (let i = 0; i < settings.settings.world_count; i++) {
-            this.worlds.push(new World(i, settings));
+            this.worlds.push(new World(i, settings, ootr_version));
         }
 
         let savewarps_to_connect = [];
@@ -374,6 +376,13 @@ class WorldGraph {
         }
         if (!(world.keysanity) && !(world.dungeon_mq['Fire Temple'])) {
             world.state.collect(ItemFactory('Small Key (Fire Temple)', world));
+        }
+        if (!(world.settings.shuffle_individual_ocarina_notes)) {
+            world.state.collect(ItemFactory('Ocarina A Button', world));
+            world.state.collect(ItemFactory('Ocarina C up Button', world));
+            world.state.collect(ItemFactory('Ocarina C down Button', world));
+            world.state.collect(ItemFactory('Ocarina C left Button', world));
+            world.state.collect(ItemFactory('Ocarina C right Button', world));
         }
         // TODO: empty dungeons
     }

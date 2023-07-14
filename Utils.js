@@ -1,10 +1,26 @@
 const { readFileSync } = require('fs');
 const { resolve } = require('path');
+const OotrVersion = require('./OotrVersion.js');
 
 // https://raw.githubusercontent.com/OoTRandomizer/OoT-Randomizer/7.1.118/SettingsList.py
 
-function read_json(file_path) {
-    let json_string = readFileSync(resolve(__dirname, 'ootr-logic', file_path), 'utf-8');
+function read_json(file_path, ootr_version) {
+    let logic_folder;
+    switch(ootr_version.branch) {
+        case '':
+        case 'R':
+            if (ootr_version.greaterThanOrEqual(new OotrVersion('7.1.143'))) {
+                logic_folder = 'ootr-logic-143';
+            } else if (ootr_version.greaterThanOrEqual(new OotrVersion('7.1.117'))) {
+                logic_folder = 'ootr-logic';
+            } else {
+                throw('OOTR version prior to 7.1.117 not implemented');
+            }
+            break;
+        default:
+            throw(`Unknown branch for version ${ootr_version.toString()}`);
+    }
+    let json_string = readFileSync(resolve(__dirname, logic_folder, file_path), 'utf-8');
     let lines = json_string.split('\n');
     json_string = '';
     for (let line of lines) {

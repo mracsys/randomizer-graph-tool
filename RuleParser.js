@@ -28,8 +28,8 @@ var event_name = new RegExp(/\w+/g);
 var rule_aliases = {};
 var nonaliases = new Set();
 
-function load_aliases() {
-    j = read_json('LogicHelpers.json');
+function load_aliases(ootr_version) {
+    j = read_json('LogicHelpers.json', ootr_version);
     Object.keys(j).map((s) => {
         if (s.includes('(')) {
             var [rule, temp_args] = s.substring(0,s.length-1).split('(')
@@ -46,13 +46,14 @@ function load_aliases() {
 }
 
 class RuleParser {
-    constructor(world, debug=true) {
+    constructor(world, ootr_version, debug=true) {
         this.world = world;
+        this.version = ootr_version;
         this.events = new Set();
         this.replaced_rules = {};
         this.delayed_rules = [];
         if (Object.keys(rule_aliases).length === 0) {
-            load_aliases();
+            load_aliases(this.version);
         }
         this.rule_cache = {};
         this.subrule_cache = {};

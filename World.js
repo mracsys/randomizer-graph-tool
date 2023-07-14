@@ -12,7 +12,7 @@ const { HintArea } = require("./HintArea.js");
 const path = require('path');
 
 class World {
-    constructor(id=0, settings=null) {
+    constructor(id, settings, ootr_version) {
         if (Object.keys(settings).includes('randomized_settings')) {
             if (settings.settings.world_count > 1) {
                 this.settings = merge(settings.settings, settings.randomized_settings[`World ${id+1}`]);
@@ -26,6 +26,7 @@ class World {
             this.settings.debug_parser = false;
         }
         this.id = id;
+        this.version = ootr_version;
         this.dungeons = [];
         this.regions = [];
         this.itempool = [];
@@ -35,7 +36,7 @@ class World {
         this._region_cache = {};
         this._location_cache = {};
 
-        this.parser = new RuleParser(this, this.settings.debug_parser);
+        this.parser = new RuleParser(this, this.version, this.settings.debug_parser);
         this.event_items = new Set();
 
         if (Object.keys(settings).includes('trials')) {
@@ -88,6 +89,25 @@ class World {
             }
         }
 
+        if (Object.keys(settings).includes('songs')) {
+            this.song_notes = settings.songs;
+        } else {
+            this.song_notes = {
+                "Zeldas Lullaby":     "<^><^>",
+                "Eponas Song":        "^<>^<>",
+                "Sarias Song":        "v><v><",
+                "Suns Song":          ">v^>v^",
+                "Song of Time":       ">Av>Av",
+                "Song of Storms":     "Av^Av^",
+                "Minuet of Forest":   "A^<><>",
+                "Bolero of Fire":     "vAvA>v>v",
+                "Serenade of Water":  "Av>><",
+                "Requiem of Spirit":  "AvA>vA",
+                "Nocturne of Shadow": "<>>A<>v",
+                "Prelude of Light":   "^>^><^"
+              }
+        }
+
         this.keysanity = ['keysanity', 'remove', 'any_dungeon', 'overworld', 'regional'].includes(this.settings.shuffle_smallkeys);
         this.shuffle_silver_rupees = this.settings.shuffle_silver_rupees !== 'vanilla';
         this.check_beatable_only = this.settings.reachable_locations !== 'all';
@@ -137,7 +157,7 @@ class World {
         } else {
             world_folder = 'World';
         }
-        let region_json = read_json(path.join(world_folder, file_path));
+        let region_json = read_json(path.join(world_folder, file_path), this.version);
         let savewarps_to_connect = [];
         console.log(`parsing ${file_path}`);
         for (const region of region_json) {

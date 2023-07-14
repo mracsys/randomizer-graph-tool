@@ -4,23 +4,25 @@ const { spawnSync } = require('child_process');
 //const { writeFileSync } = require('fs');
 const { readFileSync } = require('fs');
 const { resolve } = require('path');
+const OotrVersion = require('./OotrVersion.js');
 
 //let plando = {'settings': settings_list};
 //writeFileSync('./plando.json', JSON.stringify(plando, null, 4), 'utf-8');
 
-let plando = JSON.parse(readFileSync(resolve(__dirname, 'test', 'seedMW.json'), 'utf-8'));
+let plando = JSON.parse(readFileSync(resolve(__dirname, 'test', 'seed143.json'), 'utf-8'));
 plando[':collect'] = 'all';
 
-let graph = new WorldGraph(plando);
+let graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
 let locs = graph.worlds[0].get_locations();
 //let locs = graph.search.progression_locations();
 let loc_names = locs.map((loc) => loc.name);
 
+//graph.search.visit_locations(locs);
 graph.search.collect_locations();
 
-//const pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
+const pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
 
-//const data = JSON.parse(pythonGraph.stdout);
+const data = JSON.parse(pythonGraph.stdout);
 /*
 console.log(`${locs.length} JS progressive locations`);
 console.log(`${Object.keys(data).length} python progressive locations`);
@@ -39,7 +41,6 @@ for (let loc of Object.keys(data)) {
 return;
 */
 console.log(`${graph.search._cache.visited_locations.size} visited JS locations`);
-return;
 console.log(`${Object.keys(data).filter((l) => data[l].visited).length} visited python locations`);
 
 for (const loc of graph.search._cache.visited_locations) {
