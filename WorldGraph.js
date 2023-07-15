@@ -306,10 +306,94 @@ class WorldGraph {
                 let dest = world.get_entrance_from_target(target);
                 let src = world.get_entrance(entrance);
                 src.connect(dest.original_connection);
+                src.replaces = dest;
                 if (!!(src.reverse)) {
                     dest.reverse.connect(src.reverse.original_connection);
+                    dest.reverse.replaces = src.reverse;
                 }
             }
+
+            // adjust blue warp exits based on dungeon/boss shuffles, if enabled
+            if (world.shuffle_dungeon_entrances || world.settings.shuffle_bosses !== 'off') {
+                this.set_blue_warps(world);
+            }
+        }
+    }
+
+    set_blue_warps(world) {
+        // Determine blue warp targets
+        // if a boss room is inside a boss door, make the blue warp go outside the dungeon's entrance
+        let boss_exits = {
+            'Queen Gohma Boss Room -> Deku Tree Before Boss': world.get_entrance('Deku Tree Lobby -> KF Outside Deku Tree'),
+            'King Dodongo Boss Room -> Dodongos Cavern Mouth': world.get_entrance('Dodongos Cavern Beginning -> Death Mountain'),
+            'Barinade Boss Room -> Jabu Jabus Belly Before Boss': world.get_entrance('Jabu Jabus Belly Beginning -> Zoras Fountain'),
+            'Phantom Ganon Boss Room -> Forest Temple Before Boss': world.get_entrance('Forest Temple Lobby -> SFM Forest Temple Entrance Ledge'),
+            'Volvagia Boss Room -> Fire Temple Before Boss': world.get_entrance('Fire Temple Lower -> DMC Fire Temple Entrance'),
+            'Morpha Boss Room -> Water Temple Before Boss': world.get_entrance('Water Temple Lobby -> Lake Hylia'),
+            'Bongo Bongo Boss Room -> Shadow Temple Before Boss': world.get_entrance('Shadow Temple Entryway -> Graveyard Warp Pad Region'),
+            'Twinrova Boss Room -> Spirit Temple Before Boss': world.get_entrance('Spirit Temple Lobby -> Desert Colossus From Spirit Lobby'),
+        };
+        // if a boss room is inside a dungeon entrance (or inside a dungeon which is inside a dungeon entrance), make the blue warp go to that dungeon's blue warp target
+        let dungeon_exits = {
+            'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
+            'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
+            'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Boss Room -> Zoras Fountain'),
+            'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'),
+            'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Boss Room -> DMC Central Local'),
+            'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Boss Room -> Lake Hylia'),
+            'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'),
+            'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Boss Room -> Desert Colossus'),
+        };
+        let blue_warps = [
+            [world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
+            [world.get_entrance('King Dodongo Boss Room -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
+            [world.get_entrance('Barinade Boss Room -> Zoras Fountain'), world.get_entrance('Barinade Boss Room -> Jabu Jabus Belly Before Boss')],
+            [world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'), world.get_entrance('Phantom Ganon Boss Room -> Forest Temple Before Boss')],
+            [world.get_entrance('Volvagia Boss Room -> DMC Central Local'), world.get_entrance('Volvagia Boss Room -> Fire Temple Before Boss')],
+            [world.get_entrance('Morpha Boss Room -> Lake Hylia'), world.get_entrance('Morpha Boss Room -> Water Temple Before Boss')],
+            [world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'), world.get_entrance('Bongo Bongo Boss Room -> Shadow Temple Before Boss')],
+            [world.get_entrance('Twinrova Boss Room -> Desert Colossus'), world.get_entrance('Twinrova Boss Room -> Spirit Temple Before Boss')],
+        ];
+
+        for (let [blue_warp, boss_door_exit] of blue_warps) {
+            let target = this.get_original_or_replaced_entrance(boss_door_exit);
+            if (true) { //TODO not world.settings.decouple_entrances
+                while (true) {
+                    if (target === null) {
+                        break;
+                    }
+                    if (!(target.name in boss_exits)) {
+                        break;
+                    }
+                    target = boss_exits[target.name].replaces || boss_exits[target.name];
+                }
+                if (!!target) {
+                    if (target.name in dungeon_exits) {
+                        target = dungeon_exits[target.name];
+                    }
+                }
+            }
+            blue_warp.disconnect();
+            if (!!target) {
+                blue_warp.connect(world.get_region(target.name.split(' -> ')[1]));
+                blue_warp.replaces = target;
+            }
+        }
+    }
+
+    get_original_or_replaced_entrance(entrance) {
+        let ret;
+        if (!!(entrance.replaces)) {
+            ret = entrance.replaces;
+        } else {
+            ret = entrance;
+        }
+        // only provide a target if the provided entrance is connected
+        // in order to work with partially connected worlds
+        if (!!(ret.connected_region)) {
+            return ret;
+        } else {
+            return null;
         }
     }
 
