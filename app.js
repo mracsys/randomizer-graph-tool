@@ -65,6 +65,7 @@ function test_random_settings(max_seeds=1) {
         if (success) {
             unlinkSync(resolve(rsl, 'patches', files[0]));
         } else {
+            console.log('Problem detected, stopping random seed generation')
             // stop looping to allow re-testing the failed plando
             break;
         }
