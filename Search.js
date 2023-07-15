@@ -54,7 +54,7 @@ class Search {
         for (const exit of exit_queue) {
             if (!!exit.connected_region && !(regions.includes(exit.connected_region))) {
                 if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
-                    if (exit.connected_region.provides_time && !(tods[exit.world.id][exit.world.get_region('Root').name] & exit.connected_region.provides_time)) {
+                    if (exit.connected_region.provides_time && !(tods[exit.world.id][exit.world.get_region('Root').name] & exit.connected_region.provides_time === exit.connected_region.provides_time)) {
                         exit_queue.push(...failed);
                         failed = [];
                         tods[exit.world.id][exit.world.get_region('Root').name] |= exit.connected_region.provides_time;
