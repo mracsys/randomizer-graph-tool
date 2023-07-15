@@ -162,7 +162,7 @@ class WorldState {
                 this.prog_items[item.name] = 1;
             }
         }
-        console.log(`collected ${item.name}`);
+        //console.log(`collected ${item.name}`);
         //(item in this.prog_items) ? this.prog_items[item] += 1 : this.prog_items[item] = 1;
     }
 
@@ -195,7 +195,7 @@ class WorldState {
                 delete this.prog_items[item.name];
             }
         }
-        console.log(`disposed of ${item.name}`);
+        //console.log(`disposed of ${item.name}`);
     }
 
     region_has_shortcuts(region_name) {

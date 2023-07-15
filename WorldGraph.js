@@ -233,9 +233,9 @@ class WorldGraph {
 
                     if (loc.vanilla_item.name === dungeon_text('Boss Key', dungeon)) {
                         shuffle_setting = dungeon !== 'Ganons Castle' ? world.settings.shuffle_bosskeys : world.settings.shuffle_ganon_bosskey;
-                    } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon) && world.settings.shuffle_smallkeys === 'vanilla') {
+                    } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon)) {
                         shuffle_setting = world.settings.shuffle_smallkeys;
-                    } else if (loc.type === 'SilverRupee' && world.settings.shuffle_silver_rupees === 'vanilla') {
+                    } else if (loc.type === 'SilverRupee') {
                         shuffle_setting = world.settings.shuffle_silver_rupees;
                     }
                     if (shuffle_setting === 'vanilla') {

@@ -5,8 +5,8 @@ const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-test_specific_random_settings();
-//test_random_settings();
+//test_specific_random_settings();
+test_random_settings(1000);
 //test_spoiler();
 
 function test_spoiler() {
@@ -39,10 +39,11 @@ function test_settings(plando_file, export_spheres=false) {
     success = compare_js_to_python(graph, data);
 }
 
-function test_random_settings() {
+function test_random_settings(max_seeds=1) {
     var rsl = '/home/mracsys/git/plando-random-settings';
     var pythonGraph, data, files, plando, graph;
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < max_seeds; i++) {
+        console.log(`Testing seed ${i + 1} of ${max_seeds}`)
         pythonGraph = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
         data = read_python_stdout(pythonGraph);
 

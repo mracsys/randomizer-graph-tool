@@ -159,7 +159,7 @@ class World {
         }
         let region_json = read_json(path.join(world_folder, file_path), this.version);
         let savewarps_to_connect = [];
-        console.log(`parsing ${file_path}`);
+        //console.log(`parsing ${file_path}`);
         for (const region of region_json) {
             let new_region = new Region(region.region_name);
             new_region.world = this;

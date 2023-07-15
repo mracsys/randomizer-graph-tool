@@ -605,7 +605,7 @@ class RuleParser {
 
     create_delayed_rules() {
         let self = this;
-        console.log('parsing delayed rules');
+        //console.log('parsing delayed rules');
         self.delayed_rules.map((rule) => {
             var region_name = rule['target'];
             var node = rule['node'];
