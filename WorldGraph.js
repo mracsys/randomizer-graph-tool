@@ -1,4 +1,3 @@
-const { merge, fill, shuffle } = require("lodash");
 const SettingsList = require('./SettingsList.js');
 const World = require("./World");
 const entrance_shuffle_table = require('./EntranceList.js');
@@ -14,19 +13,19 @@ class WorldGraph {
         settings.settings.debug_parser = debug;
         this.worlds = [];
         if (!!user_overrides) {
-            settings = merge(settings, user_overrides);
+            var merged_settings = this.merge_settings(settings, user_overrides);
             if (Object.keys(user_overrides.settings).includes('allowed_tricks')) {
                 for (let trick of user_overrides.settings.allowed_tricks) {
-                    settings.settings[trick] = true;
+                    merged_settings.settings[trick] = true;
                 }
             }
         }
-        this.build_world_graphs(settings, ootr_version);
-        if (Object.keys(settings).includes('locations')) {
-            this.fill_items(settings.locations);
+        this.build_world_graphs(merged_settings, ootr_version);
+        if (Object.keys(merged_settings).includes('locations')) {
+            this.fill_items(merged_settings.locations);
         }
-        if (Object.keys(settings).includes('entrances')) {
-            this.set_entrances(settings.entrances);
+        if (Object.keys(merged_settings).includes('entrances')) {
+            this.set_entrances(merged_settings.entrances);
         }
         // must run after item fill to allow location table names
         // to line up during fill and prices to get set
@@ -37,6 +36,36 @@ class WorldGraph {
             this.collect_skipped_locations(world);
         }
         this.search = new Search(this.worlds.map((world) => world.state));
+    }
+
+    // for some reason, _.merge was mixing starting_items and hint_dist_user,
+    // so instead of that, use a custom merge function for base settings and
+    // the plando file
+    merge_settings(original, override) {
+        let merged_settings = {};
+        let merged_object;
+        for (let [k, v] of Object.entries(original)) {
+            if (Object.keys(override).includes(k)) {
+                if (typeof(v) === 'object') {
+                    if (Array.isArray(v)) {
+                        merged_settings[k] = override[k];
+                    } else {
+                        merged_object = this.merge_settings(v, override[k]);
+                        merged_settings[k] = merged_object;
+                    }
+                } else {
+                    merged_settings[k] = override[k];
+                }
+            } else {
+                merged_settings[k] = v;
+            }
+        }
+        for (let [k, v] of Object.entries(override)) {
+            if (!(Object.keys(original).includes(k))) {
+                merged_settings[k] = v;
+            }
+        }
+        return merged_settings;
     }
 
     build_world_graphs(settings, ootr_version) {

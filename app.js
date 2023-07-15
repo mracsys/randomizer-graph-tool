@@ -1,77 +1,137 @@
 const WorldGraph = require('./WorldGraph.js');
 const { hrtime } = require('node:process');
 const { spawnSync } = require('child_process');
-//const { writeFileSync } = require('fs');
-const { readFileSync } = require('fs');
+const { readFileSync, readdirSync, unlinkSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-//let plando = {'settings': settings_list};
-//writeFileSync('./plando.json', JSON.stringify(plando, null, 4), 'utf-8');
+test_specific_random_settings();
+//test_random_settings();
+//test_spoiler();
 
-let plando = JSON.parse(readFileSync(resolve(__dirname, 'test', 'seed143.json'), 'utf-8'));
-plando[':collect'] = 'all';
-
-let graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
-let locs = graph.worlds[0].get_locations();
-//let locs = graph.search.progression_locations();
-let loc_names = locs.map((loc) => loc.name);
-
-//graph.search.visit_locations(locs);
-graph.search.collect_locations();
-
-const pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
-
-const data = JSON.parse(pythonGraph.stdout);
-/*
-console.log(`${locs.length} JS progressive locations`);
-console.log(`${Object.keys(data).length} python progressive locations`);
-
-for (let loc of locs) {
-    if (!(Object.keys(data).includes(loc.name))) {
-        console.log(`Extra progressive location ${loc.name}`);
-    }
-}
-for (let loc of Object.keys(data)) {
-    if (!(loc_names.includes(loc))) {
-        console.log(`Missing progressive location ${loc}`);
-    }
+function test_spoiler() {
+    test_settings(resolve(__dirname, 'test', 'seed143.json'));
 }
 
-return;
-*/
-console.log(`${graph.search._cache.visited_locations.size} visited JS locations`);
-console.log(`${Object.keys(data).filter((l) => data[l].visited).length} visited python locations`);
+function test_specific_random_settings() {
+    let rsl = '/home/mracsys/git/plando-random-settings';
+    let files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
+    test_settings(resolve(rsl, 'patches', files[0]));
+}
 
-for (const loc of graph.search._cache.visited_locations) {
-    if (Object.keys(data).includes(loc.name)) {
-        if (graph.search.visited(loc) && !(data[loc.name].visited)) {
-            console.log(`Extra visited location ${loc.name}`);
-        } else if (graph.search.visited(loc) && data[loc.name].visited) {
-            //console.log(`Matching JS location ${loc.name}`);
+function test_settings(plando_file) {
+    let plando = JSON.parse(readFileSync(plando_file, 'utf-8'));
+    plando[':collect'] = 'spheres';
+    delete plando.item_pool;
+    if (plando.settings.hint_dist === 'custom') {
+        delete plando.settings.hint_dist;
+    }
+    var pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
+    var data;
+    try {
+        data = JSON.parse(pythonGraph.stdout);
+    } catch (error) {
+        if (pythonGraph.strerr !== '') {
+            console.log(pythonGraph.stderr);
+        } else {
+            console.log(pythonGraph.stdout.split('\n')[0]);
         }
-    } else {
-        console.log(`Non-existent JS location ${loc.name}`);
+        throw(error);
     }
-}
-console.log('Finished JS comparison');
-let meta;
-for (let l of Object.keys(data).filter((l) => data[l].visited)) {
-    meta = data[l];
-    if (loc_names.includes(l)) {
-        if (!(graph.search.visited(locs.filter((loc) => loc.name === l)[0])) && meta.visited) {
-            console.log(`Missing visited location ${l}`);
-        } else if (graph.search.visited(locs.filter((loc) => loc.name === l)[0]) && meta.visited) {
-            //console.log(`Matching python location ${l}`);
-        }
-    } else {
-        console.log(`Non-existent python location ${l}`);
-    }
-}
-console.log('Finished python comparison');
 
-//console.log(`Visited locations: ${[...graph.search._cache.visited_locations].map((l) => '\n' + l.name)}`);
-//console.log(`Python locations: ${Object.keys(data).filter((l) => data[l].visited).map((l) => '\n' + l)}`);
+    let graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
+
+    graph.search.collect_spheres();
+
+    success = compare_js_to_python(graph, data);
+}
+
+function test_random_settings() {
+    var rsl = '/home/mracsys/git/plando-random-settings';
+    var pythonGraph, data, files, plando, graph;
+    for (let i = 0; i < 1000; i++) {
+        pythonGraph = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
+        try {
+            data = JSON.parse(pythonGraph.stdout);
+        } catch (error) {
+            if (pythonGraph.strerr !== '') {
+                console.log(pythonGraph.stderr);
+            } else {
+                console.log(pythonGraph.stdout.split('\n')[0]);
+            }
+            throw(error);
+        }
+
+        files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
+        if (files.length < 1) {
+            throw('Generator Error: no spoiler to load');
+        } else if (files.length > 1) {
+            throw('Generator Error: more than one spoiler to load');
+        }
+
+        plando = JSON.parse(readFileSync(resolve(rsl, 'patches', files[0]), 'utf-8'));
+        plando[':collect'] = 'spheres';
+
+        graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
+
+        graph.search.collect_spheres();
+
+        success = compare_js_to_python(graph, data);
+
+        if (success) {
+            unlinkSync(resolve(rsl, 'patches', files[0]));
+        } else {
+            // stop looping to allow re-testing the failed plando
+            break;
+        }
+    }
+}
+
+function compare_js_to_python(graph, data) {
+    console.log(`${graph.search._cache.visited_locations.size} visited JS locations`);
+    console.log(`${Object.keys(data).filter((l) => data[l].visited).length} visited python locations`);
+
+    let success = graph.search._cache.visited_locations.size === Object.keys(data).filter((l) => data[l].visited).length;
+    let locs = graph.worlds[0].get_locations();
+    let loc_names = locs.map((loc) => loc.name);
+
+    for (const loc of graph.search._cache.visited_locations) {
+        if (Object.keys(data).includes(loc.name)) {
+            if (graph.search.visited(loc) && !(data[loc.name].visited)) {
+                console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere}, Player ${loc.item.world.id + 1} ${loc.item.name}`);
+                success = false;
+            } else if (graph.search.visited(loc) && data[loc.name].visited) {
+                //console.log(`Matching JS location ${loc.name}`);
+            }
+        } else {
+            console.log(`Non-existent JS location ${loc.name}`);
+            success = false;
+        }
+    }
+    console.log('Finished JS comparison');
+    let meta;
+    let python_locations = Object.keys(data).filter((l) => data[l].visited).sort((a, b) => data[a].sphere - data[b].sphere);
+    for (let l of python_locations) {
+        meta = data[l];
+        if (loc_names.includes(l)) {
+            if (!(graph.search.visited(locs.filter((loc) => loc.name === l)[0])) && meta.visited) {
+                console.log(`Missing visited location ${l}, sphere ${meta.sphere}, ${meta.item_name}`);
+                success = false;
+            } else if (graph.search.visited(locs.filter((loc) => loc.name === l)[0]) && meta.visited) {
+                //console.log(`Matching python location ${l}`);
+            }
+        } else {
+            console.log(`Non-existent python location ${l}`);
+            success = false;
+        }
+    }
+    console.log('Finished python comparison');
+
+    //console.log(`Visited locations: ${[...graph.search._cache.visited_locations].map((l) => '\n' + l.name)}`);
+    //console.log(`Python locations: ${Object.keys(data).filter((l) => data[l].visited).map((l) => '\n' + l)}`);
+
+    return success;
+}
 
 function benchmark_graph(graph) {
     for (const l of graph.worlds[0].get_locations()) {

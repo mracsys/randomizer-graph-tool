@@ -41,6 +41,7 @@ class Location {
         this.disabled = DisableType.ENABLED;
         this.always = false;
         this.never = false;
+        this.sphere = -1;
         if (filter_tags === null) {
             this.filter_tags = null;
         } else if (typeof(filter_tags) === 'string') {

@@ -24,6 +24,7 @@ class Search {
                 child_queue: root_regions.flatMap((region) => region.exits),
                 adult_queue: root_regions.flatMap((region) => region.exits),
                 visited_locations: new Set(),
+                spheres: {},
                 child_regions: [...root_regions],
                 adult_regions: [...root_regions],
                 child_tod: tod,
@@ -121,6 +122,26 @@ class Search {
             if (!!(location.item)) {
                 this.collect(location.item);
             }
+        }
+    }
+
+    collect_spheres(locations=null) {
+        let l = !!locations ? locations : this.progression_locations();
+        let collected;
+        let sphere = 0;
+        while (true) {
+            collected = Array.from(this.iter_reachable_locations(l));
+            if (collected.length === 0) {
+                break;
+            }
+            this._cache.spheres[sphere] = collected;
+            for (let location of collected) {
+                location.sphere = sphere;
+                if (!!(location.item)) {
+                    this.collect(location.item);
+                }
+            }
+            sphere++;
         }
     }
 
