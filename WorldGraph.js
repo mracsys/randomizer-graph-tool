@@ -406,6 +406,14 @@ class WorldGraph {
         if (!(world.keysanity) && !(world.dungeon_mq['Fire Temple'])) {
             world.state.collect(ItemFactory('Small Key (Fire Temple)', world));
         }
+        if (world.settings.shuffle_tcgkeys === 'remove') {
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+            world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world));
+        }
         if (!(world.settings.shuffle_individual_ocarina_notes)) {
             world.state.collect(ItemFactory('Ocarina A Button', world));
             world.state.collect(ItemFactory('Ocarina C up Button', world));
