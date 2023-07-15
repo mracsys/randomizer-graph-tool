@@ -5,8 +5,8 @@ const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-//test_specific_random_settings();
-test_random_settings(1000);
+test_specific_random_settings();
+//test_random_settings(1000);
 //test_spoiler();
 
 function test_spoiler() {
@@ -73,6 +73,7 @@ function test_random_settings(max_seeds=1) {
         if (success) {
             unlinkSync(resolve(rsl, 'patches', files[0]));
         } else {
+            writeFileSync('./python_spheres.json', JSON.stringify(data.spheres, null, 4), 'utf-8');
             console.log('Problem detected, stopping random seed generation')
             // stop looping to allow re-testing the failed plando
             break;
