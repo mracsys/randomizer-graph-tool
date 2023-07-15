@@ -150,16 +150,15 @@ class WorldGraph {
             for (let loc of world.get_locations()) {
                 if (!!(loc.vanilla_item)) {
                     loc.vanilla_item.world = loc.parent_region.world;
-                } else if (loc.name === 'ToT Light Arrows Cutscene' && world.settings.shuffle_ganon_bosskey === 'on_lacs') {
-                    world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world));
-                    continue;
                 } else if (loc.name === 'Gift from Sages' && ['stones', 'medallions', 'dungeons', 'tokens', 'hearts', 'triforce'].includes(world.settings.shuffle_ganon_bosskey)) {
                     world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world));
                     continue;
                 } else {
                     continue;
                 }
-                if (world.settings.shopsanity === 'off' && loc.type === 'Shop') {
+                if (loc.name === 'ToT Light Arrows Cutscene' && world.settings.shuffle_ganon_bosskey === 'on_lacs') {
+                    world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world));
+                } else if (world.settings.shopsanity === 'off' && loc.type === 'Shop') {
                     world.push_vanilla_item(loc);
                 } else if ((world.settings.shuffle_scrubs === 'off' || world.settings.shuffle_scrubs === 'regular') && ['Scrub', 'GrottoScrub'].includes(loc.type)) {
                     if (world.settings.shuffle_scrubs === 'off' || !(['Piece of Heart', 'Deku Stick Capacity', 'Deku Nut Capacity'].includes(loc.vanilla_item.name))) {
