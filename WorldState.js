@@ -143,7 +143,7 @@ class WorldState {
     collect(item) {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
-            if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].contains(dungeon_name)) {
+            if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].includes(dungeon_name)) {
                 let bk = `Boss Key (${dungeon_name})`;
                 this.prog_items[`Boss Key (${dungeon_name})`] = 1;
             }
