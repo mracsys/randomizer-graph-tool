@@ -169,8 +169,8 @@ class WorldGraph {
                     loc.price = business_scrub_prices[loc.vanilla_item.name];
                 } else if (loc.vanilla_item.name === 'Gold Skulltula Token') {
                     if (world.settings.tokensanity === 'off' ||
-                        (world.settings.tokensanity === 'dungeons' && !(loc.dungeon)) ||
-                        (world.settings.tokensanity === 'overworld' && loc.dungeon)) {
+                        (world.settings.tokensanity === 'dungeons' && !(loc.dungeon())) ||
+                        (world.settings.tokensanity === 'overworld' && loc.dungeon())) {
                             world.push_vanilla_item(loc);
                     }
                 } else  if (loc.vanilla_item.name === 'Kokiri Sword' && !(world.settings.shuffle_kokiri_sword)) {
