@@ -44,6 +44,7 @@ function test_random_settings(max_seeds=1) {
     var pythonGraph, data, files, plando, graph;
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`)
+        console.log('Running python search')
         pythonGraph = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
         data = read_python_stdout(pythonGraph);
 
@@ -54,6 +55,7 @@ function test_random_settings(max_seeds=1) {
             throw('Generator Error: more than one spoiler to load');
         }
 
+        console.log('Running JS search')
         plando = JSON.parse(readFileSync(resolve(rsl, 'patches', files[0]), 'utf-8'));
         plando[':collect'] = 'spheres';
 
