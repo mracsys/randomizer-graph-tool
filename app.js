@@ -5,8 +5,8 @@ const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-test_specific_random_settings();
-//test_random_settings(1000);
+//test_specific_random_settings();
+test_random_settings(1000);
 //test_spoiler();
 
 function test_spoiler() {
@@ -42,6 +42,12 @@ function test_settings(plando_file, export_spheres=false) {
 function test_random_settings(max_seeds=1) {
     var rsl = '/home/mracsys/git/plando-random-settings';
     var pythonGraph, data, files, plando, graph;
+    files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
+    if (files.length > 0) {
+        for (let f of files) {
+            unlinkSync(resolve(rsl, 'patches', f));
+        }
+    }
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`)
         console.log('Running python search')
