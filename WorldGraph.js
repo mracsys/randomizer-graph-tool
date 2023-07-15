@@ -213,7 +213,7 @@ class WorldGraph {
                         (world.settings.gerudo_fortress !== 'fast' && !(world.settings.key_rings.includes('Thieves Hideout'))))) {
                             world.push_vanilla_item(loc);
                     }
-                    if (loc.name === 'Hideout 1 Torch Jail Gerudo Key' && world.settings.key_rings.includes('Thieves Hideout')) {
+                    if (loc.name === 'Hideout 1 Torch Jail Gerudo Key' && world.settings.key_rings.includes('Thieves Hideout') && world.settings.gerudo_fortress !== 'open') {
                         world.push_item(loc, ItemFactory('Small Key Ring (Thieves Hideout)', world));
                     }
                 } else if (loc.vanilla_item.name === 'Small Key (Treasure Chest Game)' && world.settings.shuffle_tcgkeys === 'vanilla') {
