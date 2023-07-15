@@ -435,6 +435,21 @@ class RuleParser {
         }
         path.node.right = escape_or_string(path.node.right, t);
 
+        // JS 'in' operator doesn't work on arrays in the same
+        // way as Python. Need to replace with Array.includes(element)
+        if (path.node.operator === 'in') {
+            let inc = t.callExpression(
+                t.memberExpression(
+                    path.node.right,
+                    t.identifier('includes')
+                ),
+                [path.node.left]
+            );
+            path.replaceWith(inc);
+            path.skip();
+            return;
+        }
+
         if (self.isLiteral(self, t, path.node.right) && self.isLiteral(self, t, path.node.left)) {
             let res = eval(generate(path.node, {}, '').code);
             path.replaceWith(t.booleanLiteral(res));
