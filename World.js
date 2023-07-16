@@ -117,7 +117,7 @@ class World {
         this.shuffle_dungeon_entrances = ['simple', 'all'].includes(this.settings.shuffle_dungeon_entrances);
         this.entrance_shuffle = this.shuffle_interior_entrances || this.settings.shuffle_grotto_entrances || this.shuffle_dungeon_entrances
             || this.settings.shuffle_overworld_entrances || this.settings.shuffle_gerudo_valley_river_exit || this.settings.owl_drops || this.settings.warp_songs
-            || this.settings.spawn_positions || (this.settings.shuffle_bosses !== 'off');
+            || this.settings.spawn_positions.length > 0 || (this.settings.shuffle_bosses !== 'off');
         this.mixed_pools_bosses = false;
         this.ensure_tod_access = this.shuffle_interior_entrances || this.settings.shuffle_overworld_entrances || this.settings.spawn_positions;
         this.disable_trade_revert = this.shuffle_interior_entrances || this.settings.shuffle_overworld_entrances || this.settings.adult_trade_shuffle;
