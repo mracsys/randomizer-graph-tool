@@ -453,13 +453,16 @@ class WorldGraph {
     }
 
     collect_skipped_locations(world) {
+        world.skipped_locations.push(world.get_location('Links Pocket'));
         if (!(world.settings.shuffle_gerudo_card) && world.settings.gerudo_fortress === 'open') {
             world.state.collect(ItemFactory('Gerudo Membership Card', world));
+            world.skipped_locations.push(world.get_location('Hideout Gerudo Membership Card'));
         }
         if (world.skip_child_zelda) {
             world.state.collect(ItemFactory('Weird Egg', world));
             for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
                 let loc = world.get_location(loc_name);
+                world.skipped_locations.push(loc);
                 if (!!(loc.item)) {
                     world.state.collect(loc.item);
                 }

@@ -35,6 +35,7 @@ class World {
         this._entrance_cache = {};
         this._region_cache = {};
         this._location_cache = {};
+        this.skipped_locations = [];
 
         this.parser = new RuleParser(this, this.version, this.settings.debug_parser);
         this.event_items = new Set();

@@ -129,6 +129,7 @@ class Search {
     }
 
     collect_spheres(locations=null) {
+        this.collect_pseudo_starting_items();
         let l = !!locations ? locations : this.progression_locations();
         let collected;
         let sphere = 0;
@@ -145,6 +146,25 @@ class Search {
                 }
             }
             sphere++;
+        }
+    }
+
+
+    * iter_pseudo_starting_locations() {
+        for (let state of this.state_list) {
+            for (let location of state.world.skipped_locations) {
+                this._cache.visited_locations.add(location);
+                yield location;
+            }
+        }
+    }
+
+    collect_pseudo_starting_items() {
+        for (let location of this.iter_pseudo_starting_locations()) {
+            if (!!(location.item)) {
+                location.sphere = -1;
+                this.collect(location.item);
+            }
         }
     }
 
