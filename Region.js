@@ -38,7 +38,7 @@ class Region {
             return HintAreas[this.hint_name];
         }
         if (this.dungeon) {
-            return this.dungeon.hint;
+            return HintAreas[this.dungeon.toUpperCase().replaceAll(' ', '_')];
         }
         return null;
     }
