@@ -51,8 +51,13 @@ function test_random_settings(max_seeds=1) {
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`)
         console.log('Running python search')
-        rsl_output = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
-
+        while (true) {
+            rsl_output = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
+            // restart script if reroll limit exceeded
+            if (rsl_output.status === 0) {
+                break;
+            }
+        }
         files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
         if (files.length < 1) {
             throw('Generator Error: no spoiler to load');
