@@ -14,10 +14,13 @@ class Search {
             this.cached_spheres = [this._cache];
         } else {
             let root_regions = this.state_list.map((state) => state.world.get_region('Root'));
-            let tod = {};
+            let atod = {};
+            let ctod = {};
             for (let region of root_regions) {
-                tod[region.world.id] = {};
-                tod[region.world.id][region.name] = TimeOfDay.NONE;
+                atod[region.world.id] = {};
+                atod[region.world.id][region.name] = TimeOfDay.NONE;
+                ctod[region.world.id] = {};
+                ctod[region.world.id][region.name] = TimeOfDay.NONE;
             }
 
             this._cache = {
@@ -27,8 +30,8 @@ class Search {
                 spheres: {},
                 child_regions: [...root_regions],
                 adult_regions: [...root_regions],
-                child_tod: tod,
-                adult_tod: tod,
+                child_tod: ctod,
+                adult_tod: atod,
             };
             this.cached_spheres = [this._cache];
             this.next_sphere();
