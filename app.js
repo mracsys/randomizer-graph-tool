@@ -5,8 +5,8 @@ const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-test_specific_random_settings();
-//test_random_settings(1000);
+//test_specific_random_settings();
+test_random_settings(1000);
 //test_spoiler();
 
 function test_spoiler() {
