@@ -146,6 +146,27 @@ function compare_js_to_python(graph, data) {
     }
     console.log('Finished python comparison');
 
+    // Only do sphere comparison if searched locations match
+    if (success && Object.keys(data).includes('spheres')) {
+        let sdata = data.spheres;
+        for (let [sphere, sphere_locs] of Object.entries(sdata)) {
+            let nsphere = parseInt(sphere);
+            for (let [l, i] of Object.entries(sphere_locs)) {
+                let loc = graph.search.state_list[0].world.get_location(l);
+                if (loc.sphere !== nsphere) {
+                    console.log(`Sphere mismatch: ${loc} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
+                    success = false;
+                }
+            }
+            // out of order spheres will affect later spheres,
+            // so skip them if a problem was found in this sphere.
+            if (!success) {
+                break;
+            }
+        }
+    }
+    console.log('Finished sphere comparison');
+
     //console.log(`Visited locations: ${[...graph.search._cache.visited_locations].map((l) => '\n' + l.name)}`);
     //console.log(`Python locations: ${Object.keys(data).filter((l) => data[l].visited).map((l) => '\n' + l)}`);
 
