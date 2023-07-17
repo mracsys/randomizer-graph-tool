@@ -466,11 +466,7 @@ class WorldGraph {
         if (world.skip_child_zelda) {
             world.state.collect(ItemFactory('Weird Egg', world));
             for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
-                let loc = world.get_location(loc_name);
-                world.skipped_locations.push(loc);
-                if (!!(loc.item)) {
-                    world.state.collect(loc.item);
-                }
+                world.skipped_locations.push(world.get_location(loc_name));
             }
         }
         if (world.settings.free_scarecrow) {
