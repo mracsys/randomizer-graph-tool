@@ -5,8 +5,8 @@ const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
 const { resolve } = require('path');
 const OotrVersion = require('./OotrVersion.js');
 
-//test_specific_random_settings();
-test_random_settings(1000);
+test_specific_random_settings();
+//test_random_settings(1000);
 //test_spoiler();
 
 function test_spoiler() {
@@ -151,10 +151,10 @@ function compare_js_to_python(graph, data) {
         let sdata = data.spheres;
         for (let [sphere, sphere_locs] of Object.entries(sdata)) {
             let nsphere = parseInt(sphere);
-            for (let [l, i] of Object.entries(sphere_locs)) {
+            for (let l of Object.keys(sphere_locs)) {
                 let loc = graph.search.state_list[0].world.get_location(l);
                 if (loc.sphere !== nsphere) {
-                    console.log(`Sphere mismatch: ${loc} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
+                    console.log(`Sphere mismatch: ${l} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
                     success = false;
                 }
             }
