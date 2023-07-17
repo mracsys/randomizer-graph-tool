@@ -230,7 +230,7 @@ class WorldGraph {
                         shuffle_setting = dungeon !== 'Ganons Castle' ? world.settings.shuffle_bosskeys : world.settings.shuffle_ganon_bosskey;
                         // OOTR bug, BKs are starting items if key rings are on,
                         // key rings give BKs, and small keysy is on
-                        if (world.settings.key_rings.includes(dungeon) && world.settings.keyring_give_bk && world.settings.shuffle_smallkeys == 'remove') {
+                        if (world.settings.key_rings.includes(dungeon) && world.settings.keyring_give_bk && world.settings.shuffle_smallkeys == 'remove' && ['remove', 'any_dungeon', 'overworld', 'keysanity', 'regional'].includes(shuffle_setting)) {
                             world.state.collect(loc.vanilla_item);
                         }
                     } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon)) {
