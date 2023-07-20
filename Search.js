@@ -1,4 +1,3 @@
-const { merge } = require("lodash");
 const { TimeOfDay } = require("./Region");
 
 class Search {

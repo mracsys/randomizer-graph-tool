@@ -21,6 +21,56 @@ class SettingsList {
         }
     }
 
+    // for some reason, _.merge was mixing starting_items and hint_dist_user,
+    // so instead of that, use a custom merge function for base settings and
+    // the plando file
+    override_settings(override, original=this) {
+        let merged_object;
+        let merged_settings = {};
+        // override settings
+        for (let [k, v] of Object.entries(original)) {
+            if (Object.keys(override).includes(k)) {
+                if (typeof(v) === 'object') {
+                    if (Array.isArray(v)) {
+                        merged_settings[k] = override[k];
+                    } else {
+                        merged_object = this.override_settings(override[k], v);
+                        merged_settings[k] = merged_object;
+                    }
+                } else {
+                    merged_settings[k] = override[k];
+                }
+            } else {
+                merged_settings[k] = v;
+            }
+        }
+
+        // override default logic tricks
+        if (Object.keys(override).includes('settings')) {
+            if (Object.keys(override.settings).includes('allowed_tricks')) {
+                for (let trick of override.settings.allowed_tricks) {
+                    merged_settings.settings[trick] = true;
+                }
+            }
+        }
+
+        // append other overrides (locations, entrances, dungeon types, etc)
+        for (let [k, v] of Object.entries(override)) {
+            if (!(Object.keys(merged_settings).includes(k))) {
+                merged_settings[k] = v;
+            }
+        }
+
+        // apply overrides if at top level of recursion
+        if (original === this) {
+            for (let [k, v] of Object.entries(merged_settings)) {
+                this[k] = v;
+            }
+        }
+
+        return merged_settings;
+    }
+
     readSettingsList_7_1_117() {
         const settingslist = readFileSync(resolve(__dirname, 'ootr-logic', 'SettingsList.py'), 'utf-8');
         const lines = settingslist.split('\n').filter(Boolean);

@@ -1,4 +1,3 @@
-const { merge } = require("lodash");
 const { MakeEventItem } = require("./Item.js");
 const { Location, LocationFactory } = require("./Location.js");
 const Entrance = require('./Entrance.js');
@@ -15,13 +14,12 @@ class World {
     constructor(id, settings, ootr_version) {
         if (Object.keys(settings).includes('randomized_settings')) {
             if (settings.settings.world_count > 1) {
-                this.settings = merge(settings.settings, settings.randomized_settings[`World ${id+1}`]);
+                settings.override_settings({settings: settings.randomized_settings[`World ${id+1}`]});
             } else {
-                this.settings = merge(settings.settings, settings.randomized_settings);
+                settings.override_settings({settings: settings.randomized_settings});
             }
-        } else {
-            this.settings = settings.settings;
         }
+        this.settings = settings.settings;
         if (!(Object.keys(this.settings).includes('debug_parser'))) {
             this.settings.debug_parser = false;
         }
