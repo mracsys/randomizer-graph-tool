@@ -1,25 +1,27 @@
-const WorldGraph = require('./WorldGraph.js');
-const { hrtime } = require('node:process');
-const { spawnSync } = require('child_process');
-const { readFileSync, readdirSync, unlinkSync, writeFileSync } = require('fs');
-const { resolve } = require('path');
-const OotrVersion = require('./OotrVersion.js');
+import { hrtime } from 'node:process';
+import { spawnSync, SpawnSyncReturns } from 'node:child_process';
+import { readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
+import WorldGraphFactory from '..//WorldGraph.js';
+import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
+import { GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
+import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
 
 //test_specific_random_settings();
-test_random_settings(1000);
+test_random_settings(1000, true);
 //test_spoiler();
 
-function test_spoiler() {
-    test_settings(resolve(__dirname, 'test', 'seed143.json'));
+async function test_spoiler() {
+    await test_settings(resolve(__dirname, 'test', 'seed143.json'));
 }
 
-function test_specific_random_settings() {
+async function test_specific_random_settings() {
     let rsl = '/home/mracsys/git/plando-random-settings';
     let files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
-    test_settings(resolve(rsl, 'patches', files[0]), true);
+    await test_settings(resolve(rsl, 'patches', files[0]), true);
 }
 
-function test_settings(plando_file, export_spheres=false) {
+async function test_settings(plando_file: string, export_spheres: boolean = false) {
     let plando = JSON.parse(readFileSync(plando_file, 'utf-8'));
     plando[':collect'] = 'spheres';
     delete plando.item_pool;
@@ -33,13 +35,14 @@ function test_settings(plando_file, export_spheres=false) {
         writeFileSync('./python_spheres.json', JSON.stringify(data.spheres, null, 4), 'utf-8');
     }
 
-    let graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
-    graph.search.collect_spheres();
+    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
+    let graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
+    graph.collect_spheres();
 
-    success = compare_js_to_python(graph, data);
+    compare_js_to_python(graph, data);
 }
 
-function test_random_settings(max_seeds=1) {
+async function test_random_settings(max_seeds: number = 1, local_files: boolean = false) {
     var rsl = '/home/mracsys/git/plando-random-settings';
     var rsl_output, pythonGraph, data, files, plando, graph;
     files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
@@ -48,9 +51,12 @@ function test_random_settings(max_seeds=1) {
             unlinkSync(resolve(rsl, 'patches', f));
         }
     }
+
+    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', local_files);
+
     for (let i = 0; i < max_seeds; i++) {
-        console.log(`Testing seed ${i + 1} of ${max_seeds}`)
-        console.log('Running python search')
+        console.log(`Testing seed ${i + 1} of ${max_seeds}`);
+        console.log('Running python search');
         while (true) {
             rsl_output = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
             // restart script if reroll limit exceeded
@@ -75,10 +81,10 @@ function test_random_settings(max_seeds=1) {
         data = read_python_stdout(pythonGraph);
 
         console.log('Running JS search')
-        graph = new WorldGraph(plando, new OotrVersion('7.1.143'));
-        graph.search.collect_spheres();
+        graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
+        graph.collect_spheres();
 
-        success = compare_js_to_python(graph, data);
+        let success = compare_js_to_python(graph, data);
 
         if (success) {
             unlinkSync(resolve(rsl, 'patches', files[0]));
@@ -91,11 +97,34 @@ function test_random_settings(max_seeds=1) {
     }
 }
 
-function read_python_stdout(pythonGraph) {
+type PythonData = {
+    locations: PythonLocation,
+    spheres: PythonSphere,
+};
+type PythonLocation = {
+    [location_name: string]: {
+        name: string,
+        world: string,
+        rule_string: string,
+        transformed_rule: string,
+        visited: boolean,
+        sphere: number,
+        item_name: string,
+        child_access_rule: boolean,
+        adult_access_rule: boolean,
+    }
+};
+type PythonSphere = {
+    [sphere: string]: {
+        [location_name: string]: string,
+    }
+};
+
+function read_python_stdout(pythonGraph: SpawnSyncReturns<string>): PythonData {
     try {
         var data = JSON.parse(pythonGraph.stdout);
     } catch (error) {
-        if (pythonGraph.strerr !== '') {
+        if (pythonGraph.stderr !== '') {
             console.log(pythonGraph.stderr);
         } else {
             console.log(pythonGraph.stdout.split('\n')[0]);
@@ -105,21 +134,26 @@ function read_python_stdout(pythonGraph) {
     return data;
 }
 
-function compare_js_to_python(graph, data) {
+function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     let ldata = data.locations;
-    console.log(`${graph.search._cache.visited_locations.size} visited JS locations`);
+    let world0 = graph.worlds[0];
+    console.log(`${graph.get_visited_locations().length} visited JS locations`);
     console.log(`${Object.keys(ldata).filter((l) => ldata[l].visited).length} visited python locations`);
 
-    let success = graph.search._cache.visited_locations.size === Object.keys(ldata).filter((l) => ldata[l].visited).length;
-    let locs = graph.worlds[0].get_locations();
-    let loc_names = locs.map((loc) => loc.name);
+    let success = graph.get_visited_locations().length === Object.keys(ldata).filter((l) => ldata[l].visited).length;
+    let locs = graph.get_visited_locations();
+    let loc_names = locs.map((loc: GraphLocation): string => loc.name);
 
-    for (const loc of graph.search._cache.visited_locations) {
+    for (const loc of locs) {
         if (Object.keys(ldata).includes(loc.name)) {
-            if (graph.search.visited(loc) && !(ldata[loc.name].visited)) {
-                console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere}, Player ${loc.item.world.id + 1} ${loc.item.name}`);
+            if (!(ldata[loc.name].visited)) {
+                if (loc.item === null) {
+                    console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere}, invalid item`);
+                } else {
+                    console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere},${!!loc.item.player ? ' Player '.concat(loc.item.player.toString()) : ''} ${loc.item.name}`);
+                }
                 success = false;
-            } else if (graph.search.visited(loc) && ldata[loc.name].visited) {
+            } else if (ldata[loc.name].visited) {
                 //console.log(`Matching JS location ${loc.name}`);
             }
         } else {
@@ -132,14 +166,12 @@ function compare_js_to_python(graph, data) {
     let python_locations = Object.keys(ldata).filter((l) => ldata[l].visited).sort((a, b) => ldata[a].sphere - ldata[b].sphere);
     for (let l of python_locations) {
         meta = ldata[l];
-        if (loc_names.includes(l)) {
-            if (!(graph.search.visited(locs.filter((loc) => loc.name === l)[0])) && meta.visited) {
+        if (!(loc_names.includes(l))) {
+            if (meta.visited) {
                 console.log(`Missing visited location ${l}, sphere ${meta.sphere}, ${meta.item_name}`);
                 success = false;
-            } else if (graph.search.visited(locs.filter((loc) => loc.name === l)[0]) && meta.visited) {
-                //console.log(`Matching python location ${l}`);
             }
-        } else {
+        } else if (!(meta.visited)) {
             console.log(`Non-existent python location ${l}`);
             success = false;
         }
@@ -152,7 +184,7 @@ function compare_js_to_python(graph, data) {
         for (let [sphere, sphere_locs] of Object.entries(sdata)) {
             let nsphere = parseInt(sphere);
             for (let l of Object.keys(sphere_locs)) {
-                let loc = graph.search.state_list[0].world.get_location(l);
+                let loc = locs.filter((location: GraphLocation): boolean => location.name === l)[0];
                 if (loc.sphere !== nsphere) {
                     console.log(`Sphere mismatch: ${l} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
                     success = false;
@@ -173,14 +205,16 @@ function compare_js_to_python(graph, data) {
     return success;
 }
 
-function benchmark_graph(graph) {
+function benchmark_graph(graph: OotrGraphPlugin) {
     for (const l of graph.worlds[0].get_locations()) {
+        if (l.world === null) throw `World not defined for location ${l.name}`;
         console.log(`name: ${l.name}, rule_string: ${l.rule_string}, transformed_rule: ${l.transformed_rule}`);
         console.log(`child_access_rule: ${l.access_rule(l.world.state, {spot: l, age: 'child'})}`);
         console.log(`adult_access_rule: ${l.access_rule(l.world.state, {spot: l, age: 'adult'})}`);
     }
 
     for (const e of graph.worlds[0].get_entrances()) {
+        if (e.world === null) throw `World not defined for entrance ${e.name}`;
         console.log(`name: ${e.name}, rule_string: ${e.rule_string}, transformed_rule: ${e.transformed_rule}`);
         console.log(`child_access_rule: ${e.access_rule(e.world.state, {spot: e, age: 'child'})}`);
         console.log(`adult_access_rule: ${e.access_rule(e.world.state, {spot: e, age: 'adult'})}`);
@@ -190,10 +224,12 @@ function benchmark_graph(graph) {
 
     const start = hrtime.bigint();
     for (const l of graph.worlds[0].get_locations()) {
+        if (l.world === null) throw `World not defined for location ${l.name}`;
         child_access = l.access_rule(l.world.state, {spot: l, age: 'child'});
         adult_access = l.access_rule(l.world.state, {spot: l, age: 'adult'});
     }
     for (const e of graph.worlds[0].get_entrances()) {
+        if (e.world === null) throw `World not defined for entrance ${e.name}`;
         child_access = e.access_rule(e.world.state, {spot: e, age: 'child'});
         adult_access = e.access_rule(e.world.state, {spot: e, age: 'adult'});
     }

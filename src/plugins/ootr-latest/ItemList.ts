@@ -2,7 +2,38 @@
 //              false -> Priority
 //              null  -> Normal
 //    Item:                                            [type, Progressive, GetItemID, special],
-const item_table = {
+
+type ItemSpecial = {
+    alias?: [a: string, n: number],
+    trade?: boolean,
+    bottle?: number | boolean,
+    progressive?: number,
+    object?: number,
+    price?: number,
+    medallion?: boolean,
+    stone?: boolean,
+    ocarina_button?: boolean,
+    junk?: number,
+    shop_object?: number,
+    text_id?: number,
+    song_id?: number,
+    item_id?: number,
+    addr2_data?: number,
+    bit_mask?: number,
+    actor_type?: number,
+    object_id?: number,
+};
+
+type ItemTable = {
+    [item_name: string]: [
+        item_type: string,
+        progressive: boolean | null,
+        itemID: number | null,
+        special: ItemSpecial | null,
+    ]
+};
+
+export const item_table: ItemTable = {
     'Bombs (5)':                                       ['Item',     null,  0x0001, {'junk': 8}],
     'Deku Nuts (5)':                                   ['Item',     null,  0x0002, {'junk': 5}],
     'Bombchus (10)':                                   ['Item',     true,  0x0003, null],
@@ -432,5 +463,3 @@ const item_table = {
                                                 'object_id':  0x00BA,
                                             }],
 };
-
-module.exports = item_table;

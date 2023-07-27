@@ -1,4 +1,7 @@
-entrance_shuffle_table = [
+type EntranceConnectionData = [entrance_name: string, entrance_data: object];
+type EntranceTableEntry = [entrance_type: string, forward_entry: EntranceConnectionData, reverse_entry?: EntranceConnectionData];
+
+const entrance_shuffle_table: EntranceTableEntry[] = [
     ['Dungeon',         ['KF Outside Deku Tree -> Deku Tree Lobby',                         { 'index': 0x0000 }],
                         ['Deku Tree Lobby -> KF Outside Deku Tree',                         { 'index': 0x0209 }]],
     ['Dungeon',         ['Death Mountain -> Dodongos Cavern Beginning',                     { 'index': 0x0004 }],
@@ -310,4 +313,4 @@ entrance_shuffle_table = [
     ['Extra',           ['ZR Top of Waterfall -> Zora River',                               { 'index': 0x0199 }]],
 ];
 
-module.exports = entrance_shuffle_table;
+export default entrance_shuffle_table;

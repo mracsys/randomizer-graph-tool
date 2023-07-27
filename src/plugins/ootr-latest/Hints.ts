@@ -1,4 +1,17 @@
-let HintAreas = {
+type _HintArea = {
+    vague_preposition: string | null,
+    clear_preposition: string | null,
+    str: string,
+    short_name: string | null,
+    color: string,
+    dungeon_name: string | null,
+}
+
+type HintAreaDict = {
+    [area: string]: _HintArea
+}
+
+export const HintAreas: HintAreaDict = {
     ROOT                   : {vague_preposition: 'in',     clear_preposition: 'in',     str: "Link's pocket",              short_name: 'Free',                   color: 'White',      dungeon_name: null},
     HYRULE_FIELD           : {vague_preposition: 'in',     clear_preposition: 'in',     str: 'Hyrule Field',               short_name: 'Hyrule Field',           color: 'Light Blue', dungeon_name: null},
     LON_LON_RANCH          : {vague_preposition: 'at',     clear_preposition: 'at',     str: 'Lon Lon Ranch',              short_name: 'Lon Lon Ranch',          color: 'Light Blue', dungeon_name: null},
@@ -37,8 +50,4 @@ let HintAreas = {
     HAUNTED_WASTELAND      : {vague_preposition: 'in',     clear_preposition: 'in',     str: 'the Haunted Wasteland',      short_name: "Haunted Wasteland",      color: 'Yellow',     dungeon_name: null},
     DESERT_COLOSSUS        : {vague_preposition: 'at',     clear_preposition: 'at',     str: 'the Desert Colossus',        short_name: "Desert Colossus",        color: 'Yellow',     dungeon_name: null},
     SPIRIT_TEMPLE          : {vague_preposition: 'inside', clear_preposition: 'in',     str: 'the Spirit Temple',          short_name: "Spirit Temple",          color: 'Yellow',     dungeon_name: 'Spirit Temple'},
-};
-
-module.exports = {
-    HintAreas,
 };

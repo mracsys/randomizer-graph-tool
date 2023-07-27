@@ -1,32 +1,59 @@
-const { readFileSync } = require('fs');
-const { resolve } = require('path');
-const OotrVersion = require('./OotrVersion.js');
+import ExternalFileCache from "./OotrFileCache.js";
+import OotrVersion from "./OotrVersion.js";
+
+type SettingType = boolean | string | number | string[] | object | null | undefined;
+type Setting = {
+    name: string,
+    default: SettingType,
+    type: string,
+};
+type SettingTypeDictionary = {
+    [type_function: string]: Setting
+};
+export type SettingsDictionary = {
+    [key: string]: SettingType,
+    starting_items?: {
+        [item_name: string]: number,
+    },
+    spawn_positions?: string[],
+    shuffle_child_trade?: string[],
+    adult_trade_start?: string[],
+    triforce_goal_per_world?: number,
+    dungeon_shortcuts?: string[],
+    shuffle_ganon_bosskey?: string,
+    key_rings?: string[],
+    world_count: number,
+    debug_parser?: boolean,
+};
 
 class SettingsList {
-    constructor(ootr_version) {
-        this.settings = {};
+    [index: string]: any;
+    public settings: SettingsDictionary;
+
+    constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
+        this.settings = { world_count: 1 };
         switch(ootr_version.branch) {
             case '':
             case 'R':
-                if (ootr_version.greaterThanOrEqual(new OotrVersion('7.1.143'))) {
-                    this.readSettingsList_7_1_143();
-                } else if (ootr_version.greaterThanOrEqual(new OotrVersion('7.1.117'))) {
-                    this.readSettingsList_7_1_117();
+                if (ootr_version.gte('7.1.143')) {
+                    this.readSettingsList_7_1_143(file_cache);
+                } else if (ootr_version.gte('7.1.117')) {
+                    this.readSettingsList_7_1_117(file_cache);
                 } else {
                     throw('OOTR version prior to 7.1.117 not implemented');
                 }
                 break;
             default:
-                throw(`Unknown branch for version ${ootr_version.toString()}`);
+                throw(`Unknown branch for version ${ootr_version.to_string()}`);
         }
     }
 
     // for some reason, _.merge was mixing starting_items and hint_dist_user,
     // so instead of that, use a custom merge function for base settings and
     // the plando file
-    override_settings(override, original=this) {
-        let merged_object;
-        let merged_settings = {};
+    override_settings(override: any, original: any=this): any {
+        let merged_object: any;
+        let merged_settings: any = {};
         // override settings
         for (let [k, v] of Object.entries(original)) {
             if (Object.keys(override).includes(k)) {
@@ -71,18 +98,18 @@ class SettingsList {
         return merged_settings;
     }
 
-    readSettingsList_7_1_117() {
-        const settingslist = readFileSync(resolve(__dirname, 'ootr-logic', 'SettingsList.py'), 'utf-8');
-        const lines = settingslist.split('\n').filter(Boolean);
+    readSettingsList_7_1_117(file_cache: ExternalFileCache): void {
+        const settingslist: string = file_cache.files['SettingsList.py'];
+        const lines: string[] = settingslist.split('\n').filter(Boolean);
 
-        var setting = {
+        var setting: Setting = {
             name: '',
             default: null,
             type: 'bool',
         };
-        var parsing = false;
-        var split_char = ':';
-        var info, d, arg_test, args;
+        var parsing: boolean = false;
+        var split_char: string = ':';
+        var info: string[], d: string | null = null, arg_test: string[], args: string[];
 
         for (var line of lines) {
             line = line.trim();
@@ -212,20 +239,20 @@ class SettingsList {
         }
     }
 
-    readSettingsList_7_1_143() {
-        const trickslist = readFileSync(resolve(__dirname, 'ootr-logic', 'SettingsListTricks143.py'), 'utf-8');
-        const settingslist = readFileSync(resolve(__dirname, 'ootr-logic', 'SettingsList143.py'), 'utf-8');
-        const lines = settingslist.split('\n').filter(Boolean);
-        const tricklines = trickslist.split('\n').filter(Boolean);
+    readSettingsList_7_1_143(file_cache: ExternalFileCache): void {
+        const trickslist: string = file_cache.files['SettingsListTricks.py'];
+        const settingslist: string = file_cache.files['SettingsList.py'];
+        const lines: string[] = settingslist.split('\n').filter(Boolean);
+        const tricklines: string[] = trickslist.split('\n').filter(Boolean);
 
-        var setting = {
+        var setting: Setting = {
             name: '',
-            default: null,
+            default: false,
             type: 'bool',
         };
-        var parsing = false;
-        var split_char = ':';
-        var info, d, arg_test, args;
+        var parsing: boolean = false;
+        var split_char: string = ':';
+        var info: string[], d: string | null = null;
 
         for (var line of tricklines) {
             info = line.split(split_char);
@@ -238,14 +265,14 @@ class SettingsList {
                     this.settings[setting.name] = false;
                     setting = {
                         name: '',
-                        default: null,
+                        default: false,
                         type: 'bool',
                     };
                 }
             }
         }
 
-        let setting_types = {
+        let setting_types: SettingTypeDictionary = {
             'settinginfonone(': {
                 'name': '',
                 'default': null,
@@ -401,6 +428,4 @@ class SettingsList {
     }
 }
 
-
-
-module.exports = SettingsList;
+export default SettingsList;

@@ -1,5 +1,5 @@
-function escape_name(name) {
+function escape_name(name: string) {
     return name.replace(/\s/g, '_').replace(/[\'()[\]-]/g, '');
 }
 
-module.exports = { escape_name };
+export default escape_name;

@@ -1,8 +1,17 @@
-function shop_address(shop_id, shelf_id) {
+function shop_address(shop_id: number, shelf_id: number): number {
     return 0xC71ED0 + (0x40 * shop_id) + (0x08 * shelf_id);
 }
 
-location_table = {
+export const location_table: {
+    [name: string]: [
+        type: string,
+        scene: any,
+        _default: any,
+        addresses: any,
+        vanilla_item: string | null,
+        filter_tags: any,
+    ],
+} = {
     // Dungeon Rewards
     "Links Pocket":                                                 ["Boss",         null,  null, null,                            'Light Medallion',                       null],
     "Queen Gohma":                                                  ["Boss",         null,  0x6C, [0x0CA315F, 0x2079571],          'Kokiri Emerald',                        null],
@@ -89,8 +98,8 @@ location_table = {
     "KF House of Twins Pot 1":                                      ["Pot",          0x27,  [0,0,3], null,                         'Rupee (1)',                             ["Kokiri Forest", "Forest Area", "Pots",]],
     "KF House of Twins Pot 2":                                      ["Pot",          0x27,  [0,0,4], null,                         'Rupees (5)',                            ["Kokiri Forest", "Forest Area", "Pots",]],
     // Kokiri Forest Beehives
-    "KF Storms Grotto Beehive 1":                                   ["Beehive",      0x3E,  [0,0, 0x48 + [0x0C * 2]], null,        'Rupees (5)',                            ["Kokiri Forest", "Forest Area", "Grottos", "Beehives",]],
-    "KF Storms Grotto Beehive 2":                                   ["Beehive",      0x3E,  [0,0, 0x49 + [0x0C * 2]], null,        'Rupees (20)',                           ["Kokiri Forest", "Forest Area", "Grottos", "Beehives",]],
+    "KF Storms Grotto Beehive 1":                                   ["Beehive",      0x3E,  [0,0, 0x48 + (0x0C * 2)], null,        'Rupees (5)',                            ["Kokiri Forest", "Forest Area", "Grottos", "Beehives",]],
+    "KF Storms Grotto Beehive 2":                                   ["Beehive",      0x3E,  [0,0, 0x49 + (0x0C * 2)], null,        'Rupees (20)',                           ["Kokiri Forest", "Forest Area", "Grottos", "Beehives",]],
 
     // Lost Woods
     "LW Gift from Saria":                                           ["Cutscene",     0xFF,  0x02, null,                            'Ocarina',                               ["Lost Woods", "Forest Area", "NPCs",]],
@@ -121,9 +130,9 @@ location_table = {
     "LW Underwater Green Rupee 7":                                  ["Freestanding", 0x5B,  [3,0,12], null,                        'Rupee (1)',                             ["Lost Woods", "Forest Area", "Freestandings",]],
     "LW Underwater Shortcut Green Rupee":                           ["Freestanding", 0x5B,  [3,0,7], null,                         'Rupee (1)',                             ["Lost Woods", "Forest Area", "Freestandings",]],
     // Lost Woods Beehives
-    "LW Near Shortcuts Grotto Beehive 1":                           ["Beehive",      0x3E, [0,0,0x48 + [0x14 * 2]], null,          'Rupees (5)',                            ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
-    "LW Near Shortcuts Grotto Beehive 2":                           ["Beehive",      0x3E, [0,0,0x49 + [0x14 * 2]], null,          'Rupees (20)',                           ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
-    "LW Scrubs Grotto Beehive":                                     ["Beehive",      0x3E, [6,0,0x44 + [0x15 * 2]], null,          'Rupees (20)',                           ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
+    "LW Near Shortcuts Grotto Beehive 1":                           ["Beehive",      0x3E, [0,0,0x48 + (0x14 * 2)], null,          'Rupees (5)',                            ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
+    "LW Near Shortcuts Grotto Beehive 2":                           ["Beehive",      0x3E, [0,0,0x49 + (0x14 * 2)], null,          'Rupees (20)',                           ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
+    "LW Scrubs Grotto Beehive":                                     ["Beehive",      0x3E, [6,0,0x44 + (0x15 * 2)], null,          'Rupees (20)',                           ["Lost Woods", "Forest Area", "Grottos", "Beehives",]],
 
     // Sacred Forest Meadow
     "SFM Wolfos Grotto Chest":                                      ["Chest",        0x3E,  0x11, null,                            'Rupees (50)',                           ["Sacred Forest Meadow", "Forest Area", "Grottos", "Chests",]],
@@ -131,7 +140,7 @@ location_table = {
     "SFM Deku Scrub Grotto Rear":                                   ["GrottoScrub",  0xEE,  0x39, null,                            'Buy Red Potion for 30 Rupees',          ["Sacred Forest Meadow", "Forest Area", "Deku Scrubs", "Grottos",]],
     "SFM GS":                                                       ["GS Token",     0x0D,  0x08, null,                            'Gold Skulltula Token',                  ["Sacred Forest Meadow", "Forest Area", "Gold Skulltulas",]],
     // Sacred Forest Meadow Beehives
-    "SFM Storms Grotto Beehive":                                    ["Beehive",      0x3E, [9,0,0x43 + [0x0E * 2]], null,          'Rupees (20)',                           ["Sacred Forest Meadow", "Forest Area", "Grottos", "Beehives",]],
+    "SFM Storms Grotto Beehive":                                    ["Beehive",      0x3E, [9,0,0x43 + (0x0E * 2)], null,          'Rupees (20)',                           ["Sacred Forest Meadow", "Forest Area", "Grottos", "Beehives",]],
 
     // Hyrule Field
     "HF Ocarina of Time Item":                                      ["NPC",          0x51,  0x0C, null,                            'Ocarina',                               ["Hyrule Field", "Need Spiritual Stones", "NPCs",]],
@@ -147,13 +156,13 @@ location_table = {
     "HF Cow Grotto Pot 1":                                          ["Pot",          0x3E,  [4,0,6], null,                         'Deku Nuts (5)',                         ["Hyrule Field", "Grottos", "Pots",]],
     "HF Cow Grotto Pot 2":                                          ["Pot",          0x3E,  [4,0,8], null,                         'Rupees (5)',                            ["Hyrule Field", "Grottos", "Pots",]],
     // Hyrule Field Beehives
-    "HF Near Market Grotto Beehive 1":                              ["Beehive",      0x3E, [0,0,0x48 + [0x00 * 2]], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Near Market Grotto Beehive 2":                              ["Beehive",      0x3E, [0,0,0x49 + [0x00 * 2]], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Open Grotto Beehive 1":                                     ["Beehive",      0x3E, [0,0,0x48 + [0x03 * 2]], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Open Grotto Beehive 2":                                     ["Beehive",      0x3E, [0,0,0x49 + [0x03 * 2]], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Southeast Grotto Beehive 1":                                ["Beehive",      0x3E, [0,0,0x48 + [0x02 * 2]], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Southeast Grotto Beehive 2":                                ["Beehive",      0x3E, [0,0,0x49 + [0x02 * 2]], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
-    "HF Inside Fence Grotto Beehive":                               ["Beehive",      0x3E, [1,0,0x42 + [0x06 * 2]], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Near Market Grotto Beehive 1":                              ["Beehive",      0x3E, [0,0,0x48 + (0x00 * 2)], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Near Market Grotto Beehive 2":                              ["Beehive",      0x3E, [0,0,0x49 + (0x00 * 2)], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Open Grotto Beehive 1":                                     ["Beehive",      0x3E, [0,0,0x48 + (0x03 * 2)], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Open Grotto Beehive 2":                                     ["Beehive",      0x3E, [0,0,0x49 + (0x03 * 2)], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Southeast Grotto Beehive 1":                                ["Beehive",      0x3E, [0,0,0x48 + (0x02 * 2)], null,          'Rupees (5)',                            ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Southeast Grotto Beehive 2":                                ["Beehive",      0x3E, [0,0,0x49 + (0x02 * 2)], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
+    "HF Inside Fence Grotto Beehive":                               ["Beehive",      0x3E, [1,0,0x42 + (0x06 * 2)], null,          'Rupees (20)',                           ["Hyrule Field", "Grottos", "Beehives",]],
 
     // Market
     "Market Shooting Gallery Reward":                               ["NPC",          0x42,  0x60, null,                            'Slingshot',                             ["Market", "Minigames",]],
@@ -321,7 +330,7 @@ location_table = {
     "LLR Child Crate":                                              ["Crate",        0x63,  [[0,0,25],
                                                                                               [0,1,30]], null,                      'Rupee (1)',                             ["Lon Lon Ranch", "Crates",]],
     // Lon Lon Ranch Beehives
-    "LLR Grotto Beehive":                                           ["Beehive",      0x3E,  [12,0,0x44 + [0x1C * 2]], null,        'Rupees (20)',                           ["Lon Lon Ranch", "Grottos", "Beehives",]],
+    "LLR Grotto Beehive":                                           ["Beehive",      0x3E,  [12,0,0x44 + (0x1C * 2)], null,        'Rupees (20)',                           ["Lon Lon Ranch", "Grottos", "Beehives",]],
 
     // Kakariko
     "Kak Anju as Child":                                            ["NPC",          0x52,  0x0F, null,                            'Bottle',                                ["Kakariko Village", "Minigames",]],
@@ -378,8 +387,8 @@ location_table = {
     "Kak Adult Red Rupee Crate":                                    ["Crate",        0x52,  [[0,2,46],[0,3,43]], null,             'Rupees (20)',                           ["Kakariko Village", "Crates",]], // update crate flags to not conflict w/ child pots. These move day/night
     "Kak Adult Arrows Crate":                                       ["Crate",        0x52,  [[0,2,37],[0,3,40]], null,             'Arrows (10)',                           ["Kakariko Village", "Crates",]], // update crate flags to not conflict w/ child pots. These move day/night
     // Kak Beehives
-    "Kak Open Grotto Beehive 1":                                    ["Beehive",      0x3E,  [0,0,0x48 + [0x08 * 2]], null,         'Rupees (5)',                            ["Kakariko Village", "Grottos", "Beehives",]],
-    "Kak Open Grotto Beehive 2":                                    ["Beehive",      0x3E,  [0,0,0x49 + [0x08 * 2]], null,         'Rupees (20)',                           ["Kakariko Village", "Grottos", "Beehives",]],
+    "Kak Open Grotto Beehive 1":                                    ["Beehive",      0x3E,  [0,0,0x48 + (0x08 * 2)], null,         'Rupees (5)',                            ["Kakariko Village", "Grottos", "Beehives",]],
+    "Kak Open Grotto Beehive 2":                                    ["Beehive",      0x3E,  [0,0,0x49 + (0x08 * 2)], null,         'Rupees (20)',                           ["Kakariko Village", "Grottos", "Beehives",]],
 
     // Graveyard
     "Graveyard Shield Grave Chest":                                 ["Chest",        0x40,  0x00, null,                            'Hylian Shield',                         ["Graveyard", "Grottos", "Chests",]],
@@ -436,9 +445,9 @@ location_table = {
     "DMT Cow Grotto Recovery Heart 3":                              ["Freestanding", 0x3E,  [3,0,9],    null,                      'Recovery Heart',                        ["Death Mountain Trail", "Grottos", "Freestandings",]],
     "DMT Cow Grotto Recovery Heart 4":                              ["Freestanding", 0x3E,  [3,0,10],   null,                      'Recovery Heart',                        ["Death Mountain Trail", "Grottos", "Freestandings",]],
     // Death Mountain Trial Beehives
-    "DMT Cow Grotto Beehive":                                       ["Beehive",      0x3E, [3,0,0x44 + [0x18 * 2]], null,          'Rupees (20)',                           ["Death Mountain Trail", "Grottos", "Beehives",]],
-    "DMT Storms Grotto Beehive 1":                                  ["Beehive",      0x3E, [0,0,0x48 + [0x17 * 2]], null,          'Rupees (5)',                            ["Death Mountain Trail", "Grottos", "Beehives",]],
-    "DMT Storms Grotto Beehive 2":                                  ["Beehive",      0x3E, [0,0,0x49 + [0x17 * 2]], null,          'Rupees (20)',                           ["Death Mountain Trail", "Grottos", "Beehives",]],
+    "DMT Cow Grotto Beehive":                                       ["Beehive",      0x3E, [3,0,0x44 + (0x18 * 2)], null,          'Rupees (20)',                           ["Death Mountain Trail", "Grottos", "Beehives",]],
+    "DMT Storms Grotto Beehive 1":                                  ["Beehive",      0x3E, [0,0,0x48 + (0x17 * 2)], null,          'Rupees (5)',                            ["Death Mountain Trail", "Grottos", "Beehives",]],
+    "DMT Storms Grotto Beehive 2":                                  ["Beehive",      0x3E, [0,0,0x49 + (0x17 * 2)], null,          'Rupees (20)',                           ["Death Mountain Trail", "Grottos", "Beehives",]],
 
     // Goron City
     "GC Darunias Joy":                                              ["NPC",          0x62,  0x54, null,                            'Progressive Strength Upgrade',          ["Goron City", "NPCs",]],
@@ -482,7 +491,7 @@ location_table = {
     "GC Upper Staircase Pot 3":                                     ["Pot",          0x62,  [[3,0,45],[3,2,12]],null,              'Rupees (5)',                            ["Goron City", "Pots",]],
     "GC Boulder Maze Crate":                                        ["Crate",        0x62,  [[0,0,50],[0,2,47]], null,             'Rupee (1)',                             ["Goron City", "Crates",]],
     // Goron City Beehives
-    "GC Grotto Beehive":                                            ["Beehive",      0x3E,  [12,0,0x44 + [0x1B * 2]], null,        'Rupees (20)',                           ["Goron City", "Grottos", "Beehives",]],
+    "GC Grotto Beehive":                                            ["Beehive",      0x3E,  [12,0,0x44 + (0x1B * 2)], null,        'Rupees (20)',                           ["Goron City", "Grottos", "Beehives",]],
 
     // Death Mountain Crater
     "DMC Volcano Freestanding PoH":                                 ["Collectable",  0x61,  0x08, null,                            'Piece of Heart',                        ["Death Mountain Crater", "Freestandings",]],
@@ -517,9 +526,9 @@ location_table = {
     "DMC Near GC Pot 3":                                            ["Pot",          0x61,  [1,2,16], null,                        'Rupees (5)',                            ["Death Mountain Crater", "Pots",]],
     "DMC Near GC Pot 4":                                            ["Pot",          0x61,  [1,2,17], null,                        'Rupees (5)',                            ["Death Mountain Crater", "Pots",]],
     // Death mountain Crater Beehives
-    "DMC Upper Grotto Beehive 1":                                   ["Beehive",      0x3E, [0,0,0x48 + [0x1A * 2]], null,          'Rupees (5)',                            ["Death Mountain Crater", "Grottos", "Beehives",]],
-    "DMC Upper Grotto Beehive 2":                                   ["Beehive",      0x3E, [0,0,0x49 + [0x1A * 2]], null,          'Rupees (20)',                           ["Death Mountain Crater", "Grottos", "Beehives",]],
-    "DMC Hammer Grotto Beehive":                                    ["Beehive",      0x3E, [12,0,0x44 + [0x19 * 2]], null,         'Rupees (20)',                           ["Death Mountain Crater", "Grottos", "Beehives",]],
+    "DMC Upper Grotto Beehive 1":                                   ["Beehive",      0x3E, [0,0,0x48 + (0x1A * 2)], null,          'Rupees (5)',                            ["Death Mountain Crater", "Grottos", "Beehives",]],
+    "DMC Upper Grotto Beehive 2":                                   ["Beehive",      0x3E, [0,0,0x49 + (0x1A * 2)], null,          'Rupees (20)',                           ["Death Mountain Crater", "Grottos", "Beehives",]],
+    "DMC Hammer Grotto Beehive":                                    ["Beehive",      0x3E, [12,0,0x44 + (0x19 * 2)], null,         'Rupees (20)',                           ["Death Mountain Crater", "Grottos", "Beehives",]],
 
     // Zora's River
     "ZR Magic Bean Salesman":                                       ["NPC",          0x54,  0x16, null,                            'Buy Magic Bean',                        ["Zora's River", "NPCs",]],
@@ -545,9 +554,9 @@ location_table = {
     "ZR Waterfall Red Rupee 3":                                     ["Freestanding", 0x54,  [1,2,4], null,                         'Rupees (20)',                           ["Zora's River", "Freestandings",]],
     "ZR Waterfall Red Rupee 4":                                     ["Freestanding", 0x54,  [1,2,5], null,                         'Rupees (20)',                           ["Zora's River", "Freestandings",]],
     // Zora's River Beehives
-    "ZR Open Grotto Beehive 1":                                     ["Beehive",      0x3E, [0,0,0x48 + [0x09 * 2]], null,          'Rupees (5)',                            ["Zora's River", "Grottos", "Beehives",]],
-    "ZR Open Grotto Beehive 2":                                     ["Beehive",      0x3E, [0,0,0x49 + [0x09 * 2]], null,          'Rupees (20)',                           ["Zora's River", "Grottos", "Beehives",]],
-    "ZR Storms Grotto Beehive":                                     ["Beehive",      0x3E, [9,0,0x43 + [0x0B * 2]], null,          'Rupees (20)',                           ["Zora's River", "Grottos", "Beehives",]],
+    "ZR Open Grotto Beehive 1":                                     ["Beehive",      0x3E, [0,0,0x48 + (0x09 * 2)], null,          'Rupees (5)',                            ["Zora's River", "Grottos", "Beehives",]],
+    "ZR Open Grotto Beehive 2":                                     ["Beehive",      0x3E, [0,0,0x49 + (0x09 * 2)], null,          'Rupees (20)',                           ["Zora's River", "Grottos", "Beehives",]],
+    "ZR Storms Grotto Beehive":                                     ["Beehive",      0x3E, [9,0,0x43 + (0x0B * 2)], null,          'Rupees (20)',                           ["Zora's River", "Grottos", "Beehives",]],
 
     // Zora's Domain
     "ZD Diving Minigame":                                           ["NPC",          0x58,  0x37, null,                            'Progressive Scale',                     ["Zora's Domain", "Minigames",]],
@@ -634,7 +643,7 @@ location_table = {
     "LH Lab Dive Red Rupee 2":                                      ["Freestanding", 0x38,  [0,0,3], null,                         'Rupees (20)',                           ["Lake Hylia", "Freestandings",]],
     "LH Lab Dive Red Rupee 3":                                      ["Freestanding", 0x38,  [0,0,4], null,                         'Rupees (20)',                           ["Lake Hylia", "Freestandings",]],
     //Lake Hylia Beehives
-    "LH Grotto Beehive":                                            ["Beehive",      0x3E,  [12,0,0x44 + [0x0F * 2]], null,        'Rupees (20)',                           ["Lake Hylia", "Grottos", "Beehives",]],
+    "LH Grotto Beehive":                                            ["Beehive",      0x3E,  [12,0,0x44 + (0x0F * 2)], null,        'Rupees (20)',                           ["Lake Hylia", "Grottos", "Beehives",]],
 
     // Gerudo Valley
     "GV Crate Freestanding PoH":                                    ["Collectable",  0x5A,  0x02, null,                            'Piece of Heart',                        ["Gerudo Valley", "Freestandings",]],
@@ -661,7 +670,7 @@ location_table = {
     "GV Crate Near Cow":                                            ["Crate",        0x5A,  [0,0,38], null,                        'Rupee (1)',                             ["Gerudo Valley", "Crates",]],
     "GV Freestanding PoH Crate":                                    ["Crate",        0x5A,  [[0,2,31],[0,0,39]], null,             'Rupee (1)',                             ["Gerudo Valley", "Crates",]],
     // Gerudo Valley Beehives
-    "GV Storms Grotto Beehive":                                     ["Beehive",      0x3E,  [9,0,0x43 + [0x10 * 2]], null,         'Rupees (20)',                           ["Gerudo Valley", "Grottos", "Beehives",]],
+    "GV Storms Grotto Beehive":                                     ["Beehive",      0x3E,  [9,0,0x43 + (0x10 * 2)], null,         'Rupees (20)',                           ["Gerudo Valley", "Grottos", "Beehives",]],
 
     // Gerudo's Fortress
     "GF Chest":                                                     ["Chest",        0x5D,  0x00, null,                            'Piece of Heart',                        ["Gerudo's Fortress", "Chests",]],
@@ -733,7 +742,7 @@ location_table = {
     "Colossus GS Tree":                                             ["GS Token",     0x15,  0x08, null,                            'Gold Skulltula Token',                  ["Desert Colossus", "Gold Skulltulas",]],
     "Colossus GS Hill":                                             ["GS Token",     0x15,  0x04, null,                            'Gold Skulltula Token',                  ["Desert Colossus", "Gold Skulltulas",]],
     // Colossus Beehives
-    "Colossus Grotto Beehive":                                      ["Beehive",      0x3E,  [9,0,0x43 + [0x1D * 2]], null,         'Rupees (20)',                           ["Desert Colossus", "Grottos", "Beehives",]],
+    "Colossus Grotto Beehive":                                      ["Beehive",      0x3E,  [9,0,0x43 + (0x1D * 2)], null,         'Rupees (20)',                           ["Desert Colossus", "Grottos", "Beehives",]],
 
     // Outside Ganon's Castle
     "OGC Great Fairy Reward":                                       ["Cutscene",     0xFF,  0x15, null,                            'Double Defense',                        ["Outside Ganon's Castle", "Great Fairies",]],
@@ -2206,7 +2215,9 @@ location_table = {
     "Ganondorf Hint":                                               ["Hint",         null,  null, null,                            null,                                    null]
 };
 
-business_scrub_prices = {
+export const business_scrub_prices: {
+    [item_name: string]: number,
+} = {
     'Deku Nuts': 20,
     'Deku Sticks': 15,
     'Piece of Heart': 10,
@@ -2218,9 +2229,4 @@ business_scrub_prices = {
     'Green Potion': 40,
     'Deku Stick Capacity': 40,
     'Deku Nut Capacity': 40,
-};
-
-module.exports = {
-    location_table,
-    business_scrub_prices,
 };

@@ -1,8 +1,56 @@
 {
+  "name": "@mracsys/randomizer-graph-tool",
+  "description": "Ocarina of Time Randomizer Logic Interpreter",
+  "version": "1.0.0",
+  "type": "module",
+  "types": "./lib/cjs/types/WorldGraph.d.ts",
+  "main": "./lib/cjs/WorldGraph.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./lib/esm/types/WorldGraph.d.ts",
+        "default": "./lib/esm/WorldGraph.mjs"
+      },
+      "require": {
+        "types": "./lib/cjs/types/WorldGraph.d.ts",
+        "default": "./lib/cjs/WorldGraph.js"
+      }
+    }
+  },
+  "files": [
+    "lib/**/*"
+  ],
   "dependencies": {
     "@babel/core": "^7.21.4",
     "@babel/generator": "^7.21.4",
     "@babel/parser": "^7.21.4",
-    "@babel/preset-env": "^7.21.4"
-  }
+    "@babel/preset-env": "^7.21.4",
+    "semver": "^7.5.4"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.1",
+    "@types/babel__generator": "^7.6.4",
+    "@types/node": "^20.4.4",
+    "@types/semver": "^7.5.0",
+    "typescript": "^5.1.6"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean": "rm -rf ./lib",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p ./configs/tsconfig.esm.json && mv lib/esm/scripts/debug.js lib/esm/scripts/debug.mjs",
+    "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
+    "semantic-release": "semantic-release",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mracsys/randomizer-graph-tool.git"
+  },
+  "author": "mracsys",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mracsys/randomizer-graph-tool/issues"
+  },
+  "homepage": "https://github.com/mracsys/randomizer-graph-tool#readme"
 }
