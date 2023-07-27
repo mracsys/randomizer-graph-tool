@@ -64,7 +64,9 @@ export type GraphSetting = {
     name: string,
     type: string,
     default: any,
-    choices?: {[key: string]: string},
+    tab: string,
+    section: string,
+    choices?: {[internal_name: string]: string},
     minimum?: number,
     maximum?: number,
 };
@@ -88,6 +90,8 @@ export abstract class GraphPlugin {
 
     // Version/branch list for selection, static class method
     abstract get_game_versions(): GraphGameVersions;
+
+    abstract get_settings_options(): {[setting_name: string]: GraphSetting};
 
     // Search interface
     abstract collect_locations(): void;

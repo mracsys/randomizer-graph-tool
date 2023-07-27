@@ -127,6 +127,7 @@ class OotrVersion implements GameVersion {
 
     get_file_list(): string[] {
         let file_list = [
+            'data/settings_mapping.json',
             'data/LogicHelpers.json',
             'data/World/Bosses.json',
             'data/World/Overworld.json',

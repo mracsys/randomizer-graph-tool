@@ -1,4 +1,4 @@
-import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphWorld } from '../GraphPlugin.js';
+import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld } from '../GraphPlugin.js';
 
 import SettingsList from './SettingsList.js';
 import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList } from "./World.js";
@@ -22,6 +22,7 @@ class OotrGraphPlugin extends GraphPlugin {
 
     public worlds: World[];
     public search: Search;
+    public settings_list: SettingsList;
 
     constructor(
         public user_overrides: any,
@@ -31,18 +32,16 @@ class OotrGraphPlugin extends GraphPlugin {
     ) {
         super();
         this.worlds = [];
-        let settings_list = new SettingsList(ootr_version, file_cache);
-        let settings = {settings: settings_list.settings};
-        settings.settings.debug_parser = debug;
+        this.settings_list = new SettingsList(ootr_version, file_cache);
         if (!!user_overrides) {
-            settings_list.override_settings(user_overrides);
+            this.settings_list.override_settings(user_overrides);
         }
-        this.build_world_graphs(settings_list, ootr_version);
-        if (Object.keys(settings_list).includes('locations')) {
-            this.set_items(settings_list.locations);
+        this.build_world_graphs(this.settings_list, ootr_version);
+        if (Object.keys(this.settings_list).includes('locations')) {
+            this.set_items(this.settings_list.locations);
         }
-        if (Object.keys(settings_list).includes('entrances')) {
-            this.set_entrances(settings_list.entrances);
+        if (Object.keys(this.settings_list).includes('entrances')) {
+            this.set_entrances(this.settings_list.entrances);
         }
         this.finalize_world();
         this.search = new Search(this.worlds.map((world) => world.state));
@@ -70,6 +69,10 @@ class OotrGraphPlugin extends GraphPlugin {
         }
 
         return ootr;
+    }
+
+    get_settings_options(): { [setting_name: string]: GraphSetting; } {
+        return this.settings_list.setting_definitions;
     }
 
     collect_locations(): void {
