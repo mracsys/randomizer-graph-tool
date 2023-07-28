@@ -56,3 +56,29 @@ export function replace_python_booleans(rule: string): string {
     s = s.replaceAll(/\bFalse\b/g, 'false');
     return s.trim();
 }
+
+export function replace_python_tuples(text: string): string {
+    let result = '';
+    let insideSingleQuotes = false;
+    let insideDoubleQuotes = false;
+    let prev_char = '';
+
+    for (const char of text) {
+        if (char === "'" && !insideDoubleQuotes && !(prev_char === '\\')) {
+            insideSingleQuotes = !insideSingleQuotes;
+            result += char;
+        } else if (char === '"' && !insideSingleQuotes && !(prev_char === '\\')) {
+            insideDoubleQuotes = !insideDoubleQuotes;
+            result += char;
+        } else if (char === '(' && !insideSingleQuotes && !insideDoubleQuotes) {
+            result += '[';
+        } else if (char === ')' && !insideSingleQuotes && !insideDoubleQuotes) {
+            result += ']';
+        } else {
+            result += char;
+        }
+        prev_char = char;
+    }
+
+    return result;
+}

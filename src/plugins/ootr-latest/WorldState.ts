@@ -11,10 +11,12 @@ class WorldState {
     public world: World;
     public search: Search | null;
     public _won: () => boolean;
+    public ItemInfo: ItemInfo;
 
     constructor(parent: World) {
         this.prog_items = {};
         this.world = parent;
+        this.ItemInfo = this.world.parent_graph.ItemInfo;
         this.search = null;
         this._won = this.world.settings.triforce_hunt ? this.won_triforce_hunt : this.won_normal;
     }
@@ -62,7 +64,7 @@ class WorldState {
     }
 
     has_bottle(): boolean {
-        return this.has_any_of(ItemInfo.bottles.values()) || this.has('Rutos Letter', 2);
+        return this.has_any_of(this.ItemInfo.bottles.values()) || this.has('Rutos Letter', 2);
     }
 
     has_hearts(count: number): boolean {
@@ -74,15 +76,15 @@ class WorldState {
     }
 
     has_medallions(count: number): boolean {
-        return this.count_of(ItemInfo.medallions.values()) >= count;
+        return this.count_of(this.ItemInfo.medallions.values()) >= count;
     }
 
     has_stones(count: number): boolean {
-        return this.count_of(ItemInfo.stones.values()) >= count;
+        return this.count_of(this.ItemInfo.stones.values()) >= count;
     }
 
     has_dungeon_rewards(count: number): boolean {
-        return (this.count_of(ItemInfo.medallions.values()) + this.count_of(ItemInfo.stones.values())) >= count;
+        return (this.count_of(this.ItemInfo.medallions.values()) + this.count_of(this.ItemInfo.stones.values())) >= count;
     }
 
     had_night_start(): boolean {
@@ -114,7 +116,7 @@ class WorldState {
     }
 
     has_ocarina_buttons(count: number): boolean {
-        return this.count_of(ItemInfo.ocarina_buttons.values()) >= count;
+        return this.count_of(this.ItemInfo.ocarina_buttons.values()) >= count;
     }
 
     has_all_notes_for_song(song: string): boolean {

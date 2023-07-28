@@ -4,7 +4,6 @@ import { Region } from "./Region.js";
 import World from './World.js';
 import WorldState from './WorldState.js';
 import Entrance from './Entrance.js';
-import { location_table } from './LocationList.js';
 import { Item, ItemFactory } from './Item.js';
 
 type Spot = Entrance | Location;
@@ -81,6 +80,7 @@ export class Location implements GraphLocation {
 export function LocationFactory(locations: string | string[], world: World): Location[] {
     let ret = [];
     let locations_to_build = locations;
+    const location_table = world.parent_graph.location_list.locations;
     if (typeof(locations_to_build) === 'string') {
         locations_to_build = [locations_to_build];
     }
@@ -92,7 +92,7 @@ export function LocationFactory(locations: string | string[], world: World): Loc
             match_location = Object.keys(location_table).filter((k: string): boolean => k.toLowerCase() === location.toLowerCase())[0];
         }
         if (match_location) {
-            let [type, scene, def, addresses, vanilla_item, filter_tags] = location_table[match_location];
+            let [type, vanilla_item] = location_table[match_location];
             ret.push(new Location(match_location, type, null, false, world, vanilla_item));
         } else {
             throw `Unknown location ${location}`;

@@ -28,6 +28,7 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
     if (plando.settings.hint_dist === 'custom') {
         delete plando.settings.hint_dist;
     }
+    console.log('Running python search');
     var pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
     var data = read_python_stdout(pythonGraph);
 
@@ -35,6 +36,7 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
         writeFileSync('./python_spheres.json', JSON.stringify(data.spheres, null, 4), 'utf-8');
     }
 
+    console.log('Running JS search');
     let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
     let graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
     graph.collect_spheres();
@@ -80,7 +82,7 @@ async function test_random_settings(max_seeds: number = 1, local_files: boolean 
         pythonGraph = spawnSync('python3', ['/home/mracsys/git/OoT-Randomizer-Fork/LogicAPI.py'], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
         data = read_python_stdout(pythonGraph);
 
-        console.log('Running JS search')
+        console.log('Running JS search');
         graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
         graph.collect_spheres();
 

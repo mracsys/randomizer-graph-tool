@@ -1,33 +1,13 @@
 import { GraphItem } from "../GraphPlugin.js";
 
-import { item_table } from "./ItemList.js";
 import World from "./World.js";
 import { Location } from "./Location.js";
-
-type ItemSpecial = {
-    alias?: [a: string, n: number],
-    trade?: boolean,
-    bottle?: number | boolean,
-    progressive?: number,
-    object?: number,
-    price?: number,
-    medallion?: boolean,
-    stone?: boolean,
-    ocarina_button?: boolean,
-    junk?: number,
-    shop_object?: number,
-    text_id?: number,
-    song_id?: number,
-    item_id?: number,
-    addr2_data?: number,
-    bit_mask?: number,
-    actor_type?: number,
-    object_id?: number,
-};
+import { ItemTable, ItemSpecial } from "./ItemList.js";
 
 export class _ItemInfo {
     constructor(
-        public name: string = '',
+        public name: string,
+        private item_table: ItemTable,
         private event: boolean = false,
         public advancement: boolean = false,
         public priority: boolean = false,
@@ -50,7 +30,7 @@ export class _ItemInfo {
             _itemID = null;
             _special = null;
         } else {
-            [_type, _progressive, _itemID, _special] = item_table[name];
+            [_type, _progressive, _itemID, _special] = this.item_table[name];
         }
         this.advancement = (_progressive === true);
         this.priority = (_progressive === false);
@@ -69,7 +49,7 @@ export class _ItemInfo {
     }
 }
 
-type ItemInfo = {
+export type ItemInfo = {
     items: {[name: string]: _ItemInfo},
     events: {[name: string]: _ItemInfo},
     bottles: Set<string>,
@@ -78,35 +58,6 @@ type ItemInfo = {
     ocarina_buttons: Set<string>,
     junk: {[name: string]: number | null},
 };
-
-export var ItemInfo: ItemInfo = {
-    items: {},
-    events: {},
-    bottles: new Set(),
-    medallions: new Set(),
-    stones: new Set(),
-    ocarina_buttons: new Set(),
-    junk: {},
-};
-
-Object.keys(item_table).map((item_name) => {
-    ItemInfo.items[item_name] = new _ItemInfo(item_name);
-    if (ItemInfo.items[item_name].bottle) {
-        ItemInfo.bottles.add(item_name);
-    }
-    if (ItemInfo.items[item_name].medallion) {
-        ItemInfo.medallions.add(item_name);
-    }
-    if (ItemInfo.items[item_name].stone) {
-        ItemInfo.stones.add(item_name);
-    }
-    if (ItemInfo.items[item_name].ocarina_button) {
-        ItemInfo.ocarina_buttons.add(item_name);
-    }
-    if (ItemInfo.items[item_name].junk !== null) {
-        ItemInfo.junk[item_name] = ItemInfo.items[item_name].junk;
-    }
-});
 
 export class Item implements GraphItem {
     public info: _ItemInfo;
@@ -128,12 +79,12 @@ export class Item implements GraphItem {
     ) {
         this.player = this.world.id + 1;
         if (this.event) {
-            if (!(this.name in ItemInfo.events)) {
-                ItemInfo.events[this.name] = new _ItemInfo(this.name, true);
+            if (!(this.name in world.parent_graph.ItemInfo.events)) {
+                world.parent_graph.ItemInfo.events[this.name] = new _ItemInfo(this.name, world.parent_graph.item_list.item_table, true);
             }
-            this.info = ItemInfo.events[this.name];
+            this.info = world.parent_graph.ItemInfo.events[this.name];
         } else {
-            this.info = ItemInfo.items[this.name];
+            this.info = world.parent_graph.ItemInfo.items[this.name];
         }
         if (this.info.special.price !== undefined) this.price = this.info.special.price;
         this.advancement = this.info.advancement;
@@ -147,7 +98,7 @@ export class Item implements GraphItem {
 
 export function ItemFactory(items: string | string[], world: World, event: boolean = false): Item[] {
     if (typeof(items) === 'string') {
-        if (!(event) && !(items in ItemInfo.items)) {
+        if (!(event) && !(items in world.parent_graph.ItemInfo.items)) {
             throw('Unknown item: ' + items);
         } else {
             return [new Item(items, world, event)];
@@ -155,7 +106,7 @@ export function ItemFactory(items: string | string[], world: World, event: boole
     }
     var ret: Item[] = [];
     items.map((item) => {
-        if (!(event) && !(item in ItemInfo.items)) {
+        if (!(event) && !(item in world.parent_graph.ItemInfo.items)) {
             throw('Unknown item: ' + item);
         } else {
             ret.push(new Item(item, world, event));
@@ -175,7 +126,7 @@ export function MakeEventItem(name: string, location: Location, item: Item | nul
         throw(`Attempted to create an event item for a location not in a world: ${location.name}`);
     }
     location.locked = true;
-    if (!(name in item_table)) {
+    if (!(name in location.world.parent_graph.item_list.item_table)) {
         location.internal = true;
     }
     return item;

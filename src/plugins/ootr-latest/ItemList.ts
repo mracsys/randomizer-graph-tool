@@ -1,9 +1,8 @@
-// Progressive: true  -> Advancement
-//              false -> Priority
-//              null  -> Normal
-//    Item:                                            [type, Progressive, GetItemID, special],
+import OotrVersion from "./OotrVersion.js";
+import ExternalFileCache from "../ExternalFileCache.js";
+import { replace_python_tuples } from "./Utils.js";
 
-type ItemSpecial = {
+export type ItemSpecial = {
     alias?: [a: string, n: number],
     trade?: boolean,
     bottle?: number | boolean,
@@ -24,7 +23,7 @@ type ItemSpecial = {
     object_id?: number,
 };
 
-type ItemTable = {
+export type ItemTable = {
     [item_name: string]: [
         item_type: string,
         progressive: boolean | null,
@@ -33,433 +32,65 @@ type ItemTable = {
     ]
 };
 
-export const item_table: ItemTable = {
-    'Bombs (5)':                                       ['Item',     null,  0x0001, {'junk': 8}],
-    'Deku Nuts (5)':                                   ['Item',     null,  0x0002, {'junk': 5}],
-    'Bombchus (10)':                                   ['Item',     true,  0x0003, null],
-    'Boomerang':                                       ['Item',     true,  0x0006, null],
-    'Deku Stick (1)':                                  ['Item',     null,  0x0007, {'junk': 5}],
-    'Lens of Truth':                                   ['Item',     true,  0x000A, null],
-    'Megaton Hammer':                                  ['Item',     true,  0x000D, null],
-    'Cojiro':                                          ['Item',     true,  0x000E, {'trade': true}],
-    'Bottle':                                          ['Item',     true,  0x000F, {'bottle': 65535}],
-    'Blue Potion':                                     ['Item',     true,  0x0012, null],
-    'Bottle with Milk':                                ['Item',     true,  0x0014, {'bottle': 65535}],
-    'Rutos Letter':                                    ['Item',     true,  0x0015, null],
-    'Deliver Letter':                                  ['Item',     true,  null,   {'bottle': 65535}],
-    'Sell Big Poe':                                    ['Item',     true,  null,   {'bottle': 65535}],
-    'Magic Bean':                                      ['Item',     true,  0x0016, {'progressive': 10}],
-    'Skull Mask':                                      ['Item',     true,  0x0017, {'trade': true, 'object': 0x0136}],
-    'Spooky Mask':                                     ['Item',     true,  0x0018, {'trade': true, 'object': 0x0135}],
-    'Chicken':                                         ['Item',     true,  0x0019, {'trade': true}],
-    'Keaton Mask':                                     ['Item',     true,  0x001A, {'trade': true, 'object': 0x0134}],
-    'Bunny Hood':                                      ['Item',     true,  0x001B, {'trade': true, 'object': 0x0137}],
-    'Mask of Truth':                                   ['Item',     true,  0x001C, {'trade': true, 'object': 0x0138}],
-    'Pocket Egg':                                      ['Item',     true,  0x001D, {'trade': true}],
-    'Pocket Cucco':                                    ['Item',     true,  0x001E, {'trade': true}],
-    'Odd Mushroom':                                    ['Item',     true,  0x001F, {'trade': true}],
-    'Odd Potion':                                      ['Item',     true,  0x0020, {'trade': true}],
-    'Poachers Saw':                                    ['Item',     true,  0x0021, {'trade': true}],
-    'Broken Sword':                                    ['Item',     true,  0x0022, {'trade': true}],
-    'Prescription':                                    ['Item',     true,  0x0023, {'trade': true}],
-    'Eyeball Frog':                                    ['Item',     true,  0x0024, {'trade': true}],
-    'Eyedrops':                                        ['Item',     true,  0x0025, {'trade': true}],
-    'Claim Check':                                     ['Item',     true,  0x0026, {'trade': true}],
-    'Kokiri Sword':                                    ['Item',     true,  0x0027, null],
-    'Giants Knife':                                    ['Item',     null,  0x0028, null],
-    'Deku Shield':                                     ['Item',     null,  0x0029, null],
-    'Hylian Shield':                                   ['Item',     null,  0x002A, null],
-    'Mirror Shield':                                   ['Item',     true,  0x002B, null],
-    'Goron Tunic':                                     ['Item',     true,  0x002C, null],
-    'Zora Tunic':                                      ['Item',     true,  0x002D, null],
-    'Iron Boots':                                      ['Item',     true,  0x002E, null],
-    'Hover Boots':                                     ['Item',     true,  0x002F, null],
-    'Stone of Agony':                                  ['Item',     true,  0x0039, null],
-    'Gerudo Membership Card':                          ['Item',     true,  0x003A, null],
-    'Heart Container':                                 ['Item',     true,  0x003D, {'alias': ['Piece of Heart', 4], 'progressive': 65535}],
-    'Piece of Heart':                                  ['Item',     true,  0x003E, {'progressive': 65535}],
-    'Boss Key':                                        ['BossKey',  true,  0x003F, null],
-    'Compass':                                         ['Compass',  null,  0x0040, null],
-    'Map':                                             ['Map',      null,  0x0041, null],
-    'Small Key':                                       ['SmallKey', true,  0x0042, {'progressive': 65535}],
-    'Weird Egg':                                       ['Item',     true,  0x0047, {'trade': true}],
-    'Recovery Heart':                                  ['Item',     null,  0x0048, {'junk': 0}],
-    'Arrows (5)':                                      ['Item',     null,  0x0049, {'junk': 8}],
-    'Arrows (10)':                                     ['Item',     null,  0x004A, {'junk': 2}],
-    'Arrows (30)':                                     ['Item',     null,  0x004B, {'junk': 0}],
-    'Rupee (1)':                                       ['Item',     null,  0x004C, {'junk': -1}],
-    'Rupees (5)':                                      ['Item',     null,  0x004D, {'junk': 10}],
-    'Rupees (20)':                                     ['Item',     null,  0x004E, {'junk': 4}],
-    'Milk':                                            ['Item',     null,  0x0050, null],
-    'Goron Mask':                                      ['Item',     null,  0x0051, {'trade': true, 'object': 0x0150}],
-    'Zora Mask':                                       ['Item',     null,  0x0052, {'trade': true, 'object': 0x0151}],
-    'Gerudo Mask':                                     ['Item',     null,  0x0053, {'trade': true, 'object': 0x0152}],
-    'Rupees (50)':                                     ['Item',     null,  0x0055, {'junk': 1}],
-    'Rupees (200)':                                    ['Item',     null,  0x0056, {'junk': 0}],
-    'Biggoron Sword':                                  ['Item',     null,  0x0057, null],
-    'Fire Arrows':                                     ['Item',     true,  0x0058, null],
-    'Ice Arrows':                                      ['Item',     true,  0x0059, null],
-    'Blue Fire Arrows':                                ['Item',     true,  0x0059, null],
-    'Light Arrows':                                    ['Item',     true,  0x005A, null],
-    'Gold Skulltula Token':                            ['Token',    true,  0x005B, {'progressive': 65535}],
-    'Dins Fire':                                       ['Item',     true,  0x005C, null],
-    'Nayrus Love':                                     ['Item',     true,  0x005E, null],
-    'Farores Wind':                                    ['Item',     true,  0x005D, null],
-    'Deku Nuts (10)':                                  ['Item',     null,  0x0064, {'junk': 0}],
-    'Bomb (1)':                                        ['Item',     null,  0x0065, {'junk': -1}],
-    'Bombs (10)':                                      ['Item',     null,  0x0066, {'junk': 2}],
-    'Bombs (20)':                                      ['Item',     null,  0x0067, {'junk': 0}],
-    'Deku Seeds (30)':                                 ['Item',     null,  0x0069, {'junk': 5}],
-    'Bombchus (5)':                                    ['Item',     true,  0x006A, null],
-    'Bombchus (20)':                                   ['Item',     true,  0x006B, null],
-    'Small Key (Treasure Chest Game)':              ['TCGSmallKey', true,  0x0071, {'progressive': 65535}],
-    'Rupee (Treasure Chest Game) (1)':                 ['Item',     null,  0x0072, null],
-    'Rupees (Treasure Chest Game) (5)':                ['Item',     null,  0x0073, null],
-    'Rupees (Treasure Chest Game) (20)':               ['Item',     null,  0x0074, null],
-    'Rupees (Treasure Chest Game) (50)':               ['Item',     null,  0x0075, null],
-    'Piece of Heart (Treasure Chest Game)':            ['Item',     true,  0x0076, {'alias': ['Piece of Heart', 1], 'progressive': 65535}],
-    'Ice Trap':                                        ['Item',     null,  0x007C, {'junk': 0}],
-    'Progressive Hookshot':                            ['Item',     true,  0x0080, {'progressive': 2}],
-    'Progressive Strength Upgrade':                    ['Item',     true,  0x0081, {'progressive': 3}],
-    'Bomb Bag':                                        ['Item',     true,  0x0082, null],
-    'Bow':                                             ['Item',     true,  0x0083, null],
-    'Slingshot':                                       ['Item',     true,  0x0084, null],
-    'Progressive Wallet':                              ['Item',     true,  0x0085, {'progressive': 3}],
-    'Progressive Scale':                               ['Item',     true,  0x0086, {'progressive': 2}],
-    'Deku Nut Capacity':                               ['Item',     null,  0x0087, null],
-    'Deku Stick Capacity':                             ['Item',     null,  0x0088, null],
-    'Bombchus':                                        ['Item',     true,  0x0089, null],
-    'Magic Meter':                                     ['Item',     true,  0x008A, null],
-    'Ocarina':                                         ['Item',     true,  0x008B, null],
-    'Bottle with Red Potion':                          ['Item',     true,  0x008C, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Green Potion':                        ['Item',     true,  0x008D, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Blue Potion':                         ['Item',     true,  0x008E, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Fairy':                               ['Item',     true,  0x008F, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Fish':                                ['Item',     true,  0x0090, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Blue Fire':                           ['Item',     true,  0x0091, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Bugs':                                ['Item',     true,  0x0092, {'bottle': true, 'shop_object': 0x0F}],
-    'Bottle with Big Poe':                             ['Item',     true,  0x0093, {'shop_object': 0x0F}],
-    'Bottle with Poe':                                 ['Item',     true,  0x0094, {'bottle': true, 'shop_object': 0x0F}],
-    'Boss Key (Forest Temple)':                        ['BossKey',  true,  0x0095, null],
-    'Boss Key (Fire Temple)':                          ['BossKey',  true,  0x0096, null],
-    'Boss Key (Water Temple)':                         ['BossKey',  true,  0x0097, null],
-    'Boss Key (Spirit Temple)':                        ['BossKey',  true,  0x0098, null],
-    'Boss Key (Shadow Temple)':                        ['BossKey',  true,  0x0099, null],
-    'Boss Key (Ganons Castle)':                   ['GanonBossKey',  true,  0x009A, null],
-    'Compass (Deku Tree)':                             ['Compass', false,  0x009B, null],
-    'Compass (Dodongos Cavern)':                       ['Compass', false,  0x009C, null],
-    'Compass (Jabu Jabus Belly)':                      ['Compass', false,  0x009D, null],
-    'Compass (Forest Temple)':                         ['Compass', false,  0x009E, null],
-    'Compass (Fire Temple)':                           ['Compass', false,  0x009F, null],
-    'Compass (Water Temple)':                          ['Compass', false,  0x00A0, null],
-    'Compass (Spirit Temple)':                         ['Compass', false,  0x00A1, null],
-    'Compass (Shadow Temple)':                         ['Compass', false,  0x00A2, null],
-    'Compass (Bottom of the Well)':                    ['Compass', false,  0x00A3, null],
-    'Compass (Ice Cavern)':                            ['Compass', false,  0x00A4, null],
-    'Map (Deku Tree)':                                 ['Map',     false,  0x00A5, null],
-    'Map (Dodongos Cavern)':                           ['Map',     false,  0x00A6, null],
-    'Map (Jabu Jabus Belly)':                          ['Map',     false,  0x00A7, null],
-    'Map (Forest Temple)':                             ['Map',     false,  0x00A8, null],
-    'Map (Fire Temple)':                               ['Map',     false,  0x00A9, null],
-    'Map (Water Temple)':                              ['Map',     false,  0x00AA, null],
-    'Map (Spirit Temple)':                             ['Map',     false,  0x00AB, null],
-    'Map (Shadow Temple)':                             ['Map',     false,  0x00AC, null],
-    'Map (Bottom of the Well)':                        ['Map',     false,  0x00AD, null],
-    'Map (Ice Cavern)':                                ['Map',     false,  0x00AE, null],
-    'Small Key (Forest Temple)':                       ['SmallKey', true,  0x00AF, {'progressive': 65535}],
-    'Small Key (Fire Temple)':                         ['SmallKey', true,  0x00B0, {'progressive': 65535}],
-    'Small Key (Water Temple)':                        ['SmallKey', true,  0x00B1, {'progressive': 65535}],
-    'Small Key (Spirit Temple)':                       ['SmallKey', true,  0x00B2, {'progressive': 65535}],
-    'Small Key (Shadow Temple)':                       ['SmallKey', true,  0x00B3, {'progressive': 65535}],
-    'Small Key (Bottom of the Well)':                  ['SmallKey', true,  0x00B4, {'progressive': 65535}],
-    'Small Key (Gerudo Training Ground)':              ['SmallKey', true,  0x00B5, {'progressive': 65535}],
-    'Small Key (Thieves Hideout)':              ['HideoutSmallKey', true,  0x00B6, {'progressive': 65535}],
-    'Small Key (Ganons Castle)':                       ['SmallKey', true,  0x00B7, {'progressive': 65535}],
-    'Double Defense':                                  ['Item',     null,  0x00B8, null],
-    'Buy Magic Bean':                                  ['Item',     true,  0x0016, {'alias': ['Magic Bean', 10], 'progressive': 10}],
-    'Magic Bean Pack':                                 ['Item',     true,  0x00C9, {'alias': ['Magic Bean', 10], 'progressive': 10}],
-    'Triforce Piece':                                  ['Item',     true,  0x00CA, {'progressive': 65535}],
-    'Zeldas Letter':                                   ['Item',     true,  0x000B, {'trade': true}],
-    'Time Travel':                                     ['Event',    true,  null,   null],
-    'Scarecrow Song':                                  ['Event',    true,  null,   null],
-    'Triforce':                                        ['Event',    true,  null,   null],
+export default class ItemList {
+    public item_table: ItemTable;
 
-    'Small Key Ring (Forest Temple)':                  ['SmallKey', true,  0x00CB, {'alias': ['Small Key (Forest Temple)', 10], 'progressive': 65535}],
-    'Small Key Ring (Fire Temple)':                    ['SmallKey', true,  0x00CC, {'alias': ['Small Key (Fire Temple)', 10], 'progressive': 65535}],
-    'Small Key Ring (Water Temple)':                   ['SmallKey', true,  0x00CD, {'alias': ['Small Key (Water Temple)', 10], 'progressive': 65535}],
-    'Small Key Ring (Spirit Temple)':                  ['SmallKey', true,  0x00CE, {'alias': ['Small Key (Spirit Temple)', 10], 'progressive': 65535}],
-    'Small Key Ring (Shadow Temple)':                  ['SmallKey', true,  0x00CF, {'alias': ['Small Key (Shadow Temple)', 10], 'progressive': 65535}],
-    'Small Key Ring (Bottom of the Well)':             ['SmallKey', true,  0x00D0, {'alias': ['Small Key (Bottom of the Well)', 10], 'progressive': 65535}],
-    'Small Key Ring (Gerudo Training Ground)':         ['SmallKey', true,  0x00D1, {'alias': ['Small Key (Gerudo Training Ground)', 10], 'progressive': 65535}],
-    'Small Key Ring (Thieves Hideout)':         ['HideoutSmallKey', true,  0x00D2, {'alias': ['Small Key (Thieves Hideout)', 10], 'progressive': 65535}],
-    'Small Key Ring (Ganons Castle)':                  ['SmallKey', true,  0x00D3, {'alias': ['Small Key (Ganons Castle)', 10], 'progressive': 65535}],
-    'Small Key Ring (Treasure Chest Game)':         ['TCGSmallKey', true,  0x00D7, {'alias': ['Small Key (Treasure Chest Game)', 10], 'progressive': 65535}],
+    constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
+        this.item_table = {};
+        switch(ootr_version.branch) {
+            case '':
+            case 'R':
+                if (ootr_version.gte('7.1.117')) {
+                    this.readItemList_7_1_117(file_cache);
+                } else {
+                    throw('OOTR version prior to 7.1.117 not implemented');
+                }
+                break;
+            default:
+                throw(`Unknown branch for version ${ootr_version.to_string()}`);
+        }
+    }
 
-    'Silver Rupee (Dodongos Cavern Staircase)':                 ['SilverRupee', true,  0x00D8, {'progressive': 5}],
-    'Silver Rupee (Ice Cavern Spinning Scythe)':                ['SilverRupee', true,  0x00D9, {'progressive': 5}],
-    'Silver Rupee (Ice Cavern Push Block)':                     ['SilverRupee', true,  0x00DA, {'progressive': 5}],
-    'Silver Rupee (Bottom of the Well Basement)':               ['SilverRupee', true,  0x00DB, {'progressive': 5}],
-    'Silver Rupee (Shadow Temple Scythe Shortcut)':             ['SilverRupee', true,  0x00DC, {'progressive': 5}],
-    'Silver Rupee (Shadow Temple Invisible Blades)':            ['SilverRupee', true,  0x00DD, {'progressive': 10}],
-    'Silver Rupee (Shadow Temple Huge Pit)':                    ['SilverRupee', true,  0x00DE, {'progressive': 5}],
-    'Silver Rupee (Shadow Temple Invisible Spikes)':            ['SilverRupee', true,  0x00DF, {'progressive': 10}],
-    'Silver Rupee (Gerudo Training Ground Slopes)':             ['SilverRupee', true,  0x00E0, {'progressive': 5}],
-    'Silver Rupee (Gerudo Training Ground Lava)':               ['SilverRupee', true,  0x00E1, {'progressive': 6}],
-    'Silver Rupee (Gerudo Training Ground Water)':              ['SilverRupee', true,  0x00E2, {'progressive': 5}],
-    'Silver Rupee (Spirit Temple Child Early Torches)':         ['SilverRupee', true,  0x00E3, {'progressive': 5}],
-    'Silver Rupee (Spirit Temple Adult Boulders)':              ['SilverRupee', true,  0x00E4, {'progressive': 5}],
-    'Silver Rupee (Spirit Temple Lobby and Lower Adult)':       ['SilverRupee', true,  0x00E5, {'progressive': 5}],
-    'Silver Rupee (Spirit Temple Sun Block)':                   ['SilverRupee', true,  0x00E6, {'progressive': 5}],
-    'Silver Rupee (Spirit Temple Adult Climb)':                 ['SilverRupee', true,  0x00E7, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Spirit Trial)':                ['SilverRupee', true,  0x00E8, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Light Trial)':                 ['SilverRupee', true,  0x00E9, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Fire Trial)':                  ['SilverRupee', true,  0x00EA, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Shadow Trial)':                ['SilverRupee', true,  0x00EB, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Water Trial)':                 ['SilverRupee', true,  0x00EC, {'progressive': 5}],
-    'Silver Rupee (Ganons Castle Forest Trial)':                ['SilverRupee', true,  0x00ED, {'progressive': 5}],
-
-    'Silver Rupee Pouch (Dodongos Cavern Staircase)':           ['SilverRupee', true,  0x00EE, {'alias': ['Silver Rupee (Dodongos Cavern Staircase)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ice Cavern Spinning Scythe)':          ['SilverRupee', true,  0x00EF, {'alias': ['Silver Rupee (Ice Cavern Spinning Scythe)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ice Cavern Push Block)':               ['SilverRupee', true,  0x00F0, {'alias': ['Silver Rupee (Ice Cavern Push Block)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Bottom of the Well Basement)':         ['SilverRupee', true,  0x00F1, {'alias': ['Silver Rupee (Bottom of the Well Basement)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Shadow Temple Scythe Shortcut)':       ['SilverRupee', true,  0x00F2, {'alias': ['Silver Rupee (Shadow Temple Scythe Shortcut)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Shadow Temple Invisible Blades)':      ['SilverRupee', true,  0x00F3, {'alias': ['Silver Rupee (Shadow Temple Invisible Blades)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Shadow Temple Huge Pit)':              ['SilverRupee', true,  0x00F4, {'alias': ['Silver Rupee (Shadow Temple Huge Pit)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Shadow Temple Invisible Spikes)':      ['SilverRupee', true,  0x00F5, {'alias': ['Silver Rupee (Shadow Temple Invisible Spikes)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Gerudo Training Ground Slopes)':       ['SilverRupee', true,  0x00F6, {'alias': ['Silver Rupee (Gerudo Training Ground Slopes)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Gerudo Training Ground Lava)':         ['SilverRupee', true,  0x00F7, {'alias': ['Silver Rupee (Gerudo Training Ground Lava)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Gerudo Training Ground Water)':        ['SilverRupee', true,  0x00F8, {'alias': ['Silver Rupee (Gerudo Training Ground Water)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Spirit Temple Child Early Torches)':   ['SilverRupee', true,  0x00F9, {'alias': ['Silver Rupee (Spirit Temple Child Early Torches)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Spirit Temple Adult Boulders)':        ['SilverRupee', true,  0x00FA, {'alias': ['Silver Rupee (Spirit Temple Adult Boulders)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Spirit Temple Lobby and Lower Adult)': ['SilverRupee', true,  0x00FB, {'alias': ['Silver Rupee (Spirit Temple Lobby and Lower Adult)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Spirit Temple Sun Block)':             ['SilverRupee', true,  0x00FC, {'alias': ['Silver Rupee (Spirit Temple Sun Block)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Spirit Temple Adult Climb)':           ['SilverRupee', true,  0x00FD, {'alias': ['Silver Rupee (Spirit Temple Adult Climb)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Spirit Trial)':          ['SilverRupee', true,  0x00FE, {'alias': ['Silver Rupee (Ganons Castle Spirit Trial)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Light Trial)':           ['SilverRupee', true,  0x00FF, {'alias': ['Silver Rupee (Ganons Castle Light Trial)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Fire Trial)':            ['SilverRupee', true,  0x0100, {'alias': ['Silver Rupee (Ganons Castle Fire Trial)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Shadow Trial)':          ['SilverRupee', true,  0x0101, {'alias': ['Silver Rupee (Ganons Castle Shadow Trial)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Water Trial)':           ['SilverRupee', true,  0x0102, {'alias': ['Silver Rupee (Ganons Castle Water Trial)', 10], 'progressive': 1}],
-    'Silver Rupee Pouch (Ganons Castle Forest Trial)':          ['SilverRupee', true,  0x0103, {'alias': ['Silver Rupee (Ganons Castle Forest Trial)', 10], 'progressive': 1}],
-
-    'Ocarina A Button':                                         ['Item',     true,  0x0104, {'ocarina_button': true}],
-    'Ocarina C up Button':                                      ['Item',     true,  0x0105, {'ocarina_button': true}],
-    'Ocarina C down Button':                                    ['Item',     true,  0x0106, {'ocarina_button': true}],
-    'Ocarina C left Button':                                    ['Item',     true,  0x0107, {'ocarina_button': true}],
-    'Ocarina C right Button':                                   ['Item',     true,  0x0108, {'ocarina_button': true}],
-
-    // Event items otherwise generated by generic event logic
-    // can be defined here to enforce their appearance in playthroughs.
-    'Water Temple Clear':               ['Event',    true,  null, null],
-    'Forest Trial Clear':               ['Event',    true,  null, null],
-    'Fire Trial Clear':                 ['Event',    true,  null, null],
-    'Water Trial Clear':                ['Event',    true,  null, null],
-    'Shadow Trial Clear':               ['Event',    true,  null, null],
-    'Spirit Trial Clear':               ['Event',    true,  null, null],
-    'Light Trial Clear':                ['Event',    true,  null, null],
-    'Epona':                            ['Event',    true,  null, null],
-
-    'Deku Stick Drop':                  ['Drop',     true,  null, null],
-    'Deku Nut Drop':                    ['Drop',     true,  null, null],
-    'Blue Fire':                        ['Drop',     true,  null, null],
-    'Fairy':                            ['Drop',     true,  null, null],
-    'Fish':                             ['Drop',     true,  null, null],
-    'Bugs':                             ['Drop',     true,  null, null],
-    'Big Poe':                          ['Drop',     true,  null, null],
-    'Bombchu Drop':                     ['Drop',     true,  null, null],
-    'Deku Shield Drop':                 ['Drop',     true,  null, null],
-
-    // Consumable refills defined mostly to placate 'starting with' options
-    'Arrows':                           ['Refill',   null,  null, null],
-    'Bombs':                            ['Refill',   null,  null, null],
-    'Deku Seeds':                       ['Refill',   null,  null, null],
-    'Deku Sticks':                      ['Refill',   null,  null, null],
-    'Deku Nuts':                        ['Refill',   null,  null, null],
-    'Rupees':                           ['Refill',   null,  null, null],
-
-    'Minuet of Forest':                 ['Song',     true,  0x00BB,
-                                            {
-                                                'text_id': 0x73,
-                                                'song_id': 0x02,
-                                                'item_id': 0x5A,
-                                            }],
-    'Bolero of Fire':                   ['Song',     true,  0x00BC,
-                                            {
-                                                'text_id': 0x74,
-                                                'song_id': 0x03,
-                                                'item_id': 0x5B,
-                                            }],
-    'Serenade of Water':                ['Song',     true,  0x00BD,
-                                            {
-                                                'text_id': 0x75,
-                                                'song_id': 0x04,
-                                                'item_id': 0x5C,
-                                            }],
-    'Requiem of Spirit':                ['Song',     true,  0x00BE,
-                                            {
-                                                'text_id': 0x76,
-                                                'song_id': 0x05,
-                                                'item_id': 0x5D,
-                                            }],
-    'Nocturne of Shadow':               ['Song',     true,  0x00BF,
-                                            {
-                                                'text_id': 0x77,
-                                                'song_id': 0x06,
-                                                'item_id': 0x5E,
-                                            }],
-    'Prelude of Light':                 ['Song',     true,  0x00C0,
-                                            {
-                                                'text_id': 0x78,
-                                                'song_id': 0x07,
-                                                'item_id': 0x5F,
-                                            }],
-    'Zeldas Lullaby':                   ['Song',     true,  0x00C1,
-                                            {
-                                                'text_id': 0xD4,
-                                                'song_id': 0x0A,
-                                                'item_id': 0x60,
-                                            }],
-    'Eponas Song':                      ['Song',     true,  0x00C2,
-                                            {
-                                                'text_id': 0xD2,
-                                                'song_id': 0x09,
-                                                'item_id': 0x61,
-                                            }],
-    'Sarias Song':                      ['Song',     true,  0x00C3,
-                                            {
-                                                'text_id': 0xD1,
-                                                'song_id': 0x08,
-                                                'item_id': 0x62,
-                                            }],
-    'Suns Song':                        ['Song',     true,  0x00C4,
-                                            {
-                                                'text_id': 0xD3,
-                                                'song_id': 0x0B,
-                                                'item_id': 0x63,
-                                            }],
-    'Song of Time':                     ['Song',     true,  0x00C5,
-                                            {
-                                                'text_id': 0xD5,
-                                                'song_id': 0x0C,
-                                                'item_id': 0x64,
-                                            }],
-    'Song of Storms':                   ['Song',     true,  0x00C6,
-                                            {
-                                                'text_id': 0xD6,
-                                                'song_id': 0x0D,
-                                                'item_id': 0x65,
-                                            }],
-
-    'Buy Deku Nut (5)':                 ['Shop',     true,  0x00, {'object': 0x00BB, 'price': 15}],
-    'Buy Arrows (30)':                  ['Shop',     false, 0x01, {'object': 0x00D8, 'price': 60}],
-    'Buy Arrows (50)':                  ['Shop',     false, 0x02, {'object': 0x00D8, 'price': 90}],
-    'Buy Bombs (5) for 25 Rupees':      ['Shop',     false, 0x03, {'object': 0x00CE, 'price': 25}],
-    'Buy Deku Nut (10)':                ['Shop',     true,  0x04, {'object': 0x00BB, 'price': 30}],
-    'Buy Deku Stick (1)':               ['Shop',     true,  0x05, {'object': 0x00C7, 'price': 10}],
-    'Buy Bombs (10)':                   ['Shop',     false, 0x06, {'object': 0x00CE, 'price': 50}],
-    'Buy Fish':                         ['Shop',     true,  0x07, {'object': 0x00F4, 'price': 200}],
-    'Buy Red Potion for 30 Rupees':     ['Shop',     false, 0x08, {'object': 0x00EB, 'price': 30}],
-    'Buy Green Potion':                 ['Shop',     false, 0x09, {'object': 0x00EB, 'price': 30}],
-    'Buy Blue Potion':                  ['Shop',     false, 0x0A, {'object': 0x00EB, 'price': 100}],
-    'Buy Hylian Shield':                ['Shop',     true,  0x0C, {'object': 0x00DC, 'price': 80}],
-    'Buy Deku Shield':                  ['Shop',     true,  0x0D, {'object': 0x00CB, 'price': 40}],
-    'Buy Goron Tunic':                  ['Shop',     true,  0x0E, {'object': 0x00F2, 'price': 200}],
-    'Buy Zora Tunic':                   ['Shop',     true,  0x0F, {'object': 0x00F2, 'price': 300}],
-    'Buy Heart':                        ['Shop',     false, 0x10, {'object': 0x00B7, 'price': 10}],
-    'Buy Bombchu (10)':                 ['Shop',     true,  0x15, {'object': 0x00D9, 'price': 99}],
-    'Buy Bombchu (20)':                 ['Shop',     true,  0x16, {'object': 0x00D9, 'price': 180}],
-    'Buy Bombchu (5)':                  ['Shop',     true,  0x18, {'object': 0x00D9, 'price': 60}],
-    'Buy Deku Seeds (30)':              ['Shop',     false, 0x1D, {'object': 0x0119, 'price': 30}],
-    'Sold Out':                         ['Shop',     false, 0x26, {'object': 0x0148}],
-    'Buy Blue Fire':                    ['Shop',     true,  0x27, {'object': 0x0173, 'price': 300}],
-    'Buy Bottle Bug':                   ['Shop',     true,  0x28, {'object': 0x0174, 'price': 50}],
-    'Buy Poe':                          ['Shop',     false, 0x2A, {'object': 0x0176, 'price': 30}],
-    'Buy Fairy\'s Spirit':              ['Shop',     true,  0x2B, {'object': 0x0177, 'price': 50}],
-    'Buy Arrows (10)':                  ['Shop',     false, 0x2C, {'object': 0x00D8, 'price': 20}],
-    'Buy Bombs (20)':                   ['Shop',     false, 0x2D, {'object': 0x00CE, 'price': 80}],
-    'Buy Bombs (30)':                   ['Shop',     false, 0x2E, {'object': 0x00CE, 'price': 120}],
-    'Buy Bombs (5) for 35 Rupees':      ['Shop',     false, 0x2F, {'object': 0x00CE, 'price': 35}],
-    'Buy Red Potion for 40 Rupees':     ['Shop',     false, 0x30, {'object': 0x00EB, 'price': 40}],
-    'Buy Red Potion for 50 Rupees':     ['Shop',     false, 0x31, {'object': 0x00EB, 'price': 50}],
-
-    'Kokiri Emerald':                   ['DungeonReward',    true,  null,
-                                            {
-                                                'stone':      true,
-                                                'addr2_data': 0x80,
-                                                'bit_mask':   0x00040000,
-                                                'item_id':    0x6C,
-                                                'actor_type': 0x13,
-                                                'object_id':  0x00AD,
-                                            }],
-    'Goron Ruby':                       ['DungeonReward',    true,  null,
-                                            {
-                                                'stone':      true,
-                                                'addr2_data': 0x81,
-                                                'bit_mask':   0x00080000,
-                                                'item_id':    0x6D,
-                                                'actor_type': 0x14,
-                                                'object_id':  0x00AD,
-                                            }],
-    'Zora Sapphire':                    ['DungeonReward',    true,  null,
-                                            {
-                                                'stone':      true,
-                                                'addr2_data': 0x82,
-                                                'bit_mask':   0x00100000,
-                                                'item_id':    0x6E,
-                                                'actor_type': 0x15,
-                                                'object_id':  0x00AD,
-                                            }],
-    'Forest Medallion':                 ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x3E,
-                                                'bit_mask':   0x00000001,
-                                                'item_id':    0x66,
-                                                'actor_type': 0x0B,
-                                                'object_id':  0x00BA,
-                                            }],
-    'Fire Medallion':                   ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x3C,
-                                                'bit_mask':   0x00000002,
-                                                'item_id':    0x67,
-                                                'actor_type': 0x09,
-                                                'object_id':  0x00BA,
-                                            }],
-    'Water Medallion':                  ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x3D,
-                                                'bit_mask':   0x00000004,
-                                                'item_id':    0x68,
-                                                'actor_type': 0x0A,
-                                                'object_id':  0x00BA,
-                                            }],
-    'Spirit Medallion':                 ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x3F,
-                                                'bit_mask':   0x00000008,
-                                                'item_id':    0x69,
-                                                'actor_type': 0x0C,
-                                                'object_id':  0x00BA,
-                                            }],
-    'Shadow Medallion':                 ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x41,
-                                                'bit_mask':   0x00000010,
-                                                'item_id':    0x6A,
-                                                'actor_type': 0x0D,
-                                                'object_id':  0x00BA,
-                                            }],
-    'Light Medallion':                  ['DungeonReward',    true,  null,
-                                            {
-                                                'medallion':  true,
-                                                'addr2_data': 0x40,
-                                                'bit_mask':   0x00000020,
-                                                'item_id':    0x6B,
-                                                'actor_type': 0x0E,
-                                                'object_id':  0x00BA,
-                                            }],
-};
+    readItemList_7_1_117(file_cache: ExternalFileCache): void {
+        const itemlist: string[] = file_cache.files['ItemList.py'].split('\n').filter(Boolean);
+        
+        let parsing_items = false;
+        let parsed_lines: string = '{';
+        for (let line of itemlist) {
+            if (line.trim().startsWith('#')) {
+                continue;
+            } else if (parsing_items && line === '}') {
+                // end of item_table array, no need to parse rest of file
+                // as of 7.1.143 this is also the end of the file, but break just in case more is appended later
+                break;
+            }
+            if (parsing_items) {
+                // I wish these tables would be static json files...
+                let temp_line = replace_python_tuples(line).split('#')[0].trim()
+                    .replaceAll("'", '"')
+                    .replaceAll('\\"', "'")             // I thought there was a change a while back to get rid of apostrophes in internal names...
+                    .replaceAll(/0x[\da-fA-F]+/g, '0')  // JSON doesn't support hex
+                    .replaceAll(',]', ']')              // JSON doesn't support trailing commas
+                    .replaceAll('float["Inf"]', '65535')// convert from python infinity to a large number, infinity doesn't matter for search
+                    .replaceAll(/\bNone\b/g, 'null')    // convert from python None to null
+                    .replaceAll(/\bTrue\b/g, 'true')
+                    .replaceAll(/\bFalse\b/g, 'false');
+                if (temp_line.startsWith('}') && parsed_lines.slice(-1) === ',') {
+                    parsed_lines = parsed_lines.slice(0, -1); // songs and dungeon rewards have trailing commas on the last line of the special object
+                }
+                parsed_lines += temp_line;
+            }
+            // post python type hints file has a ':' for the type before the '=',
+            // otherwise the parts we want to parse are identical
+            if (line.split(':')[0].trim() === 'item_table' || line.split('=')[0].trim() === 'item_table') {
+                parsing_items = true;
+            }
+        }
+        if (parsed_lines.endsWith(',')) {
+            parsed_lines = parsed_lines.slice(0, -1);
+        }
+        parsed_lines += '}';
+        let python_entries: ItemTable = JSON.parse(parsed_lines);
+        this.item_table = python_entries;
+    }
+}

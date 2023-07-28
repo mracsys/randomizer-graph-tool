@@ -1,10 +1,10 @@
 import babel, { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
-import generate, { CodeGenerator } from '@babel/generator';
+import { CodeGenerator } from '@babel/generator';
 
 import WorldState from "./WorldState.js";
 import { Location } from "./Location.js";
 import Entrance from "./Entrance.js";
-import { ItemInfo, MakeEventItem } from "./Item.js";
+import { MakeEventItem } from "./Item.js";
 import { TimeOfDay } from "./Region.js";
 import { read_macro_json, replace_python_booleans } from "./Utils.js";
 import escape_name from "./RulesCommon.js";
@@ -44,41 +44,8 @@ const kwarg_defaults: kwargs = {
 
 const allowed_globals = { 'TimeOfDay': TimeOfDay };
 
-var escaped_items: {[escaped_name: string]: string} = {};
-Object.keys(ItemInfo.items).map((item) => {
-    let esc = escape_name(item);
-    escaped_items[esc] = item;
-});
-
-var event_name = new RegExp(/\w+/g);
-
-var rule_aliases: {
-    [rule: string]: {
-        args: RegExp[],
-        repl: string,
-    }
-} = {};
-var nonaliases: string[] = [];
-
 function getProperty<T>(obj: DynamicProps<T>, key: string): T {
     return obj[key];
-}
-
-function load_aliases(file_cache: ExternalFileCache) {
-    let j = read_macro_json('LogicHelpers.json', file_cache);
-    Object.keys(j).map((s) => {
-        let rule: string = s;
-        let args: RegExp[] = [];
-        let temp_args: string;
-        if (s.includes('(')) {
-            [rule, temp_args] = s.substring(0,s.length-1).split('(')
-            temp_args.split(',').map((arg) => {
-                args.push(new RegExp('\\b' + arg.trim() + '\\b', 'g'));
-            });
-        }
-        rule_aliases[rule] = { args: args, repl: replace_python_booleans(j[s]) };
-    });
-    nonaliases = Object.keys(escaped_items).filter(x => !(Object.keys(rule_aliases).includes(x)));
 }
 
 class RuleParser {
@@ -98,6 +65,15 @@ class RuleParser {
     public original_rule: string;
     public debug: boolean;
     public logicVisitor: babel.PluginItem[];
+    private escaped_items: {[escaped_name: string]: string};
+    private event_name: RegExp;
+    private rule_aliases: {
+        [rule: string]: {
+            args: RegExp[],
+            repl: string,
+        }
+    };
+    private nonaliases: string[];
 
     constructor(world: World, ootr_version: OotrVersion, debug: boolean = true) {
         this.world = world;
@@ -105,15 +81,26 @@ class RuleParser {
         this.events = new Set();
         this.replaced_rules = {};
         this.delayed_rules = [];
-        if (Object.keys(rule_aliases).length === 0) {
-            load_aliases(this.world.parent_graph.file_cache);
-        }
         this.rule_cache = {};
         this.subrule_cache = {};
         this.subrule_ast_cache = {};
         this.current_spot = null;
         this.original_rule = '';
         this.debug = debug;
+
+        // global variables in python OOTR, no need here,
+        // and we need to refactor ItemInfo to reference
+        // the parent plugin anyway
+        this.escaped_items = {};
+        Object.keys(world.parent_graph.ItemInfo.items).map((item) => {
+            let esc = escape_name(item);
+            this.escaped_items[esc] = item;
+        });
+        this.event_name = new RegExp(/\w+/g);
+        this.rule_aliases = {};
+        this.nonaliases = [];
+        this.load_aliases(this.world.parent_graph.file_cache);
+
         let self = this;
         this.logicVisitor = [function ootrLogicPlugin({ types: t }): PluginObj {
             return {
@@ -157,6 +144,23 @@ class RuleParser {
                 }
             };
         }];
+    }
+
+    load_aliases(file_cache: ExternalFileCache) {
+        let j = read_macro_json('LogicHelpers.json', file_cache);
+        Object.keys(j).map((s) => {
+            let rule: string = s;
+            let args: RegExp[] = [];
+            let temp_args: string;
+            if (s.includes('(')) {
+                [rule, temp_args] = s.substring(0,s.length-1).split('(')
+                temp_args.split(',').map((arg) => {
+                    args.push(new RegExp('\\b' + arg.trim() + '\\b', 'g'));
+                });
+            }
+            this.rule_aliases[rule] = { args: args, repl: replace_python_booleans(j[s]) };
+        });
+        this.nonaliases = Object.keys(this.escaped_items).filter(x => !(Object.keys(this.rule_aliases).includes(x)));
     }
 
     visit(self: RuleParser, rule_string: string): string {
@@ -216,9 +220,9 @@ class RuleParser {
                 throw `Parse error: attempted to call non-callable RuleParser property: ${path.node.name}`;
             }
             //self[path.node.name](self, path)
-        } else if (path.node.name in rule_aliases) {
-            let args = rule_aliases[path.node.name]['args'];
-            let repl = rule_aliases[path.node.name]['repl'];
+        } else if (path.node.name in self.rule_aliases) {
+            let args = self.rule_aliases[path.node.name]['args'];
+            let repl = self.rule_aliases[path.node.name]['repl'];
             if (args.length > 0) {
                 throw `non-zero args required for ${path.node.name}`;
             }
@@ -231,13 +235,13 @@ class RuleParser {
             } else {
                 throw(`Error parsing rule alias: Transform result is null for ${path.node.name}`);
             }
-        } else if (path.node.name in escaped_items) {
+        } else if (path.node.name in self.escaped_items) {
             path.replaceWith(
                 t.callExpression(
                     t.memberExpression(
                         t.identifier('worldState'),
                         t.identifier('has')),
-                    [t.stringLiteral(escaped_items[path.node.name])]
+                    [t.stringLiteral(self.escaped_items[path.node.name])]
                 )
             );
             path.skip();
@@ -300,7 +304,7 @@ class RuleParser {
         } else if (path.node.name in kwarg_defaults || path.node.name in allowed_globals) {
             // do nothing
             return;
-        } else if (event_name[Symbol.match](path.node.name)) {
+        } else if (self.event_name[Symbol.match](path.node.name)) {
             self.events.add(path.node.name.replaceAll('_', ' '));
             path.replaceWith(
                 t.callExpression(
@@ -376,11 +380,11 @@ class RuleParser {
             }
         }
 
-        if (item.value in escaped_items) {
-            item = t.stringLiteral(escaped_items[item.value]);
+        if (item.value in self.escaped_items) {
+            item = t.stringLiteral(self.escaped_items[item.value]);
         }
 
-        if (!(Object.keys(ItemInfo.items).includes(item.value))) {
+        if (!(Object.keys(self.world.parent_graph.ItemInfo.items).includes(item.value))) {
             self.events.add(item.value);
         }
 
@@ -409,9 +413,9 @@ class RuleParser {
                 throw `Parse error: attempted to call non-callable RuleParser property: ${path.node.callee.name}`;
             }
             //self[path.node.callee.name](self, path);
-        } else if (path.node.callee.name in rule_aliases) {
-            let args = rule_aliases[path.node.callee.name]['args'];
-            let repl = rule_aliases[path.node.callee.name]['repl'];
+        } else if (path.node.callee.name in self.rule_aliases) {
+            let args = self.rule_aliases[path.node.callee.name]['args'];
+            let repl = self.rule_aliases[path.node.callee.name]['repl'];
             if (args.length !== path.node.arguments.length) {
                 throw `Parse error: expected ${args.length} args for ${path}, not ${path.node.arguments.length}`;
             }
@@ -468,10 +472,10 @@ class RuleParser {
                                 throw(`Unhandled world settings property: ${child.name}`);
                             }
                             //arg = babel.parse(self.world.settings[child.name].toString()).program.body[0].expression;
-                        } else if (child.name in rule_aliases) {
+                        } else if (child.name in self.rule_aliases) {
                             arg = self.visit_AST(self, child);
-                        } else if (child.name in escaped_items) {
-                            arg = t.stringLiteral(escaped_items[child.name]);
+                        } else if (child.name in self.escaped_items) {
+                            arg = t.stringLiteral(self.escaped_items[child.name]);
                         } else {
                             arg = t.stringLiteral(child.name.replaceAll('_', ' '));
                         }
@@ -526,8 +530,8 @@ class RuleParser {
 
     visit_Compare(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.BinaryExpression>) {
         function escape_or_string(n: babel.types.Node, t: typeof babel.types) {
-            if (t.isIdentifier(n) && n.name in escaped_items) {
-                return t.stringLiteral(escaped_items[n.name]);
+            if (t.isIdentifier(n) && n.name in self.escaped_items) {
+                return t.stringLiteral(self.escaped_items[n.name]);
             } else if (!t.isStringLiteral(n)) {
                 return self.visit_AST(self, n);
             }
@@ -611,8 +615,8 @@ class RuleParser {
                 traverse_logic(n.right, t, op);
             } else if (t.isStringLiteral(n)) {
                 item_set.add(n.value);
-            } else if (t.isIdentifier(n) && !!n.name && nonaliases.includes(n.name)) {
-                item_set.add(escaped_items[n.name]);
+            } else if (t.isIdentifier(n) && !!n.name && self.nonaliases.includes(n.name)) {
+                item_set.add(self.escaped_items[n.name]);
             } else {
                 let elt = self.visit_AST(self, n);
                 if (t.isBooleanLiteral(elt)) {

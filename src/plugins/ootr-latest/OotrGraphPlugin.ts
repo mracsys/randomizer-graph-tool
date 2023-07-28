@@ -2,14 +2,15 @@ import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin
 
 import SettingsList from './SettingsList.js';
 import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList } from "./World.js";
-import entrance_shuffle_table from './EntranceList.js';
-import { business_scrub_prices } from './LocationList.js';
-import { Item, ItemFactory } from "./Item.js";
+import EntranceList from './EntranceList.js';
+import { Item, ItemFactory, ItemInfo, _ItemInfo } from "./Item.js";
 import OotrVersion from './OotrVersion.js';
 import OotrFileCache from './OotrFileCache.js';
 import Entrance from './Entrance.js';
 import { Location } from './Location.js';
 import Search from './Search.js';
+import LocationList from './LocationList.js';
+import ItemList from './ItemList.js';
 
 class OotrGraphPlugin extends GraphPlugin {
     private version_list = [
@@ -23,6 +24,10 @@ class OotrGraphPlugin extends GraphPlugin {
     public worlds: World[];
     public search: Search;
     public settings_list: SettingsList;
+    public location_list: LocationList;
+    public entrance_list: EntranceList;
+    public item_list: ItemList;
+    public ItemInfo: ItemInfo;
 
     constructor(
         public user_overrides: any,
@@ -33,6 +38,42 @@ class OotrGraphPlugin extends GraphPlugin {
         super();
         this.worlds = [];
         this.settings_list = new SettingsList(ootr_version, file_cache);
+        this.location_list = new LocationList(ootr_version, file_cache);
+        this.entrance_list = new EntranceList(ootr_version, file_cache);
+        this.item_list = new ItemList(ootr_version, file_cache);
+
+        // In python OOTR this is a global variable, but we don't have
+        // a static item list file to reference, so initialize as a
+        // plugin property instead.
+        this.ItemInfo = {
+            items: {},
+            events: {},
+            bottles: new Set(),
+            medallions: new Set(),
+            stones: new Set(),
+            ocarina_buttons: new Set(),
+            junk: {},
+        };
+
+        Object.keys(this.item_list.item_table).map((item_name) => {
+            this.ItemInfo.items[item_name] = new _ItemInfo(item_name, this.item_list.item_table);
+            if (this.ItemInfo.items[item_name].bottle) {
+                this.ItemInfo.bottles.add(item_name);
+            }
+            if (this.ItemInfo.items[item_name].medallion) {
+                this.ItemInfo.medallions.add(item_name);
+            }
+            if (this.ItemInfo.items[item_name].stone) {
+                this.ItemInfo.stones.add(item_name);
+            }
+            if (this.ItemInfo.items[item_name].ocarina_button) {
+                this.ItemInfo.ocarina_buttons.add(item_name);
+            }
+            if (this.ItemInfo.items[item_name].junk !== null) {
+                this.ItemInfo.junk[item_name] = this.ItemInfo.items[item_name].junk;
+            }
+        });
+
         if (!!user_overrides) {
             this.settings_list.override_settings(user_overrides);
         }
@@ -175,7 +216,7 @@ class OotrGraphPlugin extends GraphPlugin {
         }
 
         for (let world of this.worlds) {
-            for (let [type, forward_entry, return_entry] of entrance_shuffle_table) {
+            for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let forward_entrance = world.get_entrance(forward_entry[0]);
                 forward_entrance.type = type;
                 forward_entrance.primary = true;
@@ -238,9 +279,9 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (world.settings.shuffle_scrubs === 'off' || !(['Piece of Heart', 'Deku Stick Capacity', 'Deku Nut Capacity'].includes(loc.vanilla_item.name))) {
                         world.push_vanilla_item(loc);
                         if (loc.item === null) throw `Error assigning vanilla scrub item`;
-                        loc.item.price = business_scrub_prices[loc.vanilla_item.name];
+                        loc.item.price = this.location_list.business_scrub_prices[loc.vanilla_item.name];
                     }
-                    loc.price = business_scrub_prices[loc.vanilla_item.name];
+                    loc.price = this.location_list.business_scrub_prices[loc.vanilla_item.name];
                 } else if (loc.vanilla_item.name === 'Gold Skulltula Token') {
                     if (world.settings.tokensanity === 'off' ||
                         (world.settings.tokensanity === 'dungeons' && !(loc.dungeon())) ||

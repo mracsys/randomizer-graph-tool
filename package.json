@@ -38,7 +38,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "clean": "rm -rf ./lib",
     "build": "npm run clean && npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc -p ./configs/tsconfig.esm.json && mv lib/esm/scripts/debug.js lib/esm/scripts/debug.mjs",
+    "build:esm": "tsc -p ./configs/tsconfig.esm.json",
     "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
     "semantic-release": "semantic-release",
     "prepack": "npm run build"
