@@ -41,9 +41,11 @@
   "scripts": {
     "test": "jest",
     "clean": "rm -rf ./lib",
+    "debug": "npm run clean && npm run build:dev",
     "build": "npm run clean && npm run build:esm && npm run build:cjs",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",
     "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
+    "build:dev": "tsc -p ./configs/tsconfig.dev.json",
     "semantic-release": "semantic-release",
     "prepack": "npm run build"
   },

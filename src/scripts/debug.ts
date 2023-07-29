@@ -1,35 +1,15 @@
-import { hrtime } from 'node:process';
 import { spawnSync, SpawnSyncReturns } from 'node:child_process';
 import { readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import WorldGraphFactory from '..//WorldGraph.js';
 import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
 import { GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
-import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
 import { Location } from '../plugins/ootr-latest/Location.js';
 
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-//test_random_settings(1000, true);
-benchmark();
-
-async function benchmark() {
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
-    let start = hrtime.bigint();
-    let graph = await WorldGraphFactory('ootr', {}, '7.1.143', global_cache);
-    let end = hrtime.bigint();
-
-    console.log(`Graph creation time: ${Number(end - start) / 1000000000.0}`);
-
-    benchmark_graph(graph);
-
-    start = hrtime.bigint();
-    graph.collect_locations();
-    end = hrtime.bigint();
-
-    console.log(`Graph search time: ${Number(end - start) / 1000000000.0}`);
-}
+test_random_settings(1000, true);
 
 async function test_spoiler(convert: boolean = false) {
     let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', 'seed143.json'));
@@ -290,24 +270,4 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     console.log('Finished sphere comparison');
 
     return success;
-}
-
-function benchmark_graph(plugin: GraphPlugin) {
-    let graph = <OotrGraphPlugin>plugin;
-    let child_access, adult_access;
-
-    const start = hrtime.bigint();
-    for (const l of graph.worlds[0].get_locations()) {
-        if (l.world === null) throw `World not defined for location ${l.name}`;
-        child_access = l.access_rule(l.world.state, {spot: l, age: 'child'});
-        adult_access = l.access_rule(l.world.state, {spot: l, age: 'adult'});
-    }
-    for (const e of graph.worlds[0].get_entrances()) {
-        if (e.world === null) throw `World not defined for entrance ${e.name}`;
-        child_access = e.access_rule(e.world.state, {spot: e, age: 'child'});
-        adult_access = e.access_rule(e.world.state, {spot: e, age: 'adult'});
-    }
-    const end = hrtime.bigint();
-
-    console.log(`Logic rule pass time: ${Number(end - start) / 1000000000.0}`);
 }
