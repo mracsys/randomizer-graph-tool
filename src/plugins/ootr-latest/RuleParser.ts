@@ -247,6 +247,14 @@ export default class RuleParser {
             );
             path.skip();
         } else if (Object.getOwnPropertyNames(self.world).includes(path.node.name)) {
+            let new_node = t.memberExpression(
+                t.memberExpression(
+                    t.identifier('worldState'),
+                    t.identifier('world')
+                ),
+                t.identifier(path.node.name)
+            );
+            /*
             let dynamic_class: DynamicProps<any> = self.world;
             let world_parsed = getProperty(dynamic_class, path.node.name);
             //let world_parsed = self.world[path.node.name];
@@ -270,11 +278,21 @@ export default class RuleParser {
                     break;
                 default:
                     throw 'Unhandled world property type: ' + typeof(world_parsed);
-            }
+            }*/
             path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(self.world.settings).includes(path.node.name)) {
-            let worldsettings_parsed = self.world.settings[path.node.name];
+            let new_node = t.memberExpression(
+                t.memberExpression(
+                    t.memberExpression(
+                        t.identifier('worldState'),
+                        t.identifier('world')
+                    ),
+                    t.identifier('settings')
+                ),
+                t.identifier(path.node.name)
+            );
+            /*let worldsettings_parsed = self.world.settings[path.node.name];
             let new_node;
             switch(typeof(worldsettings_parsed)) {
                 case 'string':
@@ -295,7 +313,7 @@ export default class RuleParser {
                     break;
                 default:
                     throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
-            }
+            }*/
             path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(WorldState.prototype).includes(path.node.name)) {
@@ -452,7 +470,14 @@ export default class RuleParser {
                     let arg: babel.types.Expression;
                     if (t.isIdentifier(child)) {
                         if (Object.getOwnPropertyNames(self.world).includes(child.name)) {
-                            let dynamic_class: DynamicProps<any> = self.world;
+                            arg = t.memberExpression(
+                                t.memberExpression(
+                                    t.identifier('worldState'),
+                                    t.identifier('world')
+                                ),
+                                t.identifier(child.name)
+                            );
+                            /*let dynamic_class: DynamicProps<any> = self.world;
                             let world_parsed = getProperty(dynamic_class, child.name).toString();
                             world_parsed = babel.parse(world_parsed);
                             if (!!world_parsed) {
@@ -460,10 +485,20 @@ export default class RuleParser {
                                 arg = b.expression;
                             } else {
                                 throw(`Unhandled world property: ${child.name}`);
-                            }
+                            }*/
                             //arg = babel.parse(self.world[child.name].toString()).program.body[0].expression;
                         } else if (Object.getOwnPropertyNames(self.world.settings).includes(child.name)) {
-                            let dynamic_class: DynamicProps<any> = self.world.settings;
+                            arg = t.memberExpression(
+                                t.memberExpression(
+                                    t.memberExpression(
+                                        t.identifier('worldState'),
+                                        t.identifier('world')
+                                    ),
+                                    t.identifier('settings')
+                                ),
+                                t.identifier(child.name)
+                            );
+                            /*let dynamic_class: DynamicProps<any> = self.world.settings;
                             let world_parsed = getProperty(dynamic_class, child.name).toString();
                             world_parsed = babel.parse(world_parsed);
                             if (!!world_parsed) {
@@ -471,7 +506,7 @@ export default class RuleParser {
                                 arg = b.expression;
                             } else {
                                 throw(`Unhandled world settings property: ${child.name}`);
-                            }
+                            }*/
                             //arg = babel.parse(self.world.settings[child.name].toString()).program.body[0].expression;
                         } else if (child.name in self.rule_aliases) {
                             arg = self.visit_AST(self, child);
@@ -546,9 +581,6 @@ export default class RuleParser {
             return;
         }
 
-        // Python splits multiple comparisons from one expression
-        // into multiple node.ops and node.comparators properties.
-        // JS nests BinaryExpressions from left to right.
         if (t.isIdentifier(path.node.left) && path.node.operator === '===' && t.isIdentifier(path.node.right)) {
             if (!Object.getOwnPropertyNames(self.world).includes(path.node.left.name) &&
                 !Object.getOwnPropertyNames(self.world).includes(path.node.right.name) &&
@@ -560,6 +592,9 @@ export default class RuleParser {
             }
         }
 
+        // Python splits multiple comparisons from one expression
+        // into multiple node.ops and node.comparators properties.
+        // JS nests BinaryExpressions from left to right.
         if (t.isBinaryExpression(path.node.left)) {
             path.node.left = self.visit_AST(self, path.node.left);
         } else {
@@ -582,20 +617,20 @@ export default class RuleParser {
             return;
         }
 
-        if (self.isLiteral(self, t, path.node.right) && self.isLiteral(self, t, path.node.left)) {
+        /*if (self.isLiteral(self, t, path.node.right) && self.isLiteral(self, t, path.node.left)) {
             let res = eval(new CodeGenerator(path.node, {}, '').generate().code);
             path.replaceWith(t.booleanLiteral(res));
             path.skip();
-        }
+        }*/
         path.skip();
     }
 
     visit_UnaryOp(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.UnaryExpression>) {
         path.node.argument = self.visit_AST(self, path.node.argument);
-        if (self.isLiteral(self, t, path.node.argument)) {
+        /*if (self.isLiteral(self, t, path.node.argument)) {
             let res = eval(new CodeGenerator(path.node, {}, '').generate().code);
             path.replaceWith(t.booleanLiteral(res));
-        }
+        }*/
         path.skip();
     }
 

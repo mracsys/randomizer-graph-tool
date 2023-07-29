@@ -90,6 +90,18 @@ describe('visit_Call', () => {
         state.remove(poh);
         expect(logic_hearts(state, {})).toBeFalsy();
     });
+
+    it('runs macro referencing settings without compressing them', () => {
+        const rule = "can_play(Zeldas_Lullaby)";
+        let ocarina = ItemFactory('Ocarina', world)[0];
+        let lullaby = ItemFactory('Zeldas Lullaby', world)[0];
+        let can_play = parser.parse_rule(rule);
+        state.collect(ocarina);
+        state.collect(lullaby);
+        expect(can_play(state, {})).toBeTruthy();
+        world.settings.shuffle_individual_ocarina_notes = true;
+        expect(can_play(state, {})).toBeFalsy();
+    });
 });
 
 describe('visit_BoolOp', () => {
@@ -127,6 +139,17 @@ describe('visit_Compare', () => {
 
     it('parses world settings correctly', () => {
         expect(logic(state, {})).toBeTruthy();
+    });
+
+    it('compresses can_use string literals while preserving world settings', () => {
+        const rule = "can_use(Silver_Gauntlets)";
+        let strength = ItemFactory('Progressive Strength Upgrade', world)[0];
+        let can_use = parser.parse_rule(rule);
+        state.collect(strength);
+        state.collect(strength);
+        expect(can_use(state, {})).toBeFalsy();
+        expect(can_use(state, { age: 'child' })).toBeFalsy();
+        expect(can_use(state, { age: 'adult' })).toBeTruthy();
     });
 });
 

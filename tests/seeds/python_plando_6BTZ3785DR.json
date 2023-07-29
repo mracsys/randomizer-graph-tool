@@ -1,0 +1,1948 @@
+{
+    ":version": "7.1.143 f.LUM",
+    "file_hash": [
+        "Map",
+        "Boomerang",
+        "Saw",
+        "Slingshot",
+        "Mask of Truth"
+    ],
+    ":seed": "6BTZ3785DR",
+    ":settings_string": "BSA4BGBSWJAA3YCBAEBKLEASADWACANA4AQAASEA2VALAA3AAAJAESB2AP2DAC6AJLLV6WL7R9DADJECTL6CD3QCXPPNKMAAJQAAA653HSAC3BAEED4UBEA36U4D",
+    ":enable_distribution_file": true,
+    "settings": {
+        "show_seed_info": true,
+        "user_message": "RSL Script v2.5.7",
+        "world_count": 1,
+        "create_spoiler": true,
+        "randomize_settings": false,
+        "logic_rules": "glitchless",
+        "reachable_locations": "all",
+        "triforce_hunt": false,
+        "lacs_condition": "vanilla",
+        "bridge": "medallions",
+        "bridge_medallions": 4,
+        "trials_random": true,
+        "shuffle_ganon_bosskey": "dungeon",
+        "shuffle_bosskeys": "remove",
+        "shuffle_smallkeys": "regional",
+        "shuffle_tcgkeys": "regional",
+        "key_rings_choice": "choice",
+        "key_rings": [],
+        "keyring_give_bk": false,
+        "shuffle_silver_rupees": "vanilla",
+        "shuffle_mapcompass": "any_dungeon",
+        "enhance_map_compass": false,
+        "open_forest": "open",
+        "open_kakariko": "open",
+        "open_door_of_time": false,
+        "zora_fountain": "open",
+        "gerudo_fortress": "open",
+        "dungeon_shortcuts_choice": "choice",
+        "dungeon_shortcuts": [],
+        "starting_age": "random",
+        "mq_dungeons_mode": "count",
+        "mq_dungeons_count": 0,
+        "empty_dungeons_mode": "none",
+        "shuffle_interior_entrances": "simple",
+        "shuffle_hideout_entrances": false,
+        "shuffle_grotto_entrances": false,
+        "shuffle_dungeon_entrances": "off",
+        "shuffle_bosses": "off",
+        "shuffle_overworld_entrances": false,
+        "shuffle_gerudo_valley_river_exit": false,
+        "owl_drops": false,
+        "warp_songs": true,
+        "spawn_positions": [
+            "child",
+            "adult"
+        ],
+        "free_bombchu_drops": true,
+        "one_item_per_dungeon": false,
+        "shuffle_song_items": "any",
+        "shopsanity": "off",
+        "tokensanity": "dungeons",
+        "shuffle_scrubs": "low",
+        "shuffle_child_trade": [],
+        "shuffle_freestanding_items": "off",
+        "shuffle_pots": "off",
+        "shuffle_crates": "off",
+        "shuffle_cows": true,
+        "shuffle_beehives": false,
+        "shuffle_kokiri_sword": false,
+        "shuffle_ocarinas": true,
+        "shuffle_gerudo_card": true,
+        "shuffle_beans": false,
+        "shuffle_expensive_merchants": false,
+        "shuffle_frog_song_rupees": false,
+        "shuffle_individual_ocarina_notes": false,
+        "shuffle_loach_reward": "off",
+        "logic_no_night_tokens_without_suns_song": false,
+        "disabled_locations": [],
+        "allowed_tricks": [
+            "logic_fewer_tunic_requirements",
+            "logic_grottos_without_agony",
+            "logic_child_deadhand",
+            "logic_man_on_roof",
+            "logic_dc_jump",
+            "logic_rusted_switches",
+            "logic_windmill_poh",
+            "logic_crater_bean_poh_with_hovers",
+            "logic_forest_vines",
+            "logic_lens_botw",
+            "logic_lens_castle",
+            "logic_lens_gtg",
+            "logic_lens_shadow",
+            "logic_lens_spirit",
+            "logic_visible_collisions",
+            "logic_deku_b1_webs_with_bow",
+            "logic_lens_gtg_mq",
+            "logic_lens_jabu_mq",
+            "logic_lens_shadow_mq",
+            "logic_lens_spirit_mq",
+            "logic_lens_shadow_mq",
+            "logic_lens_shadow_mq_platform",
+            "logic_lens_shadow",
+            "logic_lens_shadow_platform",
+            "logic_lens_shadow_mq_dead_hand",
+            "logic_lens_bongo",
+            "logic_lens_castle_mq"
+        ],
+        "starting_items": {
+            "Minuet of Forest": 1,
+            "Eponas Song": 1
+        },
+        "start_with_consumables": false,
+        "start_with_rupees": false,
+        "starting_hearts": 3,
+        "no_escape_sequence": true,
+        "no_guard_stealth": true,
+        "no_epona_race": true,
+        "skip_some_minigame_phases": true,
+        "complete_mask_quest": true,
+        "useful_cutscenes": false,
+        "fast_chests": true,
+        "free_scarecrow": true,
+        "fast_bunny_hood": true,
+        "auto_equip_masks": false,
+        "plant_beans": false,
+        "chicken_count_random": true,
+        "big_poe_count_random": true,
+        "easier_fire_arrow_entry": false,
+        "ruto_already_f1_jabu": false,
+        "ocarina_songs": "off",
+        "correct_chest_appearances": "textures",
+        "minor_items_as_major_chest": false,
+        "invisible_chests": false,
+        "correct_potcrate_appearances": "textures_content",
+        "key_appearance_match_dungeon": false,
+        "clearer_hints": true,
+        "hints": "always",
+        "item_hints": [],
+        "hint_dist_user": {
+            "name": "chaos",
+            "gui_name": "Chaos!!!",
+            "description": "A completely randomized hint distribution with single copies",
+            "add_locations": [],
+            "remove_locations": [],
+            "add_items": [],
+            "remove_items": [],
+            "dungeons_woth_limit": 40,
+            "dungeons_barren_limit": 40,
+            "named_items_required": false,
+            "vague_named_items": false,
+            "use_default_goals": true,
+            "distribution": {
+                "trial": {
+                    "order": 1,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "always": {
+                    "order": 2,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 2
+                },
+                "dual_always": {
+                    "order": 3,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "entrance_always": {
+                    "order": 4,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "woth": {
+                    "order": 5,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "goal": {
+                    "order": 6,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "barren": {
+                    "order": 7,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "item": {
+                    "order": 8,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "sometimes": {
+                    "order": 9,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "dual": {
+                    "order": 10,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "song": {
+                    "order": 11,
+                    "weight": 0,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "overworld": {
+                    "order": 12,
+                    "weight": 0,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "dungeon": {
+                    "order": 13,
+                    "weight": 0,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "entrance": {
+                    "order": 14,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "random": {
+                    "order": 15,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "junk": {
+                    "order": 16,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "named-item": {
+                    "order": 17,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                },
+                "important_check": {
+                    "order": 18,
+                    "weight": 1,
+                    "fixed": 0,
+                    "copies": 1
+                }
+            },
+            "misc_hint_items": {
+                "dampe_diary": "Light Arrows"
+            }
+        },
+        "misc_hints": [
+            "altar",
+            "dampe_diary",
+            "ganondorf",
+            "warp_songs_and_owls",
+            "mask_shop",
+            "unique_merchants"
+        ],
+        "text_shuffle": "none",
+        "damage_multiplier": "normal",
+        "deadly_bonks": "none",
+        "no_collectible_hearts": false,
+        "starting_tod": "sunrise",
+        "blue_fire_arrows": true,
+        "fix_broken_drops": true,
+        "item_pool_value": "minimal",
+        "junk_ice_traps": "mayhem",
+        "ice_trap_appearance": "junk_only",
+        "adult_trade_shuffle": false,
+        "adult_trade_start": [
+            "Pocket Egg",
+            "Pocket Cucco",
+            "Cojiro",
+            "Odd Mushroom",
+            "Poachers Saw",
+            "Broken Sword",
+            "Prescription",
+            "Eyeball Frog",
+            "Eyedrops",
+            "Claim Check"
+        ]
+    },
+    "randomized_settings": {
+        "big_poe_count": 1,
+        "starting_age": "adult",
+        "chicken_count": 5,
+        "trials": 1
+    },
+    "dungeons": {
+        "Deku Tree": "vanilla",
+        "Dodongos Cavern": "vanilla",
+        "Jabu Jabus Belly": "vanilla",
+        "Bottom of the Well": "vanilla",
+        "Ice Cavern": "vanilla",
+        "Gerudo Training Ground": "vanilla",
+        "Forest Temple": "vanilla",
+        "Fire Temple": "vanilla",
+        "Water Temple": "vanilla",
+        "Spirit Temple": "vanilla",
+        "Shadow Temple": "vanilla",
+        "Ganons Castle": "vanilla"
+    },
+    "empty_dungeons": {
+        "Deku Tree": false,
+        "Dodongos Cavern": false,
+        "Jabu Jabus Belly": false,
+        "Forest Temple": false,
+        "Fire Temple": false,
+        "Water Temple": false,
+        "Spirit Temple": false,
+        "Shadow Temple": false
+    },
+    "trials": {
+        "Forest": "inactive",
+        "Fire": "inactive",
+        "Water": "inactive",
+        "Spirit": "inactive",
+        "Shadow": "active",
+        "Light": "inactive"
+    },
+    "songs": {
+        "Zeldas Lullaby": "<^><^>",
+        "Eponas Song": "^<>^<>",
+        "Sarias Song": "v><v><",
+        "Suns Song": ">v^>v^",
+        "Song of Time": ">Av>Av",
+        "Song of Storms": "Av^Av^",
+        "Minuet of Forest": "A^<><>",
+        "Bolero of Fire": "vAvA>v>v",
+        "Serenade of Water": "Av>><",
+        "Requiem of Spirit": "AvA>vA",
+        "Nocturne of Shadow": "<>>A<>v",
+        "Prelude of Light": "^>^><^"
+    },
+    "entrances": {
+        "Adult Spawn -> Temple of Time": "DMC Great Fairy Fountain",
+        "Child Spawn -> KF Links House": {
+            "region": "Kak Impas Ledge",
+            "from": "Kak Impas House Back"
+        },
+        "Bolero of Fire Warp -> DMC Central Local": "Market Man in Green House",
+        "Minuet of Forest Warp -> Sacred Forest Meadow": {
+            "region": "DMC Central Local",
+            "from": "Bolero of Fire Warp"
+        },
+        "Nocturne of Shadow Warp -> Graveyard Warp Pad Region": {
+            "region": "Market Entrance",
+            "from": "Market"
+        },
+        "Prelude of Light Warp -> Temple of Time": {
+            "region": "Zoras Fountain",
+            "from": "ZD Behind King Zora"
+        },
+        "Requiem of Spirit Warp -> Desert Colossus": {
+            "region": "Graveyard Warp Pad Region",
+            "from": "Nocturne of Shadow Warp"
+        },
+        "Serenade of Water Warp -> Lake Hylia": {
+            "region": "Desert Colossus",
+            "from": "Requiem of Spirit Warp"
+        },
+        "DMC Lower Nearby -> DMC Great Fairy Fountain": "HC Great Fairy Fountain",
+        "Death Mountain Summit -> DMT Great Fairy Fountain": "Graveyard Dampes House",
+        "Desert Colossus -> Colossus Great Fairy Fountain": "Kak Carpenter Boss House",
+        "GV Fortress Side -> GV Carpenter Tent": "DMT Great Fairy Fountain",
+        "Ganons Castle Grounds -> OGC Great Fairy Fountain": "Market Treasure Chest Game",
+        "Goron City -> GC Shop": "Market Bazaar",
+        "Graveyard -> Graveyard Dampes House": "ZF Great Fairy Fountain",
+        "Hyrule Castle Grounds -> HC Great Fairy Fountain": "KF Kokiri Shop",
+        "Kak Backyard -> Kak Odd Medicine Building": "KF Midos House",
+        "Kak Impas Ledge -> Kak Impas House Back": "Market Potion Shop",
+        "Kakariko Village -> Kak Bazaar": "Kak Impas House Back",
+        "Kakariko Village -> Kak Carpenter Boss House": "ZD Shop",
+        "Kakariko Village -> Kak House of Skulltula": "Kak House of Skulltula",
+        "Kakariko Village -> Kak Impas House": "Kak Impas House",
+        "Kakariko Village -> Kak Shooting Gallery": "OGC Great Fairy Fountain",
+        "Kokiri Forest -> KF House of Twins": "LLR Tower",
+        "Kokiri Forest -> KF Know It All House": "LH Fishing Hole",
+        "Kokiri Forest -> KF Kokiri Shop": "Kak Shooting Gallery",
+        "Kokiri Forest -> KF Midos House": "KF House of Twins",
+        "Kokiri Forest -> KF Sarias House": "Market Guard House",
+        "LH Fishing Island -> LH Fishing Hole": "Market Shooting Gallery",
+        "Lake Hylia -> LH Lab": "Kak Odd Medicine Building",
+        "Lon Lon Ranch -> LLR Stables": "Market Man in Green House",
+        "Lon Lon Ranch -> LLR Talons House": "GC Shop",
+        "Lon Lon Ranch -> LLR Tower": "DMC Great Fairy Fountain",
+        "Market -> Market Bazaar": "Kak Bazaar",
+        "Market -> Market Bombchu Bowling": "Market Bombchu Shop",
+        "Market -> Market Mask Shop": "LLR Stables",
+        "Market -> Market Potion Shop": "KF Know It All House",
+        "Market -> Market Shooting Gallery": "KF Sarias House",
+        "Market -> Market Treasure Chest Game": "GV Carpenter Tent",
+        "Market Back Alley -> Market Bombchu Shop": "Colossus Great Fairy Fountain",
+        "Market Back Alley -> Market Man in Green House": "LLR Talons House",
+        "Market Entrance -> Market Guard House": "Market Mask Shop",
+        "Zoras Domain -> ZD Shop": "Market Bombchu Bowling",
+        "Zoras Fountain -> ZF Great Fairy Fountain": "LH Lab"
+    },
+    "locations": {
+        "Links Pocket": "Shadow Medallion",
+        "Queen Gohma": "Water Medallion",
+        "King Dodongo": "Fire Medallion",
+        "Barinade": "Forest Medallion",
+        "Phantom Ganon": "Kokiri Emerald",
+        "Volvagia": "Zora Sapphire",
+        "Morpha": "Goron Ruby",
+        "Bongo Bongo": "Light Medallion",
+        "Twinrova": "Spirit Medallion",
+        "Song from Impa": "Rupees (50)",
+        "Song from Malon": "Small Key (Treasure Chest Game)",
+        "Song from Saria": "Small Key (Forest Temple)",
+        "Song from Royal Familys Tomb": "Gold Skulltula Token",
+        "Song from Ocarina of Time": "Rupees (200)",
+        "Song from Windmill": "Nayrus Love",
+        "Sheik in Forest": "Gold Skulltula Token",
+        "Sheik in Crater": "Bow",
+        "Sheik in Ice Cavern": "Deku Nuts (5)",
+        "Sheik at Colossus": "Gold Skulltula Token",
+        "Sheik in Kakariko": "Bombs (20)",
+        "Sheik at Temple": "Bombs (5)",
+        "KF Midos Top Left Chest": "Gold Skulltula Token",
+        "KF Midos Top Right Chest": "Deku Nuts (5)",
+        "KF Midos Bottom Left Chest": "Magic Meter",
+        "KF Midos Bottom Right Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "KF Storms Grotto Chest": "Recovery Heart",
+        "KF Links House Cow": "Deku Shield",
+        "LW Gift from Saria": "Gold Skulltula Token",
+        "LW Ocarina Memory Game": "Recovery Heart",
+        "LW Target in Woods": "Gold Skulltula Token",
+        "LW Near Shortcuts Grotto Chest": "Progressive Scale",
+        "Deku Theater Skull Mask": "Ice Trap",
+        "Deku Theater Mask of Truth": "Rupees (5)",
+        "LW Skull Kid": "Rupees (5)",
+        "LW Deku Scrub Near Bridge": {
+            "item": "Bombs (5)",
+            "price": 10
+        },
+        "LW Deku Scrub Near Deku Theater Left": {
+            "item": "Slingshot",
+            "price": 10
+        },
+        "LW Deku Scrub Near Deku Theater Right": {
+            "item": "Recovery Heart",
+            "price": 10
+        },
+        "LW Deku Scrub Grotto Front": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "LW Deku Scrub Grotto Rear": {
+            "item": "Song of Storms",
+            "price": 10
+        },
+        "SFM Wolfos Grotto Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (200)"
+        },
+        "SFM Deku Scrub Grotto Front": {
+            "item": "Arrows (30)",
+            "price": 10
+        },
+        "SFM Deku Scrub Grotto Rear": {
+            "item": "Small Key (Forest Temple)",
+            "price": 10
+        },
+        "HF Ocarina of Time Item": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "HF Near Market Grotto Chest": "Small Key (Treasure Chest Game)",
+        "HF Tektite Grotto Freestanding PoH": "Small Key (Ganons Castle)",
+        "HF Southeast Grotto Chest": "Gold Skulltula Token",
+        "HF Open Grotto Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (30)"
+        },
+        "HF Deku Scrub Grotto": {
+            "item": "Gold Skulltula Token",
+            "price": 10
+        },
+        "HF Cow Grotto Cow": "Deku Shield",
+        "Market Shooting Gallery Reward": "Small Key (Water Temple)",
+        "Market Bombchu Bowling First Prize": {
+            "item": "Ice Trap",
+            "model": "Deku Seeds (30)"
+        },
+        "Market Bombchu Bowling Second Prize": "Rupees (5)",
+        "Market Lost Dog": "Deku Seeds (30)",
+        "Market Treasure Chest Game Salesman": "Small Key (Ganons Castle)",
+        "Market Treasure Chest Game Room 1 Bottom": "Small Key (Treasure Chest Game)",
+        "Market Treasure Chest Game Room 1 Top": "Zora Tunic",
+        "Market Treasure Chest Game Room 2 Bottom": {
+            "item": "Ice Trap",
+            "model": "Bombs (5)"
+        },
+        "Market Treasure Chest Game Room 2 Top": {
+            "item": "Ice Trap",
+            "model": "Arrows (5)"
+        },
+        "Market Treasure Chest Game Room 3 Bottom": "Arrows (10)",
+        "Market Treasure Chest Game Room 3 Top": "Bottle with Fairy",
+        "Market Treasure Chest Game Room 4 Bottom": "Piece of Heart (Treasure Chest Game)",
+        "Market Treasure Chest Game Room 4 Top": "Progressive Hookshot",
+        "Market Treasure Chest Game Room 5 Bottom": "Recovery Heart",
+        "Market Treasure Chest Game Room 5 Top": "Rupees (5)",
+        "Market Treasure Chest Game Reward": "Rupees (Treasure Chest Game) (5)",
+        "Market 10 Big Poes": "Progressive Hookshot",
+        "ToT Light Arrows Cutscene": "Arrows (10)",
+        "HC Great Fairy Reward": "Recovery Heart",
+        "LLR Talons Chickens": "Ice Trap",
+        "LLR Freestanding PoH": "Bombs (5)",
+        "LLR Deku Scrub Grotto Left": {
+            "item": "Rupees (5)",
+            "price": 10
+        },
+        "LLR Deku Scrub Grotto Center": {
+            "item": "Prelude of Light",
+            "price": 10
+        },
+        "LLR Deku Scrub Grotto Right": {
+            "item": "Arrows (10)",
+            "price": 10
+        },
+        "LLR Stables Left Cow": "Deku Stick (1)",
+        "LLR Stables Right Cow": "Small Key (Treasure Chest Game)",
+        "LLR Tower Left Cow": "Bombs (5)",
+        "LLR Tower Right Cow": "Deku Seeds (30)",
+        "Kak Anju as Child": "Gold Skulltula Token",
+        "Kak Anju as Adult": "Small Key (Shadow Temple)",
+        "Kak Impas House Freestanding PoH": "Recovery Heart",
+        "Kak Windmill Freestanding PoH": "Recovery Heart",
+        "Kak Man on Roof": "Ice Trap",
+        "Kak Open Grotto Chest": "Gold Skulltula Token",
+        "Kak Redead Grotto Chest": "Gold Skulltula Token",
+        "Kak Shooting Gallery Reward": "Ice Trap",
+        "Kak 10 Gold Skulltula Reward": "Arrows (30)",
+        "Kak 20 Gold Skulltula Reward": "Ice Trap",
+        "Kak 30 Gold Skulltula Reward": "Rupees (200)",
+        "Kak 40 Gold Skulltula Reward": "Bombchus (5)",
+        "Kak 50 Gold Skulltula Reward": "Progressive Strength Upgrade",
+        "Kak Impas House Cow": "Gold Skulltula Token",
+        "Graveyard Shield Grave Chest": "Small Key (Shadow Temple)",
+        "Graveyard Heart Piece Grave Chest": "Gold Skulltula Token",
+        "Graveyard Royal Familys Tomb Chest": "Nocturne of Shadow",
+        "Graveyard Freestanding PoH": "Recovery Heart",
+        "Graveyard Dampe Gravedigging Tour": "Gold Skulltula Token",
+        "Graveyard Dampe Race Hookshot Chest": "Gold Skulltula Token",
+        "Graveyard Dampe Race Freestanding PoH": "Arrows (30)",
+        "DMT Freestanding PoH": "Gold Skulltula Token",
+        "DMT Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "DMT Storms Grotto Chest": "Bolero of Fire",
+        "DMT Great Fairy Reward": "Bottle with Poe",
+        "DMT Biggoron": "Rupee (Treasure Chest Game) (1)",
+        "DMT Cow Grotto Cow": "Gold Skulltula Token",
+        "GC Darunias Joy": "Ice Trap",
+        "GC Pot Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "GC Rolling Goron as Child": "Ice Trap",
+        "GC Rolling Goron as Adult": "Gold Skulltula Token",
+        "GC Maze Left Chest": "Small Key (Fire Temple)",
+        "GC Maze Right Chest": "Small Key (Fire Temple)",
+        "GC Maze Center Chest": "Bombs (5)",
+        "GC Deku Scrub Grotto Left": {
+            "item": "Mirror Shield",
+            "price": 10
+        },
+        "GC Deku Scrub Grotto Center": {
+            "item": "Iron Boots",
+            "price": 10
+        },
+        "GC Deku Scrub Grotto Right": {
+            "item": "Hylian Shield",
+            "price": 10
+        },
+        "DMC Volcano Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "DMC Wall Freestanding PoH": "Gold Skulltula Token",
+        "DMC Upper Grotto Chest": "Gold Skulltula Token",
+        "DMC Great Fairy Reward": "Ice Trap",
+        "DMC Deku Scrub": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "DMC Deku Scrub Grotto Left": {
+            "item": "Rupees (20)",
+            "price": 10
+        },
+        "DMC Deku Scrub Grotto Center": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "DMC Deku Scrub Grotto Right": {
+            "item": "Gold Skulltula Token",
+            "price": 10
+        },
+        "ZR Open Grotto Chest": "Progressive Strength Upgrade",
+        "ZR Frogs in the Rain": "Farores Wind",
+        "ZR Frogs Ocarina Game": "Rupees (5)",
+        "ZR Near Open Grotto Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Bombs (5)"
+        },
+        "ZR Near Domain Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "ZR Deku Scrub Grotto Front": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "ZR Deku Scrub Grotto Rear": {
+            "item": "Bottle with Poe",
+            "price": 10
+        },
+        "ZD Diving Minigame": "Ice Trap",
+        "ZD Chest": "Deku Seeds (30)",
+        "ZD King Zora Thawed": "Small Key (Water Temple)",
+        "ZF Great Fairy Reward": "Ice Trap",
+        "ZF Iceberg Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Rupees (50)"
+        },
+        "ZF Bottom Freestanding PoH": {
+            "item": "Ice Trap",
+            "model": "Bombs (20)"
+        },
+        "LH Underwater Item": "Small Key (Water Temple)",
+        "LH Child Fishing": "Gerudo Membership Card",
+        "LH Adult Fishing": "Zeldas Lullaby",
+        "LH Lab Dive": "Gold Skulltula Token",
+        "LH Freestanding PoH": "Eyeball Frog",
+        "LH Sun": "Bombs (5)",
+        "LH Deku Scrub Grotto Left": {
+            "item": "Small Key (Water Temple)",
+            "price": 10
+        },
+        "LH Deku Scrub Grotto Center": {
+            "item": "Suns Song",
+            "price": 10
+        },
+        "LH Deku Scrub Grotto Right": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "GV Crate Freestanding PoH": "Deku Nuts (5)",
+        "GV Waterfall Freestanding PoH": "Bottle with Milk",
+        "GV Chest": "Gold Skulltula Token",
+        "GV Deku Scrub Grotto Front": {
+            "item": "Small Key (Gerudo Training Ground)",
+            "price": 10
+        },
+        "GV Deku Scrub Grotto Rear": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "GV Cow": "Ice Trap",
+        "GF Chest": "Gold Skulltula Token",
+        "GF HBA 1000 Points": "Ice Trap",
+        "GF HBA 1500 Points": "Arrows (30)",
+        "Wasteland Chest": "Rupees (Treasure Chest Game) (5)",
+        "Colossus Great Fairy Reward": "Arrows (30)",
+        "Colossus Freestanding PoH": "Recovery Heart",
+        "Colossus Deku Scrub Grotto Front": {
+            "item": "Recovery Heart",
+            "price": 10
+        },
+        "Colossus Deku Scrub Grotto Rear": {
+            "item": "Small Key (Spirit Temple)",
+            "price": 10
+        },
+        "OGC Great Fairy Reward": "Deku Shield",
+        "Deku Tree Map Chest": "Small Key (Forest Temple)",
+        "Deku Tree Slingshot Room Side Chest": "Rupees (5)",
+        "Deku Tree Slingshot Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Deku Tree Compass Chest": "Recovery Heart",
+        "Deku Tree Compass Room Side Chest": "Gold Skulltula Token",
+        "Deku Tree Basement Chest": "Arrows (30)",
+        "Deku Tree GS Compass Room": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Deku Tree GS Basement Vines": "Hylian Shield",
+        "Deku Tree GS Basement Gate": "Rupees (5)",
+        "Deku Tree GS Basement Back Room": {
+            "item": "Ice Trap",
+            "model": "Arrows (10)"
+        },
+        "Deku Tree Queen Gohma Heart": "Bombs (5)",
+        "Dodongos Cavern Map Chest": "Progressive Scale",
+        "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+        "Dodongos Cavern Bomb Flower Platform Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (20)"
+        },
+        "Dodongos Cavern Bomb Bag Chest": "Bombs (20)",
+        "Dodongos Cavern End of Bridge Chest": "Light Arrows",
+        "Dodongos Cavern Deku Scrub Side Room Near Dodongos": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "Dodongos Cavern Deku Scrub Lobby": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "Dodongos Cavern Deku Scrub Near Bomb Bag Left": {
+            "item": "Ocarina",
+            "price": 10
+        },
+        "Dodongos Cavern Deku Scrub Near Bomb Bag Right": {
+            "item": "Hover Boots",
+            "price": 10
+        },
+        "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+        "Dodongos Cavern GS Scarecrow": "Deku Nuts (5)",
+        "Dodongos Cavern GS Alcove Above Stairs": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Dodongos Cavern GS Vines Above Stairs": "Dins Fire",
+        "Dodongos Cavern GS Back Room": "Recovery Heart",
+        "Dodongos Cavern Boss Room Chest": "Gold Skulltula Token",
+        "Dodongos Cavern King Dodongo Heart": "Boomerang",
+        "Jabu Jabus Belly Boomerang Chest": "Bomb Bag",
+        "Jabu Jabus Belly Map Chest": "Map (Jabu Jabus Belly)",
+        "Jabu Jabus Belly Compass Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Stick (1)"
+        },
+        "Jabu Jabus Belly Deku Scrub": {
+            "item": "Map (Shadow Temple)",
+            "price": 10
+        },
+        "Jabu Jabus Belly GS Water Switch Room": "Progressive Strength Upgrade",
+        "Jabu Jabus Belly GS Lobby Basement Lower": "Recovery Heart",
+        "Jabu Jabus Belly GS Lobby Basement Upper": "Gold Skulltula Token",
+        "Jabu Jabus Belly GS Near Boss": {
+            "item": "Ice Trap",
+            "model": "Arrows (10)"
+        },
+        "Jabu Jabus Belly Barinade Heart": "Rupees (5)",
+        "Bottom of the Well Front Left Fake Wall Chest": "Arrows (10)",
+        "Bottom of the Well Front Center Bombable Chest": "Recovery Heart",
+        "Bottom of the Well Back Left Bombable Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Bottom of the Well Underwater Left Chest": "Compass (Shadow Temple)",
+        "Bottom of the Well Freestanding Key": "Lens of Truth",
+        "Bottom of the Well Compass Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Bottom of the Well Center Skulltula Chest": "Deku Stick (1)",
+        "Bottom of the Well Right Bottom Fake Wall Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (30)"
+        },
+        "Bottom of the Well Fire Keese Chest": "Map (Bottom of the Well)",
+        "Bottom of the Well Like Like Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Bottom of the Well Map Chest": "Map (Ice Cavern)",
+        "Bottom of the Well Underwater Front Chest": "Rupees (5)",
+        "Bottom of the Well Invisible Chest": "Rupees (200)",
+        "Bottom of the Well Lens of Truth Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Bottom of the Well GS West Inner Room": "Compass (Spirit Temple)",
+        "Bottom of the Well GS East Inner Room": "Rupees (50)",
+        "Bottom of the Well GS Like Like Cage": "Ocarina",
+        "Forest Temple First Room Chest": "Rupees (20)",
+        "Forest Temple First Stalfos Chest": "Small Key (Forest Temple)",
+        "Forest Temple Raised Island Courtyard Chest": "Deku Shield",
+        "Forest Temple Map Chest": "Rupees (5)",
+        "Forest Temple Well Chest": "Rupees (5)",
+        "Forest Temple Eye Switch Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Seeds (30)"
+        },
+        "Forest Temple Boss Key Chest": "Rupees (50)",
+        "Forest Temple Floormaster Chest": "Small Key (Forest Temple)",
+        "Forest Temple Red Poe Chest": "Compass (Bottom of the Well)",
+        "Forest Temple Bow Chest": "Deku Nuts (5)",
+        "Forest Temple Blue Poe Chest": "Arrows (10)",
+        "Forest Temple Falling Ceiling Room Chest": "Map (Spirit Temple)",
+        "Forest Temple Basement Chest": "Arrows (30)",
+        "Forest Temple GS First Room": "Map (Fire Temple)",
+        "Forest Temple GS Lobby": "Compass (Dodongos Cavern)",
+        "Forest Temple GS Raised Island Courtyard": "Deku Nuts (5)",
+        "Forest Temple GS Level Island Courtyard": {
+            "item": "Ice Trap",
+            "model": "Rupees (20)"
+        },
+        "Forest Temple GS Basement": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Forest Temple Phantom Ganon Heart": "Recovery Heart",
+        "Fire Temple Near Boss Chest": "Gold Skulltula Token",
+        "Fire Temple Flare Dancer Chest": "Gold Skulltula Token",
+        "Fire Temple Boss Key Chest": "Gold Skulltula Token",
+        "Fire Temple Big Lava Room Lower Open Door Chest": "Rupees (5)",
+        "Fire Temple Big Lava Room Blocked Door Chest": "Rupees (50)",
+        "Fire Temple Boulder Maze Lower Chest": "Rupees (5)",
+        "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+        "Fire Temple Map Chest": "Gold Skulltula Token",
+        "Fire Temple Boulder Maze Shortcut Chest": "Gold Skulltula Token",
+        "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+        "Fire Temple Scarecrow Chest": "Gold Skulltula Token",
+        "Fire Temple Compass Chest": "Stone of Agony",
+        "Fire Temple Megaton Hammer Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Fire Temple Highest Goron Chest": "Fire Arrows",
+        "Fire Temple GS Boss Key Loop": "Gold Skulltula Token",
+        "Fire Temple GS Song of Time Room": "Arrows (30)",
+        "Fire Temple GS Boulder Maze": "Requiem of Spirit",
+        "Fire Temple GS Scarecrow Climb": "Rupees (5)",
+        "Fire Temple GS Scarecrow Top": "Gold Skulltula Token",
+        "Fire Temple Volvagia Heart": "Gold Skulltula Token",
+        "Water Temple Compass Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (30)"
+        },
+        "Water Temple Map Chest": "Rupees (5)",
+        "Water Temple Cracked Wall Chest": "Rupee (Treasure Chest Game) (1)",
+        "Water Temple Torches Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (10)"
+        },
+        "Water Temple Boss Key Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "Water Temple Central Pillar Chest": "Rupees (50)",
+        "Water Temple Central Bow Target Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (20)"
+        },
+        "Water Temple Longshot Chest": "Rupees (20)",
+        "Water Temple River Chest": "Gold Skulltula Token",
+        "Water Temple Dragon Chest": "Map (Water Temple)",
+        "Water Temple GS Behind Gate": "Gold Skulltula Token",
+        "Water Temple GS Near Boss Key Chest": "Rupees (200)",
+        "Water Temple GS Central Pillar": "Compass (Ice Cavern)",
+        "Water Temple GS Falling Platform Room": "Small Key (Water Temple)",
+        "Water Temple GS River": "Bombs (10)",
+        "Water Temple Morpha Heart": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Shadow Temple Map Chest": "Arrows (5)",
+        "Shadow Temple Hover Boots Chest": "Small Key (Bottom of the Well)",
+        "Shadow Temple Compass Chest": "Small Key (Shadow Temple)",
+        "Shadow Temple Early Silver Rupee Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Shadow Temple Invisible Blades Visible Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Shadow Temple Invisible Blades Invisible Chest": "Map (Dodongos Cavern)",
+        "Shadow Temple Falling Spikes Lower Chest": "Deku Nuts (5)",
+        "Shadow Temple Falling Spikes Upper Chest": "Small Key (Bottom of the Well)",
+        "Shadow Temple Falling Spikes Switch Chest": "Small Key (Shadow Temple)",
+        "Shadow Temple Invisible Spikes Chest": {
+            "item": "Ice Trap",
+            "model": "Bombs (5)"
+        },
+        "Shadow Temple Freestanding Key": "Biggoron Sword",
+        "Shadow Temple Wind Hint Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "Shadow Temple After Wind Enemy Chest": "Small Key (Bottom of the Well)",
+        "Shadow Temple After Wind Hidden Chest": "Small Key (Shadow Temple)",
+        "Shadow Temple Spike Walls Left Chest": "Gold Skulltula Token",
+        "Shadow Temple Boss Key Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Shadow Temple Invisible Floormaster Chest": "Goron Tunic",
+        "Shadow Temple GS Invisible Blades Room": "Blue Fire Arrows",
+        "Shadow Temple GS Falling Spikes Room": "Gold Skulltula Token",
+        "Shadow Temple GS Single Giant Pot": "Serenade of Water",
+        "Shadow Temple GS Near Ship": {
+            "item": "Ice Trap",
+            "model": "Bombs (5)"
+        },
+        "Shadow Temple GS Triple Giant Pot": {
+            "item": "Ice Trap",
+            "model": "Rupees (200)"
+        },
+        "Shadow Temple Bongo Bongo Heart": {
+            "item": "Ice Trap",
+            "model": "Bombs (10)"
+        },
+        "Spirit Temple Child Bridge Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Spirit Temple Child Early Torches Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (30)"
+        },
+        "Spirit Temple Child Climb North Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Seeds (30)"
+        },
+        "Spirit Temple Child Climb East Chest": "Sarias Song",
+        "Spirit Temple Map Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "Spirit Temple Sun Block Room Chest": "Gold Skulltula Token",
+        "Spirit Temple Silver Gauntlets Chest": "Rupees (20)",
+        "Spirit Temple Compass Chest": "Deku Shield",
+        "Spirit Temple Early Adult Right Chest": "Small Key (Spirit Temple)",
+        "Spirit Temple First Mirror Left Chest": "Rupees (5)",
+        "Spirit Temple First Mirror Right Chest": "Rupees (5)",
+        "Spirit Temple Statue Room Northeast Chest": "Small Key (Spirit Temple)",
+        "Spirit Temple Statue Room Hand Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Spirit Temple Near Four Armos Chest": "Small Key (Gerudo Training Ground)",
+        "Spirit Temple Hallway Right Invisible Chest": "Small Key (Gerudo Training Ground)",
+        "Spirit Temple Hallway Left Invisible Chest": "Gold Skulltula Token",
+        "Spirit Temple Mirror Shield Chest": "Small Key (Spirit Temple)",
+        "Spirit Temple Boss Key Chest": "Bombs (5)",
+        "Spirit Temple Topmost Chest": "Small Key (Gerudo Training Ground)",
+        "Spirit Temple GS Metal Fence": "Gold Skulltula Token",
+        "Spirit Temple GS Sun on Floor Room": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Spirit Temple GS Hall After Sun Block Room": "Small Key (Spirit Temple)",
+        "Spirit Temple GS Lobby": "Deku Nuts (5)",
+        "Spirit Temple GS Boulder Room": "Small Key (Gerudo Training Ground)",
+        "Spirit Temple Twinrova Heart": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Ice Cavern Map Chest": "Compass (Water Temple)",
+        "Ice Cavern Compass Chest": "Small Key (Water Temple)",
+        "Ice Cavern Iron Boots Chest": "Rupees (5)",
+        "Ice Cavern GS Spinning Scythe Room": "Arrows (10)",
+        "Ice Cavern GS Heart Piece Room": "Rupees (50)",
+        "Ice Cavern GS Push Block Room": "Rupees (20)",
+        "Ice Cavern Freestanding PoH": "Progressive Wallet",
+        "Gerudo Training Ground Lobby Left Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Stick (1)"
+        },
+        "Gerudo Training Ground Lobby Right Chest": "Small Key (Gerudo Training Ground)",
+        "Gerudo Training Ground Stalfos Chest": "Deku Nuts (10)",
+        "Gerudo Training Ground Before Heavy Block Chest": "Compass (Jabu Jabus Belly)",
+        "Gerudo Training Ground Heavy Block First Chest": "Small Key (Gerudo Training Ground)",
+        "Gerudo Training Ground Heavy Block Second Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Gerudo Training Ground Heavy Block Third Chest": "Bombs (10)",
+        "Gerudo Training Ground Heavy Block Fourth Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Gerudo Training Ground Eye Statue Chest": "Compass (Forest Temple)",
+        "Gerudo Training Ground Near Scarecrow Chest": "Map (Forest Temple)",
+        "Gerudo Training Ground Hammer Room Clear Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "Gerudo Training Ground Hammer Room Switch Chest": "Small Key (Gerudo Training Ground)",
+        "Gerudo Training Ground Freestanding Key": "Rupees (50)",
+        "Gerudo Training Ground Maze Right Central Chest": "Rupees (200)",
+        "Gerudo Training Ground Maze Right Side Chest": "Small Key (Gerudo Training Ground)",
+        "Gerudo Training Ground Underwater Silver Rupee Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Gerudo Training Ground Beamos Chest": "Compass (Fire Temple)",
+        "Gerudo Training Ground Hidden Ceiling Chest": {
+            "item": "Ice Trap",
+            "model": "Recovery Heart"
+        },
+        "Gerudo Training Ground Maze Path First Chest": {
+            "item": "Ice Trap",
+            "model": "Arrows (10)"
+        },
+        "Gerudo Training Ground Maze Path Second Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (50)"
+        },
+        "Gerudo Training Ground Maze Path Third Chest": "Rupees (5)",
+        "Gerudo Training Ground Maze Path Final Chest": "Progressive Wallet",
+        "Ganons Castle Forest Trial Chest": "Rupees (Treasure Chest Game) (20)",
+        "Ganons Castle Water Trial Left Chest": "Gold Skulltula Token",
+        "Ganons Castle Water Trial Right Chest": "Rupee (1)",
+        "Ganons Castle Shadow Trial Front Chest": "Rupees (200)",
+        "Ganons Castle Shadow Trial Golden Gauntlets Chest": "Song of Time",
+        "Ganons Castle Light Trial First Left Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (50)"
+        },
+        "Ganons Castle Light Trial Second Left Chest": "Small Key (Treasure Chest Game)",
+        "Ganons Castle Light Trial Third Left Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (20)"
+        },
+        "Ganons Castle Light Trial First Right Chest": "Deku Seeds (30)",
+        "Ganons Castle Light Trial Second Right Chest": "Recovery Heart",
+        "Ganons Castle Light Trial Third Right Chest": {
+            "item": "Ice Trap",
+            "model": "Deku Nuts (5)"
+        },
+        "Ganons Castle Light Trial Invisible Enemies Chest": "Rupees (5)",
+        "Ganons Castle Light Trial Lullaby Chest": "Rupees (20)",
+        "Ganons Castle Spirit Trial Crystal Switch Chest": "Map (Deku Tree)",
+        "Ganons Castle Spirit Trial Invisible Chest": {
+            "item": "Ice Trap",
+            "model": "Rupees (5)"
+        },
+        "Ganons Castle Deku Scrub Left": {
+            "item": "Small Key (Treasure Chest Game)",
+            "price": 10
+        },
+        "Ganons Castle Deku Scrub Center-Left": {
+            "item": "Compass (Deku Tree)",
+            "price": 10
+        },
+        "Ganons Castle Deku Scrub Center-Right": {
+            "item": "Ice Trap",
+            "price": 10
+        },
+        "Ganons Castle Deku Scrub Right": {
+            "item": "Boss Key (Ganons Castle)",
+            "price": 10
+        },
+        "Ganons Tower Boss Key Chest": "Arrows (30)"
+    },
+    ":skipped_locations": {
+        "Links Pocket": "Shadow Medallion"
+    },
+    ":woth_locations": {
+        "KF Midos Bottom Left Chest": "Magic Meter",
+        "LH Adult Fishing": "Zeldas Lullaby",
+        "Kak Anju as Adult": "Small Key (Shadow Temple)",
+        "Graveyard Shield Grave Chest": "Small Key (Shadow Temple)",
+        "ZR Open Grotto Chest": "Progressive Strength Upgrade",
+        "LH Deku Scrub Grotto Center": {
+            "item": "Suns Song",
+            "price": 10
+        },
+        "Dodongos Cavern Map Chest": "Progressive Scale",
+        "Dodongos Cavern Deku Scrub Lobby": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+        "Dodongos Cavern Deku Scrub Side Room Near Dodongos": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "GC Maze Left Chest": "Small Key (Fire Temple)",
+        "GC Maze Right Chest": "Small Key (Fire Temple)",
+        "DMC Deku Scrub Grotto Center": {
+            "item": "Small Key (Fire Temple)",
+            "price": 10
+        },
+        "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+        "Dodongos Cavern Deku Scrub Near Bomb Bag Right": {
+            "item": "Hover Boots",
+            "price": 10
+        },
+        "Dodongos Cavern Deku Scrub Near Bomb Bag Left": {
+            "item": "Ocarina",
+            "price": 10
+        },
+        "Dodongos Cavern End of Bridge Chest": "Light Arrows",
+        "Sheik in Crater": "Bow",
+        "LW Near Shortcuts Grotto Chest": "Progressive Scale",
+        "Dodongos Cavern GS Vines Above Stairs": "Dins Fire",
+        "Market 10 Big Poes": "Progressive Hookshot",
+        "GC Deku Scrub Grotto Left": {
+            "item": "Mirror Shield",
+            "price": 10
+        },
+        "GC Deku Scrub Grotto Center": {
+            "item": "Iron Boots",
+            "price": 10
+        },
+        "Ice Cavern Freestanding PoH": "Progressive Wallet",
+        "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+        "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+        "Fire Temple Highest Goron Chest": "Fire Arrows",
+        "Kak 40 Gold Skulltula Reward": "Bombchus (5)",
+        "Fire Temple GS Boulder Maze": "Requiem of Spirit",
+        "Shadow Temple Compass Chest": "Small Key (Shadow Temple)",
+        "Shadow Temple GS Single Giant Pot": "Serenade of Water",
+        "Dodongos Cavern King Dodongo Heart": "Boomerang",
+        "Shadow Temple Falling Spikes Switch Chest": "Small Key (Shadow Temple)",
+        "Shadow Temple After Wind Hidden Chest": "Small Key (Shadow Temple)",
+        "Kak 50 Gold Skulltula Reward": "Progressive Strength Upgrade",
+        "Colossus Deku Scrub Grotto Rear": {
+            "item": "Small Key (Spirit Temple)",
+            "price": 10
+        },
+        "Spirit Temple Early Adult Right Chest": "Small Key (Spirit Temple)",
+        "Spirit Temple GS Hall After Sun Block Room": "Small Key (Spirit Temple)",
+        "Spirit Temple Statue Room Northeast Chest": "Small Key (Spirit Temple)",
+        "Spirit Temple Mirror Shield Chest": "Small Key (Spirit Temple)"
+    },
+    ":goal_locations": {
+        "rainbow_bridge": {
+            "Path to King Dodongo": {
+                "LH Adult Fishing": "Zeldas Lullaby",
+                "ZR Open Grotto Chest": "Progressive Strength Upgrade",
+                "Dodongos Cavern Deku Scrub Lobby": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+                "Dodongos Cavern Deku Scrub Side Room Near Dodongos": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "GC Maze Left Chest": "Small Key (Fire Temple)",
+                "GC Maze Right Chest": "Small Key (Fire Temple)",
+                "DMC Deku Scrub Grotto Center": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Left": {
+                    "item": "Ocarina",
+                    "price": 10
+                },
+                "Sheik in Crater": "Bow",
+                "Market 10 Big Poes": "Progressive Hookshot",
+                "Ice Cavern Freestanding PoH": "Progressive Wallet",
+                "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+                "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+                "Kak 40 Gold Skulltula Reward": "Bombchus (5)"
+            },
+            "Path to Twinrova": {
+                "KF Midos Bottom Left Chest": "Magic Meter",
+                "LH Adult Fishing": "Zeldas Lullaby",
+                "ZR Open Grotto Chest": "Progressive Strength Upgrade",
+                "LH Deku Scrub Grotto Center": {
+                    "item": "Suns Song",
+                    "price": 10
+                },
+                "Dodongos Cavern Map Chest": "Progressive Scale",
+                "Dodongos Cavern Deku Scrub Lobby": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+                "Dodongos Cavern Deku Scrub Side Room Near Dodongos": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "GC Maze Left Chest": "Small Key (Fire Temple)",
+                "GC Maze Right Chest": "Small Key (Fire Temple)",
+                "DMC Deku Scrub Grotto Center": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Right": {
+                    "item": "Hover Boots",
+                    "price": 10
+                },
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Left": {
+                    "item": "Ocarina",
+                    "price": 10
+                },
+                "Sheik in Crater": "Bow",
+                "LW Near Shortcuts Grotto Chest": "Progressive Scale",
+                "Dodongos Cavern GS Vines Above Stairs": "Dins Fire",
+                "Market 10 Big Poes": "Progressive Hookshot",
+                "GC Deku Scrub Grotto Left": {
+                    "item": "Mirror Shield",
+                    "price": 10
+                },
+                "GC Deku Scrub Grotto Center": {
+                    "item": "Iron Boots",
+                    "price": 10
+                },
+                "Ice Cavern Freestanding PoH": "Progressive Wallet",
+                "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+                "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+                "Kak 40 Gold Skulltula Reward": "Bombchus (5)",
+                "Fire Temple GS Boulder Maze": "Requiem of Spirit",
+                "Shadow Temple GS Single Giant Pot": "Serenade of Water",
+                "Dodongos Cavern King Dodongo Heart": "Boomerang",
+                "Kak 50 Gold Skulltula Reward": "Progressive Strength Upgrade",
+                "Colossus Deku Scrub Grotto Rear": {
+                    "item": "Small Key (Spirit Temple)",
+                    "price": 10
+                },
+                "Spirit Temple Early Adult Right Chest": "Small Key (Spirit Temple)",
+                "Spirit Temple GS Hall After Sun Block Room": "Small Key (Spirit Temple)",
+                "Spirit Temple Statue Room Northeast Chest": "Small Key (Spirit Temple)",
+                "Spirit Temple Mirror Shield Chest": "Small Key (Spirit Temple)"
+            },
+            "Path to Bongo Bongo": {
+                "KF Midos Bottom Left Chest": "Magic Meter",
+                "LH Adult Fishing": "Zeldas Lullaby",
+                "Kak Anju as Adult": "Small Key (Shadow Temple)",
+                "Graveyard Shield Grave Chest": "Small Key (Shadow Temple)",
+                "ZR Open Grotto Chest": "Progressive Strength Upgrade",
+                "Dodongos Cavern Deku Scrub Lobby": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+                "Dodongos Cavern Deku Scrub Side Room Near Dodongos": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "GC Maze Left Chest": "Small Key (Fire Temple)",
+                "GC Maze Right Chest": "Small Key (Fire Temple)",
+                "DMC Deku Scrub Grotto Center": {
+                    "item": "Small Key (Fire Temple)",
+                    "price": 10
+                },
+                "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Right": {
+                    "item": "Hover Boots",
+                    "price": 10
+                },
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Left": {
+                    "item": "Ocarina",
+                    "price": 10
+                },
+                "Sheik in Crater": "Bow",
+                "Dodongos Cavern GS Vines Above Stairs": "Dins Fire",
+                "Market 10 Big Poes": "Progressive Hookshot",
+                "Ice Cavern Freestanding PoH": "Progressive Wallet",
+                "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+                "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+                "Kak 40 Gold Skulltula Reward": "Bombchus (5)",
+                "Fire Temple GS Boulder Maze": "Requiem of Spirit",
+                "Shadow Temple Compass Chest": "Small Key (Shadow Temple)",
+                "Shadow Temple Falling Spikes Switch Chest": "Small Key (Shadow Temple)",
+                "Shadow Temple After Wind Hidden Chest": "Small Key (Shadow Temple)"
+            }
+        },
+        "trials": {
+            "Path to the Tower": {
+                "Dodongos Cavern End of Bridge Chest": "Light Arrows",
+                "Fire Temple Highest Goron Chest": "Fire Arrows"
+            }
+        }
+    },
+    ":barren_regions": [
+        "Zora's Fountain",
+        "Gerudo's Fortress",
+        "the Haunted Wasteland",
+        "the Temple of Time",
+        "Hyrule Castle"
+    ],
+    "gossip_stones": {
+        "Colossus (Spirit Temple)": {
+            "text": "They say that #the Shadow Temple# hoards #Deku Nuts (5 pieces)#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Shadow Temple Falling Spikes Lower Chest"
+            ],
+            "hinted_items": [
+                "Deku Nuts (5)"
+            ]
+        },
+        "DMC (Bombable Wall)": {
+            "text": "They say that slaying #30 Gold Skulltulas# reveals #a Huge Rupee#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 30 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Rupees (200)"
+            ]
+        },
+        "DMC (Upper Grotto)": {
+            "text": "They say that ##the Market## has #1# major item.",
+            "colors": [
+                "Green",
+                "Pink"
+            ]
+        },
+        "DMT (Biggoron)": {
+            "text": "They say that slaying #30 Gold Skulltulas# reveals #a Huge Rupee#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 30 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Rupees (200)"
+            ]
+        },
+        "DMT (Storms Grotto)": {
+            "text": "They say that #the Fire Temple# is on the path to #the Tower#.",
+            "colors": [
+                "Light Blue",
+                "White"
+            ],
+            "hinted_locations": [
+                "Fire Temple Highest Goron Chest"
+            ],
+            "hinted_items": [
+                "Fire Arrows"
+            ]
+        },
+        "Dodongos Cavern (Bombable Wall)": {
+            "text": "They say that a #ravaged village# mourns with #Bombs (20 pieces)#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Sheik in Kakariko"
+            ],
+            "hinted_items": [
+                "Bombs (20)"
+            ]
+        },
+        "GC (Maze)": {
+            "text": "They say that ##Zora's Fountain## has #0# major items.",
+            "colors": [
+                "Green",
+                "Red"
+            ]
+        },
+        "GC (Medigoron)": {
+            "text": "They say that #Biggoron# crafts #a Green Rupee#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "DMT Biggoron"
+            ],
+            "hinted_items": [
+                "Rupee (Treasure Chest Game) (1)"
+            ]
+        },
+        "GV (Waterfall)": {
+            "text": "They say that slaying #40 Gold Skulltulas# reveals #Bombchus (5 pieces)#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 40 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Bombchus (5)"
+            ]
+        },
+        "Graveyard (Shadow Temple)": {
+            "text": "They say that slaying #40 Gold Skulltulas# reveals #Bombchus (5 pieces)#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 40 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Bombchus (5)"
+            ]
+        },
+        "HC (Malon)": {
+            "text": "They say that #Malon's obstacle course# leads to #a Deku Shield#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "KF Links House Cow"
+            ],
+            "hinted_items": [
+                "Deku Shield"
+            ]
+        },
+        "HC (Rock Wall)": {
+            "text": "They say that a #heavy pillar# outside the castle obstructs the #Treasure Box Shop#.",
+            "colors": [
+                "Green",
+                "Light Blue"
+            ]
+        },
+        "HC (Storms Grotto)": {
+            "text": "They say that at the #Bombchu Bowling Alley#, you will be rewarded with...^ #an Ice Trap# and #a Blue Rupee#.",
+            "colors": [
+                "Red",
+                "Green",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Market Bombchu Bowling First Prize",
+                "Market Bombchu Bowling Second Prize"
+            ],
+            "hinted_items": [
+                "Ice Trap",
+                "Rupees (5)"
+            ]
+        },
+        "HF (Cow Grotto)": {
+            "text": "They say that the #Ocarina of Time# rewards both...^ #an Ice Trap# and #a Huge Rupee#.",
+            "colors": [
+                "Red",
+                "Green",
+                "Green"
+            ],
+            "hinted_locations": [
+                "HF Ocarina of Time Item",
+                "Song from Ocarina of Time"
+            ],
+            "hinted_items": [
+                "Ice Trap",
+                "Rupees (200)"
+            ]
+        },
+        "HF (Near Market Grotto)": {
+            "text": "They say that a #fountain wall# hides the #Lakeside Laboratory#.",
+            "colors": [
+                "Green",
+                "Light Blue"
+            ]
+        },
+        "HF (Open Grotto)": {
+            "text": "They say that #Zora's River# is on the path to #King Dodongo#.",
+            "colors": [
+                "Light Blue",
+                "Red"
+            ],
+            "hinted_locations": [
+                "ZR Open Grotto Chest"
+            ],
+            "hinted_items": [
+                "Progressive Strength Upgrade"
+            ]
+        },
+        "HF (Southeast Grotto)": {
+            "text": "They say that ##Lake Hylia## has #5# major items.",
+            "colors": [
+                "Green",
+                "Green"
+            ]
+        },
+        "KF (Deku Tree Left)": {
+            "text": "They say that the #Skull Mask and Mask of Truth# reward...^ #an Ice Trap# and #a Blue Rupee#.",
+            "colors": [
+                "Red",
+                "Green",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Deku Theater Skull Mask",
+                "Deku Theater Mask of Truth"
+            ],
+            "hinted_items": [
+                "Ice Trap",
+                "Rupees (5)"
+            ]
+        },
+        "KF (Deku Tree Right)": {
+            "text": "They say that the #Frogs of Zora River# will reward you with...^ #Farore's Wind# and #a Blue Rupee#.",
+            "colors": [
+                "Red",
+                "Green",
+                "Green"
+            ],
+            "hinted_locations": [
+                "ZR Frogs in the Rain",
+                "ZR Frogs Ocarina Game"
+            ],
+            "hinted_items": [
+                "Farores Wind",
+                "Rupees (5)"
+            ]
+        },
+        "KF (Outside Storms)": {
+            "text": "They say that plundering #Gerudo's Fortress# is a foolish choice.",
+            "colors": [
+                "Pink"
+            ]
+        },
+        "KF (Storms Grotto)": {
+            "text": "They say that #in a meadow# Sheik teaches #a Gold Skulltula Token#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Sheik in Forest"
+            ],
+            "hinted_items": [
+                "Gold Skulltula Token"
+            ]
+        },
+        "Kak (Open Grotto)": {
+            "text": "They say that quest guidance can be found at a talking rock."
+        },
+        "LH (Lab)": {
+            "text": "What did Zelda suggest that Link do when diplomacy didn't work?^${12 39 C7}Triforce."
+        },
+        "LH (Southeast Corner)": {
+            "text": "They say that #a Forest Temple Small Key# can be found at #the Sacred Forest Meadow#.",
+            "colors": [
+                "Green",
+                "Red"
+            ],
+            "hinted_locations": [
+                "Song from Saria"
+            ],
+            "hinted_items": [
+                "Small Key (Forest Temple)"
+            ]
+        },
+        "LH (Southwest Corner)": {
+            "text": "They say that #Dodongo's Cavern# is on the way of the hero.",
+            "colors": [
+                "Light Blue"
+            ],
+            "hinted_locations": [
+                "Dodongos Cavern Deku Scrub Near Bomb Bag Left"
+            ],
+            "hinted_items": [
+                "Ocarina"
+            ]
+        },
+        "LW (Bridge)": {
+            "text": "They say that a room containing a #large pot in the Shadow Temple# holds...^ #the Biggoron Sword# and #the Serenade of Water#.",
+            "colors": [
+                "Red",
+                "Green",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Shadow Temple Freestanding Key",
+                "Shadow Temple GS Single Giant Pot"
+            ],
+            "hinted_items": [
+                "Biggoron Sword",
+                "Serenade of Water"
+            ]
+        },
+        "LW (Near Shortcuts Grotto)": {
+            "text": "They say that slaying #50 Gold Skulltulas# reveals #a Strength Upgrade#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 50 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Progressive Strength Upgrade"
+            ]
+        },
+        "SFM (Maze Lower)": {
+            "text": "They say that #the Song of Storms# can be found in #the Lost Woods#.",
+            "colors": [
+                "Green",
+                "Red"
+            ],
+            "hinted_locations": [
+                "LW Deku Scrub Grotto Rear"
+            ],
+            "hinted_items": [
+                "Song of Storms"
+            ]
+        },
+        "SFM (Maze Upper)": {
+            "text": "They say that plundering #Hyrule Castle# is a foolish choice.",
+            "colors": [
+                "Pink"
+            ]
+        },
+        "SFM (Saria)": {
+            "text": "They say that a #tent in the valley# covers a #Great Fairy Fountain#.",
+            "colors": [
+                "Green",
+                "Light Blue"
+            ]
+        },
+        "ToT (Left)": {
+            "text": "They say that #Biggoron# crafts #a Green Rupee#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "DMT Biggoron"
+            ],
+            "hinted_items": [
+                "Rupee (Treasure Chest Game) (1)"
+            ]
+        },
+        "ToT (Left-Center)": {
+            "text": "They say that #Malon's obstacle course# leads to #a Deku Shield#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "KF Links House Cow"
+            ],
+            "hinted_items": [
+                "Deku Shield"
+            ]
+        },
+        "ToT (Right)": {
+            "text": "They say that slaying #50 Gold Skulltulas# reveals #a Strength Upgrade#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Kak 50 Gold Skulltula Reward"
+            ],
+            "hinted_items": [
+                "Progressive Strength Upgrade"
+            ]
+        },
+        "ToT (Right-Center)": {
+            "text": "They say that the #Shadow Trial# protects Ganon's Tower.",
+            "colors": [
+                "Pink"
+            ]
+        },
+        "ZD (Mweep)": {
+            "text": "They say that a #ravaged village# mourns with #Bombs (20 pieces)#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "Sheik in Kakariko"
+            ],
+            "hinted_items": [
+                "Bombs (20)"
+            ]
+        },
+        "ZF (Fairy)": {
+            "text": "One who does not have Triforce can't go in."
+        },
+        "ZF (Jabu)": {
+            "text": "They say that #the Shadow Temple# is on the path to #Bongo Bongo#.",
+            "colors": [
+                "Light Blue",
+                "Pink"
+            ],
+            "hinted_locations": [
+                "Shadow Temple Compass Chest"
+            ],
+            "hinted_items": [
+                "Small Key (Shadow Temple)"
+            ]
+        },
+        "ZR (Near Domain)": {
+            "text": "They say that #Dodongo's Cavern# is on the way of the hero.",
+            "colors": [
+                "Light Blue"
+            ],
+            "hinted_locations": [
+                "Dodongos Cavern King Dodongo Heart"
+            ],
+            "hinted_items": [
+                "Boomerang"
+            ]
+        },
+        "ZR (Near Grottos)": {
+            "text": "They say that #a Gold Skulltula Token# can be found in #the Lost Woods#.",
+            "colors": [
+                "Green",
+                "Red"
+            ],
+            "hinted_locations": [
+                "LW Gift from Saria"
+            ],
+            "hinted_items": [
+                "Gold Skulltula Token"
+            ]
+        },
+        "ZR (Open Grotto)": {
+            "text": "They say that unfreezing #King Zora# grants #a Water Temple Small Key#.",
+            "colors": [
+                "Red",
+                "Green"
+            ],
+            "hinted_locations": [
+                "ZD King Zora Thawed"
+            ],
+            "hinted_items": [
+                "Small Key (Water Temple)"
+            ]
+        }
+    },
+    ":playthrough": {
+        "0": {
+            "Links Pocket": "Shadow Medallion"
+        },
+        "1": {
+            "DMT Freestanding PoH": "Gold Skulltula Token",
+            "GC GS Center Platform": "Gold Skulltula Token",
+            "GV Waterfall Freestanding PoH": "Bottle with Milk",
+            "Graveyard Dampe Race Hookshot Chest": "Gold Skulltula Token",
+            "Graveyard Shield Grave Chest": "Small Key (Shadow Temple)",
+            "KF Midos Bottom Left Chest": "Magic Meter",
+            "KF Midos Top Left Chest": "Gold Skulltula Token",
+            "Kak Anju as Adult": "Small Key (Shadow Temple)",
+            "Kak Open Grotto Chest": "Gold Skulltula Token",
+            "LH Adult Fishing": "Zeldas Lullaby",
+            "LH Deku Scrub Grotto Center": "Suns Song",
+            "LW Gift from Saria": "Gold Skulltula Token",
+            "OGC GS": "Gold Skulltula Token",
+            "ZR Open Grotto Chest": "Progressive Strength Upgrade"
+        },
+        "2": {
+            "DMC Wall Freestanding PoH": "Gold Skulltula Token",
+            "Dodongos Cavern Compass Chest": "Small Key (Fire Temple)",
+            "Dodongos Cavern Deku Scrub Lobby": "Small Key (Fire Temple)",
+            "Dodongos Cavern Deku Scrub Side Room Near Dodongos": "Small Key (Fire Temple)",
+            "Dodongos Cavern GS Side Room Near Lower Lizalfos": "Megaton Hammer",
+            "Dodongos Cavern GS Vines Above Stairs": "Dins Fire",
+            "Dodongos Cavern Map Chest": "Progressive Scale",
+            "GC Rolling Goron as Adult": "Gold Skulltula Token"
+        },
+        "3": {
+            "DMC Deku Scrub Grotto Center": "Small Key (Fire Temple)",
+            "DMC Deku Scrub Grotto Right": "Gold Skulltula Token",
+            "DMC Upper Grotto Chest": "Gold Skulltula Token",
+            "DMT GS Above Dodongos Cavern": "Gold Skulltula Token",
+            "DMT GS Falling Rocks Path": "Gold Skulltula Token",
+            "DMT GS Near Kak": "Gold Skulltula Token",
+            "Dodongos Cavern Deku Scrub Near Bomb Bag Left": "Ocarina",
+            "Dodongos Cavern Deku Scrub Near Bomb Bag Right": "Hover Boots",
+            "Dodongos Cavern End of Bridge Chest": "Light Arrows",
+            "GC Maze Left Chest": "Small Key (Fire Temple)",
+            "GC Maze Right Chest": "Small Key (Fire Temple)",
+            "GV Chest": "Gold Skulltula Token",
+            "HF Deku Scrub Grotto": "Gold Skulltula Token",
+            "HF Southeast Grotto Chest": "Gold Skulltula Token",
+            "Kak Redead Grotto Chest": "Gold Skulltula Token",
+            "LW Near Shortcuts Grotto Chest": "Progressive Scale"
+        },
+        "4": {
+            "DMT Cow Grotto Cow": "Gold Skulltula Token",
+            "Fire Temple Near Boss Chest": "Gold Skulltula Token",
+            "GF Chest": "Gold Skulltula Token",
+            "GF GS Top Floor": "Gold Skulltula Token",
+            "Graveyard Heart Piece Grave Chest": "Gold Skulltula Token",
+            "Ice Cavern Spinning Scythe Silver Rupee Center Back": "Silver Rupee (Ice Cavern Spinning Scythe)",
+            "Ice Cavern Spinning Scythe Silver Rupee Center Left": "Silver Rupee (Ice Cavern Spinning Scythe)",
+            "Ice Cavern Spinning Scythe Silver Rupee Center Right": "Silver Rupee (Ice Cavern Spinning Scythe)",
+            "Ice Cavern Spinning Scythe Silver Rupee Icicles": "Silver Rupee (Ice Cavern Spinning Scythe)",
+            "Ice Cavern Spinning Scythe Silver Rupee Ledge": "Silver Rupee (Ice Cavern Spinning Scythe)",
+            "Kak Impas House Cow": "Gold Skulltula Token",
+            "Sheik in Crater": "Bow",
+            "Song from Royal Familys Tomb": "Gold Skulltula Token",
+            "ZD GS Frozen Waterfall": "Gold Skulltula Token"
+        },
+        "5": {
+            "Hyrule Field Big Poe Kill": "Big Poe",
+            "Ice Cavern Map Room Blue Fire": "Blue Fire"
+        },
+        "6": {
+            "Ice Cavern Freestanding PoH": "Progressive Wallet",
+            "Market 10 Big Poes": "Progressive Hookshot"
+        },
+        "7": {
+            "GC Shop Item 5": "Buy Goron Tunic",
+            "GV GS Behind Tent": "Gold Skulltula Token",
+            "GV GS Pillar": "Gold Skulltula Token",
+            "HF GS Cow Grotto": "Gold Skulltula Token",
+            "HF GS Near Kak Grotto": "Gold Skulltula Token",
+            "KF GS House of Twins": "Gold Skulltula Token",
+            "Kak GS Above Impas House": "Gold Skulltula Token",
+            "ZR GS Above Bridge": "Gold Skulltula Token",
+            "ZR GS Near Raised Grottos": "Gold Skulltula Token"
+        },
+        "8": {
+            "Fire Temple Boulder Maze Side Room Chest": "Small Key (Fire Temple)",
+            "Fire Temple Boulder Maze Upper Chest": "Small Key (Fire Temple)",
+            "Fire Temple GS Scarecrow Top": "Gold Skulltula Token",
+            "Fire Temple Map Chest": "Gold Skulltula Token",
+            "Fire Temple Scarecrow Chest": "Gold Skulltula Token",
+            "Fire Temple Volvagia Heart": "Gold Skulltula Token",
+            "GC Deku Scrub Grotto Center": "Iron Boots",
+            "GC Deku Scrub Grotto Left": "Mirror Shield"
+        },
+        "9": {
+            "Fire Temple Boss Key Chest": "Gold Skulltula Token",
+            "Fire Temple Flare Dancer Chest": "Gold Skulltula Token",
+            "Fire Temple GS Boss Key Loop": "Gold Skulltula Token",
+            "Fire Temple Highest Goron Chest": "Fire Arrows"
+        },
+        "10": {
+            "Kak 40 Gold Skulltula Reward": "Bombchus (5)"
+        },
+        "11": {
+            "Dodongos Cavern Boss Room Chest": "Gold Skulltula Token",
+            "Dodongos Cavern King Dodongo Heart": "Boomerang",
+            "Fire Temple Boulder Maze Shortcut Chest": "Gold Skulltula Token",
+            "Fire Temple GS Boulder Maze": "Requiem of Spirit",
+            "King Dodongo": "Fire Medallion",
+            "LH GS Lab Crate": "Gold Skulltula Token",
+            "LH Lab Dive": "Gold Skulltula Token",
+            "Water Temple GS Behind Gate": "Gold Skulltula Token"
+        },
+        "12": {
+            "Shadow Temple Compass Chest": "Small Key (Shadow Temple)",
+            "Shadow Temple Huge Pit Silver Rupee Center Back": "Silver Rupee (Shadow Temple Huge Pit)",
+            "Shadow Temple Huge Pit Silver Rupee Center Front": "Silver Rupee (Shadow Temple Huge Pit)",
+            "Shadow Temple Huge Pit Silver Rupee Center": "Silver Rupee (Shadow Temple Huge Pit)",
+            "Shadow Temple Huge Pit Silver Rupee Left": "Silver Rupee (Shadow Temple Huge Pit)",
+            "Shadow Temple Huge Pit Silver Rupee Right": "Silver Rupee (Shadow Temple Huge Pit)",
+            "Shadow Temple Invisible Spikes Silver Rupee Center": "Silver Rupee (Shadow Temple Invisible Spikes)",
+            "Shadow Temple Invisible Spikes Silver Rupee Ledge": "Silver Rupee (Shadow Temple Invisible Spikes)",
+            "Shadow Temple Invisible Spikes Silver Rupee Left": "Silver Rupee (Shadow Temple Invisible Spikes)",
+            "Shadow Temple Invisible Spikes Silver Rupee Near Ledge": "Silver Rupee (Shadow Temple Invisible Spikes)",
+            "Shadow Temple Invisible Spikes Silver Rupee Right": "Silver Rupee (Shadow Temple Invisible Spikes)"
+        },
+        "13": {
+            "Shadow Temple After Wind Hidden Chest": "Small Key (Shadow Temple)",
+            "Shadow Temple Falling Spikes Switch Chest": "Small Key (Shadow Temple)",
+            "Shadow Temple GS Falling Spikes Room": "Gold Skulltula Token",
+            "Shadow Temple GS Single Giant Pot": "Serenade of Water"
+        },
+        "14": {
+            "Bongo Bongo": "Light Medallion",
+            "Colossus GS Tree": "Gold Skulltula Token",
+            "Shadow Temple Spike Walls Left Chest": "Gold Skulltula Token",
+            "Sheik at Colossus": "Gold Skulltula Token"
+        },
+        "15": {
+            "Kak 50 Gold Skulltula Reward": "Progressive Strength Upgrade"
+        },
+        "16": {
+            "Colossus Deku Scrub Grotto Rear": "Small Key (Spirit Temple)",
+            "Spirit Temple Adult Boulder Silver Rupee Back Left": "Silver Rupee (Spirit Temple Adult Boulders)",
+            "Spirit Temple Adult Boulder Silver Rupee Back Right": "Silver Rupee (Spirit Temple Adult Boulders)",
+            "Spirit Temple Adult Boulder Silver Rupee Front Left": "Silver Rupee (Spirit Temple Adult Boulders)",
+            "Spirit Temple Adult Boulder Silver Rupee Front Right": "Silver Rupee (Spirit Temple Adult Boulders)",
+            "Spirit Temple Adult Boulder Silver Rupee Ledge": "Silver Rupee (Spirit Temple Adult Boulders)"
+        },
+        "17": {
+            "Spirit Temple Early Adult Right Chest": "Small Key (Spirit Temple)",
+            "Spirit Temple GS Hall After Sun Block Room": "Small Key (Spirit Temple)"
+        },
+        "18": {
+            "Spirit Temple Statue Room Northeast Chest": "Small Key (Spirit Temple)"
+        },
+        "19": {
+            "Spirit Temple Mirror Shield Chest": "Small Key (Spirit Temple)"
+        },
+        "20": {
+            "Twinrova": "Spirit Medallion"
+        },
+        "21": {
+            "Ganons Castle Deku Scrub Right": "Boss Key (Ganons Castle)",
+            "Shadow Trial Clear from Ganons Castle Shadow Trial Ending": "Shadow Trial Clear"
+        },
+        "22": {
+            "Ganon": "Triforce"
+        }
+    },
+    ":entrance_playthrough": {
+        "1": {
+            "Adult Spawn -> Temple of Time": "DMC Great Fairy Fountain",
+            "DMC Great Fairy Fountain -> DMC Lower Local": {
+                "region": "Lon Lon Ranch",
+                "from": "LLR Tower"
+            },
+            "Kak Backyard -> Kak Odd Medicine Building": "KF Midos House",
+            "Kakariko Village -> Kak House of Skulltula": "Kak House of Skulltula",
+            "Kakariko Village -> Kak Impas House": "Kak Impas House",
+            "Kokiri Forest -> KF Know It All House": "LH Fishing Hole",
+            "Kokiri Forest -> KF Sarias House": "Market Guard House",
+            "Lon Lon Ranch -> LLR Talons House": "GC Shop"
+        },
+        "11": {
+            "Zoras Fountain -> ZF Great Fairy Fountain": "LH Lab"
+        },
+        "12": {
+            "Requiem of Spirit Warp -> Desert Colossus": {
+                "region": "Graveyard Warp Pad Region",
+                "from": "Nocturne of Shadow Warp"
+            }
+        },
+        "14": {
+            "Serenade of Water Warp -> Lake Hylia": {
+                "region": "Desert Colossus",
+                "from": "Requiem of Spirit Warp"
+            }
+        }
+    },
+    ":collect": "spheres"
+}
