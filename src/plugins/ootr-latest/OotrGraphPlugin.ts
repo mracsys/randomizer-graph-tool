@@ -33,7 +33,8 @@ class OotrGraphPlugin extends GraphPlugin {
         public user_overrides: any,
         public ootr_version: OotrVersion,
         public file_cache: OotrFileCache,
-        public debug: boolean,
+        public debug: boolean = false,
+        public test_only: boolean = false,
     ) {
         super();
         this.worlds = [];
@@ -77,6 +78,14 @@ class OotrGraphPlugin extends GraphPlugin {
         if (!!user_overrides) {
             this.settings_list.override_settings(user_overrides);
         }
+
+        // If this is a running in a test environment, skip parsing logic
+        // as this takes more than a few ms.
+        if (test_only) {
+            // won't function correctly as the world logic isn't loaded
+            this.search = new Search(this.worlds.map((world) => world.state));
+            return;
+        }
         this.build_world_graphs(this.settings_list, ootr_version);
         if (Object.keys(this.settings_list).includes('locations')) {
             this.set_items(this.settings_list.locations);
@@ -88,7 +97,7 @@ class OotrGraphPlugin extends GraphPlugin {
         this.search = new Search(this.worlds.map((world) => world.state));
     }
 
-    static async create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache | null = null, debug: boolean = false) {
+    static async create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache | null = null, debug: boolean = false, test_only: boolean = false) {
         let ootr_version = new OotrVersion(version);
         let file_cache;
         if (!!global_cache) {
@@ -96,7 +105,7 @@ class OotrGraphPlugin extends GraphPlugin {
         } else {
             file_cache = await OotrFileCache.load_ootr_files(version);
         }
-        return new OotrGraphPlugin(user_overrides, ootr_version, file_cache, debug);
+        return new OotrGraphPlugin(user_overrides, ootr_version, file_cache, debug, test_only);
     }
 
     get_game_versions(): GraphGameVersions {
@@ -223,7 +232,6 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (!!return_entry) {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     return_entrance.type = type;
-                    return_entrance.primary = true;
                     forward_entrance.bind_two_way(return_entrance);
                 }
             }

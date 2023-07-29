@@ -1,4 +1,5 @@
-import babel, { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
+import * as babel from "@babel/core";
+import { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
 import { CodeGenerator } from '@babel/generator';
 
 import WorldState from "./WorldState.js";
@@ -12,9 +13,9 @@ import ExternalFileCache from "./OotrFileCache.js";
 import World from "./World.js";
 import OotrVersion from "./OotrVersion.js";
 
-type Spot = Entrance | Location;
-type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
-type AccessRule = (worldState: WorldState, { age, spot, tod }: kwargs) => boolean;
+export type Spot = Entrance | Location;
+export type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
+export type AccessRule = (worldState: WorldState, { age, spot, tod }: kwargs) => boolean;
 type DelayedRule = {
     target: string,
     node: babel.types.Node,
@@ -48,7 +49,7 @@ function getProperty<T>(obj: DynamicProps<T>, key: string): T {
     return obj[key];
 }
 
-class RuleParser {
+export default class RuleParser {
     public world: World;
     public version: OotrVersion;
     public events: Set<string>;
@@ -75,7 +76,7 @@ class RuleParser {
     };
     private nonaliases: string[];
 
-    constructor(world: World, ootr_version: OotrVersion, debug: boolean = true) {
+    constructor(world: World, ootr_version: OotrVersion, debug: boolean = false) {
         this.world = world;
         this.version = ootr_version;
         this.events = new Set();
@@ -957,5 +958,3 @@ class RuleParser {
         }
     }
 }
-
-export default RuleParser;

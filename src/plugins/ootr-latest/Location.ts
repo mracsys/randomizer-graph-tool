@@ -42,6 +42,7 @@ export class Location implements GraphLocation {
         public shuffled: boolean = false,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
+        if (this.type === "Event" || this.name === "Gift from Sages") this.internal = true;
     }
 
     add_rule(rule: AccessRule): void {
@@ -73,7 +74,7 @@ export class Location implements GraphLocation {
     }
 
     viewable(): boolean {
-        return true;
+        return !(this.internal);
     }
 }
 

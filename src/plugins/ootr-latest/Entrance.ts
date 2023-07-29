@@ -106,7 +106,8 @@ class Entrance implements GraphEntrance {
     }
 
     viewable(): boolean {
-        return true;
+        // only shufflable entrances are given a type from the entrance table
+        return this.type !== null;
     }
 }
 
