@@ -25,6 +25,7 @@ export default class EntranceList {
     }
 
     readEntranceList_7_1_117(file_cache: ExternalFileCache): void {
+        if (file_cache.files['EntranceShuffle.py'] === undefined) return;
         const entrancelist: string[] = file_cache.files['EntranceShuffle.py'].split('\n').filter(Boolean);
         
         let parsing_entrances = false;

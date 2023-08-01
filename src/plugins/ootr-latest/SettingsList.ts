@@ -108,6 +108,7 @@ class SettingsList {
     }
 
     readSettingsList_7_1_117(file_cache: ExternalFileCache): void {
+        if (file_cache.files['SettingsList.py'] === undefined) return;
         const settingslist: string = file_cache.files['SettingsList.py'];
         const lines: string[] = settingslist.split('\n').filter(Boolean);
 
@@ -261,9 +262,17 @@ class SettingsList {
     }
 
     readSettingsList_7_1_143(file_cache: ExternalFileCache): void {
+        if (file_cache.files['SettingsList.py'] === undefined
+            || file_cache.files['SettingsListTricks.py'] === undefined
+            || file_cache.files['data/settings_mapping.json'] === undefined) return;
         const trickslist: string = file_cache.files['SettingsListTricks.py'];
         const settingslist: string = file_cache.files['SettingsList.py'];
-        const settings_categories: any = JSON.parse(file_cache.files['data/settings_mapping.json']);
+        let settings_categories: any;
+        try {
+            settings_categories = JSON.parse(file_cache.files['data/settings_mapping.json']);
+        } catch {
+            console.log(`Could not parse setting_mapping.json: ${file_cache.files['data/settings_mapping.json']}`);
+        }
         const lines: string[] = settingslist.split('\n').filter(Boolean);
         const tricklines: string[] = trickslist.split('\n').filter(Boolean);
 

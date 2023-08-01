@@ -57,6 +57,7 @@ export default class LocationList {
     }
 
     readLocationList_7_1_117(file_cache: ExternalFileCache): void {
+        if (file_cache.files['LocationList.py'] === undefined) return;
         const locationlist: string[] = file_cache.files['LocationList.py'].split('\n').filter(Boolean);
         
         let parsing_locations = false;

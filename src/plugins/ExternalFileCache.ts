@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'path';
+//import { readFile } from 'node:fs/promises';
+//import { resolve } from 'path';
 
 class ExternalFileCache {
     constructor(public files: {[filename: string]: string} = {}) {}
@@ -10,12 +10,12 @@ class ExternalFileCache {
             try {
                 if (local_folder !== '') {
                     // assumes cwd is root of project!!
-                    files[f] = await readFile(resolve(local_folder, f), { encoding: 'utf8'});
+                    //files[f] = await readFile(resolve(local_folder, f), { encoding: 'utf8'});
                 } else {
-                    console.log(`downloading ${f}`);
+                    //console.log(`downloading ${f}`);
                     let response = await fetch(`${remote_url}/${f}`);
                     files[f] = await response.text();
-                    console.log(`finished downloading ${f}`);
+                    //console.log(`finished downloading ${f}`);
                 }
             } catch (err) {
                 let message;

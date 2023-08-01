@@ -5,12 +5,12 @@ import Entrance from './Entrance.js';
 import { Location } from "./Location.js";
 import World from './World.js';
 
-export class TimeOfDay {
-    static NONE =  0;
-    static DAY = 1;
-    static DAMPE = 2;
-    static ALL = this.DAY | this.DAMPE;
-}
+export const TimeOfDay = {
+    NONE: 0,
+    DAY: 1,
+    DAMPE: 2,
+    ALL: 3,
+};
 
 const RegionType = {
     OVERWORLD: 1,

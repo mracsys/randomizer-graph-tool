@@ -45,10 +45,10 @@ class OotrVersion implements GameVersion {
         if (this.branch !== branchVersion.branch) {
             throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
         }
-        if (semver.eq(this.to_string(true), version)) {
+        if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp >= branchVersion.supp;
         } else {
-            return semver.gt(this.to_string(true), version);
+            return semver.gt(this.to_string(true), branchVersion.to_string(true));
         }
     }
 
@@ -57,10 +57,10 @@ class OotrVersion implements GameVersion {
         if (this.branch !== branchVersion.branch) {
             throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
         }
-        if (semver.eq(this.to_string(true), version)) {
+        if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp > branchVersion.supp;
         } else {
-            return semver.gt(this.to_string(true), version);
+            return semver.gt(this.to_string(true), branchVersion.to_string(true));
         }
     }
 
@@ -69,10 +69,10 @@ class OotrVersion implements GameVersion {
         if (this.branch !== branchVersion.branch) {
             throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
         }
-        if (semver.eq(this.to_string(true), version)) {
+        if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp <= branchVersion.supp;
         } else {
-            return semver.lt(this.to_string(true), version);
+            return semver.lt(this.to_string(true), branchVersion.to_string(true));
         }
     }
 
@@ -81,10 +81,10 @@ class OotrVersion implements GameVersion {
         if (this.branch !== branchVersion.branch) {
             throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
         }
-        if (semver.eq(this.to_string(true), version)) {
+        if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp < branchVersion.supp;
         } else {
-            return semver.lt(this.to_string(true), version);
+            return semver.lt(this.to_string(true), branchVersion.to_string(true));
         }
     }
 
@@ -93,7 +93,7 @@ class OotrVersion implements GameVersion {
         if (this.branch !== branchVersion.branch) {
             throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
         }
-        return (semver.eq(this.to_string(true), version) && this.supp === branchVersion.supp);
+        return (semver.eq(this.to_string(true), branchVersion.to_string(true)) && this.supp === branchVersion.supp);
     }
 
     to_string(semverStr: boolean = false): string {
@@ -187,11 +187,18 @@ class OotrVersion implements GameVersion {
         ];
         switch(this.branch) {
             case '':
-            case 'R':
                 if (this.gte('7.1.143')) {
                     file_list.push('SettingsListTricks.py');
                 } else if (this.lt('7.1.117')) {
                     throw('OOTR versions prior to 7.1.117 not implemented');
+                }
+                file_list.push('SettingsList.py');
+                break;
+            case 'R':
+                if (this.gte('7.1.143 R-1')) {
+                    file_list.push('SettingsListTricks.py');
+                } else if (this.lt('7.1.117 R-1')) {
+                    throw('OOTR versions prior to 7.1.117 R-1 not implemented');
                 }
                 file_list.push('SettingsList.py');
                 break;

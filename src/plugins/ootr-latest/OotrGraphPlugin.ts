@@ -43,6 +43,8 @@ class OotrGraphPlugin extends GraphPlugin {
         this.entrance_list = new EntranceList(ootr_version, file_cache);
         this.item_list = new ItemList(ootr_version, file_cache);
 
+        let valid_cache = Object.keys(this.file_cache.files).length > 0;
+
         // In python OOTR this is a global variable, but we don't have
         // a static item list file to reference, so initialize as a
         // plugin property instead.
@@ -56,32 +58,34 @@ class OotrGraphPlugin extends GraphPlugin {
             junk: {},
         };
 
-        Object.keys(this.item_list.item_table).map((item_name) => {
-            this.ItemInfo.items[item_name] = new _ItemInfo(item_name, this.item_list.item_table);
-            if (this.ItemInfo.items[item_name].bottle) {
-                this.ItemInfo.bottles.add(item_name);
-            }
-            if (this.ItemInfo.items[item_name].medallion) {
-                this.ItemInfo.medallions.add(item_name);
-            }
-            if (this.ItemInfo.items[item_name].stone) {
-                this.ItemInfo.stones.add(item_name);
-            }
-            if (this.ItemInfo.items[item_name].ocarina_button) {
-                this.ItemInfo.ocarina_buttons.add(item_name);
-            }
-            if (this.ItemInfo.items[item_name].junk !== null) {
-                this.ItemInfo.junk[item_name] = this.ItemInfo.items[item_name].junk;
-            }
-        });
+        if (valid_cache) {
+            Object.keys(this.item_list.item_table).map((item_name) => {
+                this.ItemInfo.items[item_name] = new _ItemInfo(item_name, this.item_list.item_table);
+                if (this.ItemInfo.items[item_name].bottle) {
+                    this.ItemInfo.bottles.add(item_name);
+                }
+                if (this.ItemInfo.items[item_name].medallion) {
+                    this.ItemInfo.medallions.add(item_name);
+                }
+                if (this.ItemInfo.items[item_name].stone) {
+                    this.ItemInfo.stones.add(item_name);
+                }
+                if (this.ItemInfo.items[item_name].ocarina_button) {
+                    this.ItemInfo.ocarina_buttons.add(item_name);
+                }
+                if (this.ItemInfo.items[item_name].junk !== null) {
+                    this.ItemInfo.junk[item_name] = this.ItemInfo.items[item_name].junk;
+                }
+            });
+        }
 
-        if (!!user_overrides) {
+        if (!!user_overrides && valid_cache) {
             this.settings_list.override_settings(user_overrides);
         }
 
         // If this is a running in a test environment, skip parsing logic
         // as this takes more than a few ms.
-        if (test_only) {
+        if (test_only || !valid_cache) {
             // won't function correctly as the world logic isn't loaded
             this.search = new Search(this.worlds.map((world) => world.state));
             return;
@@ -95,9 +99,10 @@ class OotrGraphPlugin extends GraphPlugin {
         }
         this.finalize_world();
         this.search = new Search(this.worlds.map((world) => world.state));
+        this.initialized = true;
     }
 
-    static async create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache | null = null, debug: boolean = false, test_only: boolean = false) {
+    static async create_remote_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache | null = null, debug: boolean = false, test_only: boolean = false) {
         let ootr_version = new OotrVersion(version);
         let file_cache;
         if (!!global_cache) {
@@ -106,6 +111,11 @@ class OotrGraphPlugin extends GraphPlugin {
             file_cache = await OotrFileCache.load_ootr_files(version);
         }
         return new OotrGraphPlugin(user_overrides, ootr_version, file_cache, debug, test_only);
+    }
+
+    static create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache, debug: boolean = false, test_only: boolean = false) {
+        let ootr_version = new OotrVersion(version);
+        return new OotrGraphPlugin(user_overrides, ootr_version, global_cache, debug, test_only);
     }
 
     get_game_versions(): GraphGameVersions {

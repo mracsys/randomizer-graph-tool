@@ -1,7 +1,7 @@
 import { spawnSync, SpawnSyncReturns } from 'node:child_process';
 import { readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import WorldGraphFactory from '..//WorldGraph.js';
+import { WorldGraphRemoteFactory, WorldGraphFactory, ExternalFileCacheFactory } from '..//WorldGraph.js';
 import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
 import { GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
 import { Location } from '../plugins/ootr-latest/Location.js';
@@ -9,7 +9,16 @@ import { Location } from '../plugins/ootr-latest/Location.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_random_settings(1000, true);
+test_spoiler(false);
+//test_remote_files();
+//test_random_settings(1000, true);
+
+async function test_remote_files() {
+    //let _cache = {files: {}};
+    let _cache = await ExternalFileCacheFactory('ootr', '7.1.143');
+    let graph = WorldGraphFactory('ootr', {}, '7.1.143', _cache);
+    console.log(graph.get_game_versions().versions[0].version);
+}
 
 async function test_spoiler(convert: boolean = false) {
     let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', 'seed143.json'));
@@ -49,7 +58,7 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
 
     console.log('Running JS search');
     let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
-    let graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
+    let graph = await WorldGraphRemoteFactory('ootr', plando, '7.1.143', global_cache);
     graph.collect_spheres();
 
     let success = compare_js_to_python(graph, data);
@@ -99,7 +108,7 @@ async function test_random_settings(max_seeds: number = 1, local_files: boolean 
         data = read_python_stdout(pythonGraph);
 
         console.log('Running JS search');
-        graph = await WorldGraphFactory('ootr', plando, '7.1.143', global_cache);
+        graph = await WorldGraphRemoteFactory('ootr', plando, '7.1.143', global_cache);
         graph.collect_spheres();
 
         let success = compare_js_to_python(graph, data);

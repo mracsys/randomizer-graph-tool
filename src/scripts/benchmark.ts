@@ -1,5 +1,5 @@
 import { hrtime } from 'node:process';
-import WorldGraphFactory from '..//WorldGraph.js';
+import { WorldGraphRemoteFactory } from '..//WorldGraph.js';
 import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
 import { GraphPlugin } from '../plugins/GraphPlugin.js';
 import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
@@ -11,7 +11,7 @@ async function benchmark() {
     console.log(`Creat Rules   Search`);
     for (let i=0; i<10; i++) {
         let start = hrtime.bigint();
-        let graph = await WorldGraphFactory('ootr', {}, '7.1.143', global_cache);
+        let graph = await WorldGraphRemoteFactory('ootr', {}, '7.1.143', global_cache);
         let end = hrtime.bigint();
 
         let created = Number(end - start) / 1000000000.0;

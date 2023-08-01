@@ -1,5 +1,8 @@
 import * as babel from "@babel/core";
-import { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
+import { NodePath } from "@babel/core";
+//import { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
+import { parse } from "@babel/parser";
+import { transform, transformFromAst } from "@babel/standalone";
 import { CodeGenerator } from '@babel/generator';
 
 import WorldState from "./WorldState.js";
@@ -103,7 +106,7 @@ export default class RuleParser {
         this.load_aliases(this.world.parent_graph.file_cache);
 
         let self = this;
-        this.logicVisitor = [function ootrLogicPlugin({ types: t }): PluginObj {
+        this.logicVisitor = [function ootrLogicPlugin({ types: t }): babel.PluginObj {
             return {
                 visitor: {
                     Identifier(path) {
@@ -167,7 +170,7 @@ export default class RuleParser {
     visit(self: RuleParser, rule_string: string): string {
         if (self.debug) console.log(`start transforming rule ${rule_string}`);
         if (!(rule_string in self.subrule_cache) || rule_string.includes('here(') || rule_string.includes('at(')) {
-            let transformed_code = transformSync(rule_string, {
+            let transformed_code = transform(rule_string, {
                 sourceType: 'script',
                 plugins: self.logicVisitor
             });
@@ -190,12 +193,12 @@ export default class RuleParser {
         let ast_code = new CodeGenerator(ast, {}, '').generate().code;
         if (!(ast_code in self.subrule_ast_cache) || ast_code.includes('here(') || ast_code.includes('at(')) {
             let file = self.make_file(babel.types, ast);
-            let transformed_code = transformFromAstSync(file, undefined, {
+            let transformed_code: babel.BabelFileResult = transformFromAst(file, undefined, {
                 sourceType: 'script',
                 plugins: self.logicVisitor
             });
             if (!!transformed_code && !!transformed_code.code && transformed_code.code !== undefined) {
-                let visited_ast = babel.parse(transformed_code.code);
+                let visited_ast = parse(transformed_code.code);
                 if (!!visited_ast) {
                     self.subrule_ast_cache[ast_code] = self.get_visited_node(babel.types, visited_ast);
                 } else {
@@ -228,7 +231,7 @@ export default class RuleParser {
                 throw `non-zero args required for ${path.node.name}`;
             }
             // traverse repl and return
-            let repl_parsed = babel.parse(self.visit(self, repl));
+            let repl_parsed = parse(self.visit(self, repl));
             if (!!repl_parsed) {
                 let b = <babel.types.ExpressionStatement>repl_parsed.program.body[0];
                 path.replaceWith(b.expression);
@@ -450,7 +453,7 @@ export default class RuleParser {
                 }
                 repl = arg_re[Symbol.replace](repl, val);
             });
-            let repl_parsed = babel.parse(self.visit(self, repl));
+            let repl_parsed = parse(self.visit(self, repl));
             if (!!repl_parsed) {
                 let b = <babel.types.ExpressionStatement>repl_parsed.program.body[0];
                 path.replaceWith(b.expression);
@@ -783,7 +786,7 @@ export default class RuleParser {
         );
     }
 
-    replace_subrule(self: RuleParser, path: NodePath, target: string, node: Node): void {
+    replace_subrule(self: RuleParser, path: NodePath, target: string, node: babel.types.Node): void {
         const rule = new CodeGenerator(node, {}, '').generate().code;
         const t = babel.types;
         if (target in self.replaced_rules && rule in self.replaced_rules[target]) {
@@ -841,14 +844,14 @@ export default class RuleParser {
         if (this.debug) console.log(`done transforming rule`);
         if (!(rule_str in self.rule_cache)) {
             let t = babel.types;
-            let proto = babel.parse(access_proto);
+            let proto = parse(access_proto);
             let params;
             if (!!proto) {
                 let b = <babel.types.ExpressionStatement>proto.program.body[0];
                 let arrow = <babel.types.ArrowFunctionExpression>b.expression;
                 params = arrow.params; // damnit typescript
             } else throw `Error parsing access rule prototype parameters`;
-            let rule_ast = babel.parse(rule_str);
+            let rule_ast = parse(rule_str);
             let body;
             if (!!rule_ast) {
                 let b = <babel.types.ExpressionStatement>rule_ast.program.body[0];
@@ -936,10 +939,15 @@ export default class RuleParser {
         self.replace_subrule(self, path, self.current_spot.parent_region.name, path.node.arguments[0]);
     }
 
+    // NOTE: Python OOTR includes direct references to TimeOfDay static methods.
+    //       These work in node, but were failing when exported to a library
+    //       and imported into a react project. TimeOfDay constants are replaced
+    //       with numeric values in each of the at_* rule strings as a workaround.
+
     at_day(self: RuleParser, path: NodePath) {
         if (self.world.ensure_tod_access) {
-            let day = babel.parse("!!tod ? (tod & TimeOfDay.DAY) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAY))");
-            if (day === null) throw `Parse error: Unable to parse static at_day logic string`;
+            let day = parse("!!tod ? (tod & 1) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 1))");
+            if (day === null || day === undefined) throw `Parse error: Unable to parse static at_day logic string`;
             path.replaceWith(self.get_visited_node(babel.types, day));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
@@ -949,8 +957,8 @@ export default class RuleParser {
 
     at_dampe_time(self: RuleParser, path: NodePath) {
         if (self.world.ensure_tod_access) {
-            let dampe = babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAMPE)");
-            if (dampe === null) throw `Parse error: Unable to parse static at_dampe_time logic string`;
+            let dampe = parse("!!tod ? (tod & 2) : worldState.search.can_reach(spot.parent_region, age, 2)");
+            if (dampe === null || dampe === undefined) throw `Parse error: Unable to parse static at_dampe_time logic string`;
             path.replaceWith(self.get_visited_node(babel.types, dampe));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));
@@ -961,12 +969,12 @@ export default class RuleParser {
     at_night(self: RuleParser, path: NodePath) {
         if (self.current_spot === null) throw `Parse error: Tried to use time of day event generation with a null spot`;
         if (self.current_spot.type === 'GS Token' && self.world.settings.logic_no_night_tokens_without_suns_song) {
-            let skull = babel.parse(self.visit(self, 'can_play(Suns_Song)'));
-            if (skull === null) throw `Parse error: Unable to parse static at_night logic string`;
+            let skull = parse(self.visit(self, 'can_play(Suns_Song)'));
+            if (skull === null || skull === undefined) throw `Parse error: Unable to parse static at_night logic string`;
             path.replaceWith(self.get_visited_node(babel.types, skull));
         } else if (self.world.ensure_tod_access) {
-            let night = babel.parse("!!tod ? (tod & TimeOfDay.DAMPE) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, TimeOfDay.DAMPE))");
-            if (night === null) throw `Parse error: Unable to parse static at_night logic string`;
+            let night = parse("!!tod ? (tod & 2) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 2))");
+            if (night === null || night === undefined) throw `Parse error: Unable to parse static at_night logic string`;
             path.replaceWith(self.get_visited_node(babel.types, night));
         } else {
             path.replaceWith(babel.types.booleanLiteral(true));

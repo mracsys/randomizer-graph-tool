@@ -79,6 +79,7 @@ export abstract class GraphPlugin {
         private entrance_cache: {[world_id: number]: GraphEntrance[]} = {},
         private location_cache: {[world_id: number]: GraphLocation[]} = {},
         private item_cache: {[world_id: number]: GraphItem[]} = {},
+        public initialized: boolean = false,
     ) {}
 
     reset() {
