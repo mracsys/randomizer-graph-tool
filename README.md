@@ -51,15 +51,20 @@ async WorldGraphRemoteFactory(
 ): GraphPlugin
 ```
 _game_ - Game to analyze. Currently only `ootr` is supported.
+
 _user\_overrides_ - Valid plando file for the selected game and version.
+
 _version_ - Randomizer version for the game. Supported versions are:
+
     - ootr
         - 7.1.117
         - 7.1.143
         - 7.1.154
         - 7.1.143 R-1
         - 7.1.154 R-1
+
 _global\_cache_ - Instance of ExternalFileCache (see below) containing required randomizer files as strings. If not specified, files are retrieved automatically from the internet. In a development environment with many requests from repeated startups, this may lead to ratelimiting from Github. A local cache for dev work is highly recommended.
+
 _debug_ - Toggles extra console logging for development purposes
 
 Builds a graph object using the provided world settings. Use provided search functions to evaluate
@@ -86,8 +91,11 @@ async ExternalFileCacheFactory(
 ): ExternalFileCache
 ```
 _game_ - Game to analyze.  See _WorldGraphRemoteFactory_ for supported games.
+
 _version_ - Randomizer version for the game. See _WorldGraphRemoteFactory_ for supported versions.
+
 _local\_files_ - __(Optional)__ Local folder containing external randomizer files. Relative paths from the project root folder can be used in addition to absolute paths. ***Only works in a node.js environment***
+
 _local\_url_ - __(Optional)__ URL prefix override for randomizer files. If null and _local\_files_ is false, the Github repo for the selected game version is automatically used.
 
 Caches remote randomizer files for the specified game and version.
