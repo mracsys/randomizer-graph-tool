@@ -50,6 +50,18 @@ async WorldGraphRemoteFactory(
     debug: boolean = false
 ): GraphPlugin
 ```
+Builds a graph object using the provided world settings. Use provided search functions to evaluate
+logical access to locations and entrances. Worlds do not need to be fully specified. The graph will
+search as far as it can from the spawn entrance and ignore unconnected entrances and unfilled locations.
+
+For synchronous behavior, use `WorldGraphFactory` with a manually created `ExternalFileCache` of the same
+game and version.
+
+Compile time for the graph is 1-2 seconds, but a full search is less than a millisecond. You should cache and mutate
+the graph object between uses to speed up calculations. See the _GraphPlugin_ type below for usage.
+
+***Parameters***
+
 _game_ - Game to analyze. Currently only `ootr` is supported.
 
 _user\_overrides_ - Valid plando file for the selected game and version.
@@ -67,16 +79,6 @@ _global\_cache_ - Instance of ExternalFileCache (see below) containing required 
 
 _debug_ - Toggles extra console logging for development purposes
 
-Builds a graph object using the provided world settings. Use provided search functions to evaluate
-logical access to locations and entrances. Worlds do not need to be fully specified. The graph will
-search as far as it can from the spawn entrance and ignore unconnected entrances and unfilled locations.
-
-For synchronous behavior, use `WorldGraphFactory` with a manually created `ExternalFileCache` of the same
-game and version.
-
-Compile time for the graph is 1-2 seconds, but a full search is less than a millisecond. You should cache and mutate
-the graph object between uses to speed up calculations. See the _GraphPlugin_ type below for usage.
-
 ```typescript
 async ExternalFileCacheFactory(
     game: string = 'ootr',
@@ -90,6 +92,10 @@ async ExternalFileCacheFactory(
     } = {}
 ): ExternalFileCache
 ```
+Caches remote randomizer files for the specified game and version.
+
+***Parameters***
+
 _game_ - Game to analyze.  See _WorldGraphRemoteFactory_ for supported games.
 
 _version_ - Randomizer version for the game. See _WorldGraphRemoteFactory_ for supported versions.
@@ -97,8 +103,6 @@ _version_ - Randomizer version for the game. See _WorldGraphRemoteFactory_ for s
 _local\_files_ - __(Optional)__ Local folder containing external randomizer files. Relative paths from the project root folder can be used in addition to absolute paths. ***Only works in a node.js environment***
 
 _local\_url_ - __(Optional)__ URL prefix override for randomizer files. If null and _local\_files_ is false, the Github repo for the selected game version is automatically used.
-
-Caches remote randomizer files for the specified game and version.
 
 ### Types
 
