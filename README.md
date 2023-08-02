@@ -219,3 +219,11 @@ Unit tests are included in `tests`. Requires OOTR 7.1.143 files to be saved loca
 `yarn test`
 
 Integration testing scripts are included in `src/scripts/`
+
+Publish the library to npm with:
+
+```
+npm login
+npm publish --dry-run
+npm publish --access=public
+```
