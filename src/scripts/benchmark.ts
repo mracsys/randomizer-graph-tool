@@ -7,7 +7,7 @@ import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
 benchmark();
 
 async function benchmark() {
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
+    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', { local_files: 'tests/ootr-local-143' });
     console.log(`Creat Rules   Search`);
     for (let i=0; i<10; i++) {
         let start = hrtime.bigint();

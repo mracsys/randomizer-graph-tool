@@ -7,7 +7,7 @@ import { Item, ItemFactory } from "../src/plugins/ootr-latest/Item";
 import { Region } from "../src/plugins/ootr-latest/Region";
 import { Location } from "../src/plugins/ootr-latest/Location";
 import OotrGraphPlugin from "../src/plugins/ootr-latest/OotrGraphPlugin";
-import { describe, expect, it, beforeEach } from "@jest/globals";
+import { describe, expect, it, beforeEach, beforeAll } from "@jest/globals";
 
 let test_version: string;
 let _cache: OotrFileCache;
@@ -17,9 +17,12 @@ let world: World;
 let state: WorldState;
 let parser: RuleParser;
 
-beforeEach(async () => {
+beforeAll(async () =>{
     test_version = '7.1.143';
-    _cache = await OotrFileCache.load_ootr_files(test_version, true);
+    _cache = await OotrFileCache.load_ootr_files(test_version);
+});
+
+beforeEach(async () => {
     _graph = await OotrGraphPlugin.create_graph({}, test_version, _cache, false, true);
     _version = new OotrVersion(test_version);
     world = new World(0, _graph.settings_list, _version, _graph);

@@ -34,11 +34,17 @@ async function WorldGraphRemoteFactory(
 async function ExternalFileCacheFactory(
     game: string = 'ootr',
     version: string = '7.1.143',
-    local_files: boolean = false
+    {
+        local_files = null,
+        local_url = null,
+    }: {
+        local_files?: string | null,
+        local_url?: string | null,
+    } = {}
 ): Promise<ExternalFileCache> {
     switch(game) {
         case 'ootr':
-            return await OotrFileCache.load_ootr_files(version, local_files);
+            return await OotrFileCache.load_ootr_files(version, { local_files: local_files, local_url: local_url });
         default:
             throw `Unimplemented game ${game}`;
     }
@@ -72,6 +78,7 @@ export {
     WorldGraphFactory,
     ExternalFileCacheFactory,
     GraphPlugin,
+    ExternalFileCache,
     GameVersion,
     GraphGameVersions,
     GraphSetting,

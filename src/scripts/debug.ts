@@ -6,17 +6,18 @@ import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
 import { GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
 import { Location } from '../plugins/ootr-latest/Location.js';
 
+// local paths to RSL script and OOTR for generating/validating world searches
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
 test_spoiler(false);
 //test_remote_files();
-//test_random_settings(1000, true);
+//test_random_settings(1000, 'tests/ootr-local-143');
 
 async function test_remote_files() {
     //let _cache = {files: {}};
-    let _cache = await ExternalFileCacheFactory('ootr', '7.1.143');
-    let graph = WorldGraphFactory('ootr', {}, '7.1.143', _cache);
+    let _cache = await ExternalFileCacheFactory('ootr', '7.1.117');
+    let graph = WorldGraphFactory('ootr', {}, '7.1.117', _cache);
     console.log(graph.get_game_versions().versions[0].version);
 }
 
@@ -57,7 +58,7 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
     }
 
     console.log('Running JS search');
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', true);
+    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', { local_files: 'tests/ootr-local-143' });
     let graph = await WorldGraphRemoteFactory('ootr', plando, '7.1.143', global_cache);
     graph.collect_spheres();
 
@@ -65,7 +66,7 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
     return [plando, graph, data, success];
 }
 
-async function test_random_settings(max_seeds: number = 1, local_files: boolean = false) {
+async function test_random_settings(max_seeds: number = 1, local_files: string | null = null) {
     var rsl_output, pythonGraph, data, files, plando, graph;
     files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
     if (files.length > 0) {
@@ -79,7 +80,7 @@ async function test_random_settings(max_seeds: number = 1, local_files: boolean 
         }
     }
 
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', local_files);
+    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', { local_files: local_files });
 
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`);

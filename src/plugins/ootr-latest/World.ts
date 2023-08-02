@@ -243,7 +243,7 @@ class World implements GraphWorld {
         }
         let region_json = read_json(world_folder + '/' + file_path, this.parent_graph.file_cache);
         let savewarps_to_connect: SavewarpConnection[] = [];
-        //console.log(`parsing ${file_path}`);
+        if (this.parent_graph.debug) console.log(`parsing ${file_path}`);
         for (const region of region_json) {
             let new_region = new Region(region.region_name, this);
             if (!!region.scene) {
@@ -274,7 +274,7 @@ class World implements GraphWorld {
                     new_location.parent_region = new_region;
                     new_location.rule_string = replace_python_booleans(rule);
                     if (this.settings.logic_rules !== 'none') {
-                        //console.log(`parsing ${new_location.name}`);
+                        if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
                         this.parser.parse_spot_rule(new_location);
                     }
                     new_region.locations.push(new_location);
@@ -286,7 +286,7 @@ class World implements GraphWorld {
                     let new_location = new Location(lname, 'Event', new_region, false, this);
                     new_location.rule_string = replace_python_booleans(rule);
                     if (this.settings.logic_rules !== 'none') {
-                        //console.log(`parsing ${new_location.name}`);
+                        if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
                         this.parser.parse_spot_rule(new_location);
                     }
                     if (!(new_location.never)) {
@@ -302,7 +302,7 @@ class World implements GraphWorld {
                     new_exit.original_connection_name = exit;
                     new_exit.rule_string = replace_python_booleans(rule);
                     if (this.settings.logic_rules !== 'none') {
-                        //console.log(`parsing ${new_exit.name}`);
+                        if (this.parent_graph.debug) console.log(`parsing ${new_exit.name}`);
                         this.parser.parse_spot_rule(new_exit);
                     }
                     new_region.exits.push(new_exit);
@@ -341,7 +341,6 @@ class World implements GraphWorld {
     create_internal_locations(): void {
         this.parser.create_delayed_rules();
         if (this.parser.events.size > this.event_items.size) {
-            // TODO: add set difference, ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set#implementing_basic_set_operations
             throw('Parse error: undefined items in parser event list');
         }
     }

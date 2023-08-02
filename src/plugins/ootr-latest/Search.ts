@@ -40,6 +40,8 @@ class Search {
             this.cached_spheres = [this._cache];
         } else {
             let root_regions = this.state_list.map((state) => state.world.get_region('Root'));
+            // create parallel ToD objects so that the child/adult maps
+            // don't update each other after assignment
             let atod: TimeOfDayMap = {};
             let ctod: TimeOfDayMap = {};
             for (let region of root_regions) {

@@ -1,6 +1,5 @@
-import * as babel from "@babel/core";
-import { NodePath } from "@babel/core";
-//import { PluginObj, transformSync, transformFromAstSync, NodePath, Node } from "@babel/core";
+import * as babeltypes from "@babel/types";
+import type { NodePath } from "@babel/core";
 import { parse } from "@babel/parser";
 import { transform, transformFromAst } from "@babel/standalone";
 import { CodeGenerator } from '@babel/generator';
@@ -21,7 +20,7 @@ export type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | n
 export type AccessRule = (worldState: WorldState, { age, spot, tod }: kwargs) => boolean;
 type DelayedRule = {
     target: string,
-    node: babel.types.Node,
+    node: babeltypes.Node,
     subrule: string,
     subrule_name: string,
 };
@@ -32,7 +31,7 @@ type SubruleCache = {
     [rule_str: string]: string,
 };
 type SubruleAstCache = {
-    [rule_str: string]: babel.types.Expression,
+    [rule_str: string]: babeltypes.Expression,
 };
 type DynamicProps<T> = {
     [key: string]: T,
@@ -58,7 +57,7 @@ export default class RuleParser {
     public events: Set<string>;
     public replaced_rules: {
         [target_region: string]: {
-            [rule_str: string]: babel.types.CallExpression,
+            [rule_str: string]: babeltypes.CallExpression,
         },
     };
     public delayed_rules: DelayedRule[];
@@ -189,10 +188,10 @@ export default class RuleParser {
     // around the issue by creating a dummy program with the
     // subtree as the only expression, transforming, re-parsing
     // back to AST, then extracting the changed expression.
-    visit_AST(self: RuleParser, ast: babel.types.Node): babel.types.Expression {
+    visit_AST(self: RuleParser, ast: babeltypes.Node): babeltypes.Expression {
         let ast_code = new CodeGenerator(ast, {}, '').generate().code;
         if (!(ast_code in self.subrule_ast_cache) || ast_code.includes('here(') || ast_code.includes('at(')) {
-            let file = self.make_file(babel.types, ast);
+            let file = self.make_file(babeltypes, ast);
             let transformed_code: babel.BabelFileResult = transformFromAst(file, undefined, {
                 sourceType: 'script',
                 plugins: self.logicVisitor
@@ -200,7 +199,7 @@ export default class RuleParser {
             if (!!transformed_code && !!transformed_code.code && transformed_code.code !== undefined) {
                 let visited_ast = parse(transformed_code.code);
                 if (!!visited_ast) {
-                    self.subrule_ast_cache[ast_code] = self.get_visited_node(babel.types, visited_ast);
+                    self.subrule_ast_cache[ast_code] = self.get_visited_node(babeltypes, visited_ast);
                 } else {
                     throw(`Error transforming access rule: Transform result is null for ${ast_code}`);
                 }
@@ -213,7 +212,7 @@ export default class RuleParser {
         return self.subrule_ast_cache[ast_code];
     }
 
-    visit_Name(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.Identifier>) {
+    visit_Name(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.Identifier>) {
         if (Object.getOwnPropertyNames(RuleParser.prototype).includes(path.node.name)) {
             //here, at, tod tests
             let dynamic_class: DynamicProps<any> = self;
@@ -223,7 +222,6 @@ export default class RuleParser {
             } else {
                 throw `Parse error: attempted to call non-callable RuleParser property: ${path.node.name}`;
             }
-            //self[path.node.name](self, path)
         } else if (path.node.name in self.rule_aliases) {
             let args = self.rule_aliases[path.node.name]['args'];
             let repl = self.rule_aliases[path.node.name]['repl'];
@@ -233,7 +231,7 @@ export default class RuleParser {
             // traverse repl and return
             let repl_parsed = parse(self.visit(self, repl));
             if (!!repl_parsed) {
-                let b = <babel.types.ExpressionStatement>repl_parsed.program.body[0];
+                let b = <babeltypes.ExpressionStatement>repl_parsed.program.body[0];
                 path.replaceWith(b.expression);
                 path.skip();
             } else {
@@ -257,31 +255,6 @@ export default class RuleParser {
                 ),
                 t.identifier(path.node.name)
             );
-            /*
-            let dynamic_class: DynamicProps<any> = self.world;
-            let world_parsed = getProperty(dynamic_class, path.node.name);
-            //let world_parsed = self.world[path.node.name];
-            let new_node;
-            switch(typeof(world_parsed)) {
-                case 'string':
-                    new_node = t.stringLiteral(world_parsed);
-                    break;
-                case 'boolean':
-                    new_node = t.booleanLiteral(world_parsed);
-                    break;
-                case 'number':
-                    new_node = t.numericLiteral(world_parsed);
-                    break;
-                case 'object':
-                    if (Array.isArray(world_parsed)) {
-                        new_node = t.arrayExpression(Array.from(world_parsed).map((i) => { return t.stringLiteral(i); }));
-                    } else {
-                        throw 'Unhandled world property type: ' + typeof(world_parsed);
-                    }
-                    break;
-                default:
-                    throw 'Unhandled world property type: ' + typeof(world_parsed);
-            }*/
             path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(self.world.settings).includes(path.node.name)) {
@@ -295,28 +268,6 @@ export default class RuleParser {
                 ),
                 t.identifier(path.node.name)
             );
-            /*let worldsettings_parsed = self.world.settings[path.node.name];
-            let new_node;
-            switch(typeof(worldsettings_parsed)) {
-                case 'string':
-                    new_node = t.stringLiteral(worldsettings_parsed);
-                    break;
-                case 'boolean':
-                    new_node = t.booleanLiteral(worldsettings_parsed);
-                    break;
-                case 'number':
-                    new_node = t.numericLiteral(worldsettings_parsed);
-                    break;
-                case 'object':
-                    if (Array.isArray(worldsettings_parsed)) {
-                        new_node = t.arrayExpression(Array.from(worldsettings_parsed).map((i) => { return t.stringLiteral(i); }));
-                    } else {
-                        throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
-                    }
-                    break;
-                default:
-                    throw 'Unhandled world property type: ' + typeof(worldsettings_parsed);
-            }*/
             path.replaceWith(new_node);
             path.skip();
         } else if (Object.getOwnPropertyNames(WorldState.prototype).includes(path.node.name)) {
@@ -347,7 +298,7 @@ export default class RuleParser {
     // through visit_Str to state.has(literal). This function
     // converts the directives back to expressions for further
     // transformation.
-    visit_Program(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.Program>) {
+    visit_Program(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.Program>) {
         if (path.node.directives.length > 0) {
             if (path.node.body.length > 0) {
                 throw('Found directives in program with non-null expression');
@@ -358,7 +309,7 @@ export default class RuleParser {
         }
     }
 
-    visit_Str(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.StringLiteral>) {
+    visit_Str(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.StringLiteral>) {
         path.replaceWith(
             t.callExpression(
                 t.memberExpression(
@@ -371,13 +322,13 @@ export default class RuleParser {
     }
 
     // unused
-    visit_Constant(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.StringLiteral>) {
+    visit_Constant(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.StringLiteral>) {
         if (typeof(path.node.value) === 'string') {
             self.visit_Str(self, t, path);
         }
     }
 
-    visit_Tuple(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.SequenceExpression>) {
+    visit_Tuple(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.SequenceExpression>) {
         if (path.node.expressions.length != 2) {
             throw 'Parse error: Tuple must have 2 values: ' + path;
         }
@@ -421,7 +372,7 @@ export default class RuleParser {
         path.skip();
     }
 
-    visit_Call(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.CallExpression>) {
+    visit_Call(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.CallExpression>) {
         if (!(t.isIdentifier(path.node.callee))) {
             return;
         }
@@ -434,7 +385,6 @@ export default class RuleParser {
             } else {
                 throw `Parse error: attempted to call non-callable RuleParser property: ${path.node.callee.name}`;
             }
-            //self[path.node.callee.name](self, path);
         } else if (path.node.callee.name in self.rule_aliases) {
             let args = self.rule_aliases[path.node.callee.name]['args'];
             let repl = self.rule_aliases[path.node.callee.name]['repl'];
@@ -455,22 +405,22 @@ export default class RuleParser {
             });
             let repl_parsed = parse(self.visit(self, repl));
             if (!!repl_parsed) {
-                let b = <babel.types.ExpressionStatement>repl_parsed.program.body[0];
+                let b = <babeltypes.ExpressionStatement>repl_parsed.program.body[0];
                 path.replaceWith(b.expression);
                 path.skip();
             } else {
                 throw(`Error parsing rule alias: Transform result is null for ${path.node.callee.name}`);
             }
         } else {
-            let new_args: babel.types.Expression[] = [];
-            let kwargs: babel.types.AssignmentExpression[] = [];
+            let new_args: babeltypes.Expression[] = [];
+            let kwargs: babeltypes.AssignmentExpression[] = [];
             for (let child of path.node.arguments) {
                 // JS-exclusive condition to filter out keyword arguments.
                 // Python automatically separates these to node.keywords from node.args.
                 if (t.isAssignmentExpression(child)) {
                     kwargs.push(child);
                 } else {
-                    let arg: babel.types.Expression;
+                    let arg: babeltypes.Expression;
                     if (t.isIdentifier(child)) {
                         if (Object.getOwnPropertyNames(self.world).includes(child.name)) {
                             arg = t.memberExpression(
@@ -480,16 +430,6 @@ export default class RuleParser {
                                 ),
                                 t.identifier(child.name)
                             );
-                            /*let dynamic_class: DynamicProps<any> = self.world;
-                            let world_parsed = getProperty(dynamic_class, child.name).toString();
-                            world_parsed = babel.parse(world_parsed);
-                            if (!!world_parsed) {
-                                let b = <babel.types.ExpressionStatement>world_parsed.program.body[0];
-                                arg = b.expression;
-                            } else {
-                                throw(`Unhandled world property: ${child.name}`);
-                            }*/
-                            //arg = babel.parse(self.world[child.name].toString()).program.body[0].expression;
                         } else if (Object.getOwnPropertyNames(self.world.settings).includes(child.name)) {
                             arg = t.memberExpression(
                                 t.memberExpression(
@@ -501,16 +441,6 @@ export default class RuleParser {
                                 ),
                                 t.identifier(child.name)
                             );
-                            /*let dynamic_class: DynamicProps<any> = self.world.settings;
-                            let world_parsed = getProperty(dynamic_class, child.name).toString();
-                            world_parsed = babel.parse(world_parsed);
-                            if (!!world_parsed) {
-                                let b = <babel.types.ExpressionStatement>world_parsed.program.body[0];
-                                arg = b.expression;
-                            } else {
-                                throw(`Unhandled world settings property: ${child.name}`);
-                            }*/
-                            //arg = babel.parse(self.world.settings[child.name].toString()).program.body[0].expression;
                         } else if (child.name in self.rule_aliases) {
                             arg = self.visit_AST(self, child);
                         } else if (child.name in self.escaped_items) {
@@ -531,7 +461,7 @@ export default class RuleParser {
         }
     }
 
-    visit_Subscript(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.MemberExpression>) {
+    visit_Subscript(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.MemberExpression>) {
         // Javascript MemberExpressions are not distinct
         // between object.property and object[property] like
         // in Python (Attribute and Subscript, respectively).
@@ -567,8 +497,8 @@ export default class RuleParser {
         }
     }
 
-    visit_Compare(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.BinaryExpression>) {
-        function escape_or_string(n: babel.types.Node, t: typeof babel.types) {
+    visit_Compare(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.BinaryExpression>) {
+        function escape_or_string(n: babeltypes.Node, t: typeof babeltypes) {
             if (t.isIdentifier(n) && n.name in self.escaped_items) {
                 return t.stringLiteral(self.escaped_items[n.name]);
             } else if (!t.isStringLiteral(n)) {
@@ -620,25 +550,16 @@ export default class RuleParser {
             return;
         }
 
-        /*if (self.isLiteral(self, t, path.node.right) && self.isLiteral(self, t, path.node.left)) {
-            let res = eval(new CodeGenerator(path.node, {}, '').generate().code);
-            path.replaceWith(t.booleanLiteral(res));
-            path.skip();
-        }*/
         path.skip();
     }
 
-    visit_UnaryOp(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.UnaryExpression>) {
+    visit_UnaryOp(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.UnaryExpression>) {
         path.node.argument = self.visit_AST(self, path.node.argument);
-        /*if (self.isLiteral(self, t, path.node.argument)) {
-            let res = eval(new CodeGenerator(path.node, {}, '').generate().code);
-            path.replaceWith(t.booleanLiteral(res));
-        }*/
         path.skip();
     }
 
-    visit_BoolOp(self: RuleParser, t: typeof babel.types, path: babel.NodePath<babel.types.LogicalExpression>) {
-        function traverse_logic(n: babel.types.Node, t: typeof babel.types, op: string): void {
+    visit_BoolOp(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.LogicalExpression>) {
+        function traverse_logic(n: babeltypes.Node, t: typeof babeltypes, op: string): void {
             // Python groups all elements with common operators
             // outside of parentheses. JS nests LogicalExpressions
             // such that there is always one left and one right.
@@ -695,15 +616,15 @@ export default class RuleParser {
         }
 
         // repack logic back into nested logical expressions
-        function rebuild_logic(t: typeof babel.types, e: babel.types.Expression[], op: LogicOperator): babel.types.LogicalExpression {
+        function rebuild_logic(t: typeof babeltypes, e: babeltypes.Expression[], op: LogicOperator): babeltypes.LogicalExpression {
             let right_test = e.pop();
-            let right: babel.types.Expression
+            let right: babeltypes.Expression
             if (right_test !== undefined) {
                 right = right_test;
             } else {
                 throw `Right side of comparison is undefined`;
             }
-            let left: babel.types.Expression;
+            let left: babeltypes.Expression;
             if (e.length > 1) {
                 left = rebuild_logic(t, e, op);
             } else {
@@ -720,7 +641,7 @@ export default class RuleParser {
         let early_return = path.node.operator === '||';
         let groupable = early_return ? 'has_any_of' : 'has_all_of';
         let item_set: Set<string> = new Set();
-        let new_values: babel.types.Expression[] = [];
+        let new_values: babeltypes.Expression[] = [];
         traverse_logic(path.node.left, t, path.node.operator);
         // test if the early return was hit before parsing the last comparator in the chain
         if (t.isBooleanLiteral(path.node)) {
@@ -738,7 +659,7 @@ export default class RuleParser {
             return;
         }
 
-        let expressions: babel.types.Expression[] = [];
+        let expressions: babeltypes.Expression[] = [];
         if (item_set.size > 0) {
             let call = t.callExpression(
                 t.memberExpression(
@@ -761,23 +682,13 @@ export default class RuleParser {
         path.skip();
     }
 
-    make_call(self: RuleParser, t: typeof babel.types, node: babel.types.Expression, name: string, args: babel.types.Expression[], kwargs: babel.types.AssignmentExpression[]) {
+    make_call(self: RuleParser, t: typeof babeltypes, node: babeltypes.Expression, name: string, args: babeltypes.Expression[], kwargs: babeltypes.AssignmentExpression[]) {
         if (!Object.getOwnPropertyNames(WorldState.prototype).includes(name)) {
             throw `Parse error: No such function State.${name}`;
         }
-        // Convert separate AssignmentExpression keyword args to
-        // one combined ObjectExpression for use with parameter
-        // destructuring to simulate Python **kwargs.
-        // Not actually used anywhere outside top level access rules,
-        // but kept here because python OOTR has it.
-        //
-        //let objargs = [];
-        //kwargs.forEach((kwarg) => {
-        //    objargs.push(t.objectProperty(kwarg.left, kwarg.right));
-        //});
-        //if (objargs.length > 0) {
-        //    args.push(t.objectExpression(objargs));
-        //}
+        // kwargs aren't currently used inside the logic files,
+        // only at the top level when assembling the final
+        // access rule
         return t.callExpression(
             t.memberExpression(
                 t.identifier('worldState'),
@@ -786,9 +697,9 @@ export default class RuleParser {
         );
     }
 
-    replace_subrule(self: RuleParser, path: NodePath, target: string, node: babel.types.Node): void {
+    replace_subrule(self: RuleParser, path: NodePath, target: string, node: babeltypes.Node): void {
         const rule = new CodeGenerator(node, {}, '').generate().code;
-        const t = babel.types;
+        const t = babeltypes;
         if (target in self.replaced_rules && rule in self.replaced_rules[target]) {
             path.replaceWith(self.replaced_rules[target][rule]);
         } else {
@@ -811,12 +722,12 @@ export default class RuleParser {
 
     create_delayed_rules(): void {
         let self = this;
-        //console.log('parsing delayed rules');
+        if (this.debug) console.log('parsing delayed rules');
         self.delayed_rules.map((rule) => {
             let region_name = rule['target'];
             let node = rule['node'];
             let subrule_name = rule['subrule_name'];
-            //console.log(`parsing event ${subrule_name} in ${region_name}`);
+            if (this.debug) console.log(`parsing event ${subrule_name} in ${region_name}`);
             let region = self.world.get_region(region_name);
             let event = new Location(subrule_name, 'Event', region, true, self.world);
             event.rule_string = rule['subrule'].trim();
@@ -843,25 +754,25 @@ export default class RuleParser {
         if (!!(this.current_spot)) this.current_spot.transformed_rule = rule_str;
         if (this.debug) console.log(`done transforming rule`);
         if (!(rule_str in self.rule_cache)) {
-            let t = babel.types;
+            let t = babeltypes;
             let proto = parse(access_proto);
             let params;
             if (!!proto) {
-                let b = <babel.types.ExpressionStatement>proto.program.body[0];
-                let arrow = <babel.types.ArrowFunctionExpression>b.expression;
+                let b = <babeltypes.ExpressionStatement>proto.program.body[0];
+                let arrow = <babeltypes.ArrowFunctionExpression>b.expression;
                 params = arrow.params; // damnit typescript
             } else throw `Error parsing access rule prototype parameters`;
             let rule_ast = parse(rule_str);
             let body;
             if (!!rule_ast) {
-                let b = <babel.types.ExpressionStatement>rule_ast.program.body[0];
+                let b = <babeltypes.ExpressionStatement>rule_ast.program.body[0];
                 body = b.expression;
             } else throw `Error parsing access rule to final AST`;
-            let exp: babel.types.ArrowFunctionExpression
+            let exp: babeltypes.ArrowFunctionExpression
             if (!!params && !!body) {
                 exp = t.arrowFunctionExpression(params,body,false);
             } else throw `Error building access rule arrow function`;
-            let stmt: babel.types.ExpressionStatement
+            let stmt: babeltypes.ExpressionStatement
             if (!!exp) {
                 stmt = t.expressionStatement(exp);
             } else throw `Error building access rule expression`; // finally, was that so hard typescript??
@@ -875,33 +786,33 @@ export default class RuleParser {
         return self.rule_cache[rule_str];
     }
 
-    make_file(t: typeof babel.types, ast: babel.types.Node): babel.types.File {
-        let f: babel.types.File;
+    make_file(t: typeof babeltypes, ast: babeltypes.Node): babeltypes.File {
+        let f: babeltypes.File;
         if (!t.isFile(ast)) {
-            let p: babel.types.Program;
+            let p: babeltypes.Program;
             if (!t.isProgram(ast)) {
-                let s: babel.types.ExpressionStatement;
+                let s: babeltypes.ExpressionStatement;
                 if (!t.isExpressionStatement(ast)) {
-                    let e = <babel.types.Expression>ast;
+                    let e = <babeltypes.Expression>ast;
                     s = t.expressionStatement(e);
                 } else {
-                    s = <babel.types.ExpressionStatement>ast;
+                    s = <babeltypes.ExpressionStatement>ast;
                 }
                 p = t.program([s]);
             } else {
-                p = <babel.types.Program>ast;
+                p = <babeltypes.Program>ast;
             }
             f = t.file(p);
         } else {
-            f = <babel.types.File>ast;
+            f = <babeltypes.File>ast;
         }
         return f;
     }
 
-    get_visited_node(t: typeof babel.types, ast: babel.types.File): babel.types.Expression {
+    get_visited_node(t: typeof babeltypes, ast: babeltypes.File): babeltypes.Expression {
         if (ast.program.body.length > 0) {
             // non-literals
-            let b = <babel.types.ExpressionStatement>ast.program.body[0];
+            let b = <babeltypes.ExpressionStatement>ast.program.body[0];
             return b.expression;
         } else {
             // literals
@@ -914,7 +825,7 @@ export default class RuleParser {
         }
     }
 
-    isLiteral(self: RuleParser, t: typeof babel.types, n: babel.types.Node): boolean {
+    isLiteral(self: RuleParser, t: typeof babeltypes, n: babeltypes.Node): boolean {
         if (t.isBinaryExpression(n)) {
             return self.isLiteral(self, t, n.left) && self.isLiteral(self, t, n.right);
         } else {
@@ -922,15 +833,15 @@ export default class RuleParser {
         }
     }
 
-    at(self: RuleParser, path: NodePath<babel.types.CallExpression>) {
+    at(self: RuleParser, path: NodePath<babeltypes.CallExpression>) {
         if (path.node.arguments.length !== 2) {
             throw(`Parse error: invalid at() arguments (${path.node.arguments})`);
         }
-        if (!(babel.types.isStringLiteral(path.node.arguments[0]))) throw `Parse error: non-string used for at() region argument`;
+        if (!(babeltypes.isStringLiteral(path.node.arguments[0]))) throw `Parse error: non-string used for at() region argument`;
         self.replace_subrule(self, path, path.node.arguments[0].value, path.node.arguments[1]);
     }
 
-    here(self: RuleParser, path: NodePath<babel.types.CallExpression>) {
+    here(self: RuleParser, path: NodePath<babeltypes.CallExpression>) {
         if (path.node.arguments.length !== 1) {
             throw(`Parse error: invalid here() arguments (${path.node.arguments})`);
         }
@@ -948,9 +859,9 @@ export default class RuleParser {
         if (self.world.ensure_tod_access) {
             let day = parse("!!tod ? (tod & 1) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 1))");
             if (day === null || day === undefined) throw `Parse error: Unable to parse static at_day logic string`;
-            path.replaceWith(self.get_visited_node(babel.types, day));
+            path.replaceWith(self.get_visited_node(babeltypes, day));
         } else {
-            path.replaceWith(babel.types.booleanLiteral(true));
+            path.replaceWith(babeltypes.booleanLiteral(true));
         }
         path.skip();
     }
@@ -959,9 +870,9 @@ export default class RuleParser {
         if (self.world.ensure_tod_access) {
             let dampe = parse("!!tod ? (tod & 2) : worldState.search.can_reach(spot.parent_region, age, 2)");
             if (dampe === null || dampe === undefined) throw `Parse error: Unable to parse static at_dampe_time logic string`;
-            path.replaceWith(self.get_visited_node(babel.types, dampe));
+            path.replaceWith(self.get_visited_node(babeltypes, dampe));
         } else {
-            path.replaceWith(babel.types.booleanLiteral(true));
+            path.replaceWith(babeltypes.booleanLiteral(true));
         }
         path.skip();
     }
@@ -971,13 +882,13 @@ export default class RuleParser {
         if (self.current_spot.type === 'GS Token' && self.world.settings.logic_no_night_tokens_without_suns_song) {
             let skull = parse(self.visit(self, 'can_play(Suns_Song)'));
             if (skull === null || skull === undefined) throw `Parse error: Unable to parse static at_night logic string`;
-            path.replaceWith(self.get_visited_node(babel.types, skull));
+            path.replaceWith(self.get_visited_node(babeltypes, skull));
         } else if (self.world.ensure_tod_access) {
             let night = parse("!!tod ? (tod & 2) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 2))");
             if (night === null || night === undefined) throw `Parse error: Unable to parse static at_night logic string`;
-            path.replaceWith(self.get_visited_node(babel.types, night));
+            path.replaceWith(self.get_visited_node(babeltypes, night));
         } else {
-            path.replaceWith(babel.types.booleanLiteral(true));
+            path.replaceWith(babeltypes.booleanLiteral(true));
         }
         path.skip();
     }

@@ -42,9 +42,6 @@ class OotrVersion implements GameVersion {
 
     gte(version: string): boolean {
         let branchVersion = new OotrVersion(version, false);
-        if (this.branch !== branchVersion.branch) {
-            throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
-        }
         if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp >= branchVersion.supp;
         } else {
@@ -54,9 +51,6 @@ class OotrVersion implements GameVersion {
 
     gt(version: string): boolean {
         let branchVersion = new OotrVersion(version, false);
-        if (this.branch !== branchVersion.branch) {
-            throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
-        }
         if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp > branchVersion.supp;
         } else {
@@ -66,9 +60,6 @@ class OotrVersion implements GameVersion {
 
     lte(version: string): boolean {
         let branchVersion = new OotrVersion(version, false);
-        if (this.branch !== branchVersion.branch) {
-            throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
-        }
         if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp <= branchVersion.supp;
         } else {
@@ -78,9 +69,6 @@ class OotrVersion implements GameVersion {
 
     lt(version: string): boolean {
         let branchVersion = new OotrVersion(version, false);
-        if (this.branch !== branchVersion.branch) {
-            throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
-        }
         if (semver.eq(this.to_string(true), branchVersion.to_string(true))) {
             return this.supp < branchVersion.supp;
         } else {
@@ -90,9 +78,6 @@ class OotrVersion implements GameVersion {
 
     eq(version: string): boolean {
         let branchVersion = new OotrVersion(version, false);
-        if (this.branch !== branchVersion.branch) {
-            throw(`Invalid branch comparison: ${this.to_string()} to ${branchVersion.to_string()}`)
-        }
         return (semver.eq(this.to_string(true), branchVersion.to_string(true)) && this.supp === branchVersion.supp);
     }
 

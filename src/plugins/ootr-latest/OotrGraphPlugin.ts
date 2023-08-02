@@ -278,7 +278,6 @@ class OotrGraphPlugin extends GraphPlugin {
         ];
         for (let world of this.worlds) {
             // vanilla item fill based on settings
-            let replacement_vanilla_item;
             for (let loc of world.get_locations()) {
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
@@ -644,7 +643,7 @@ class OotrGraphPlugin extends GraphPlugin {
             world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world)[0]);
             world.state.collect(ItemFactory('Small Key (Treasure Chest Game)', world)[0]);
         }
-        if (!(world.settings.shuffle_individual_ocarina_notes)) {
+        if (!(world.settings.shuffle_individual_ocarina_notes) && this.ootr_version.gte('7.1.138')) {
             world.state.collect(ItemFactory('Ocarina A Button', world)[0]);
             world.state.collect(ItemFactory('Ocarina C up Button', world)[0]);
             world.state.collect(ItemFactory('Ocarina C down Button', world)[0]);
