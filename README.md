@@ -1,5 +1,4 @@
-# ootr-web-logic
-Ocarina of Time Randomizer Logic Interpreter
+#  randomizer-graph-tool
 
 Provides a graph object to determine logically reachable locations and entrances for randomizers.
 
