@@ -115,14 +115,14 @@ class GraphPlugin {
     get_items(): {[world_id: number]: GraphItem[]} {}
 
     // Search interface world-specific convenience functions
-    get_entrances_for_world(world: GraphWorld): GraphEntrance[] {}
+    get_entrances_for_world(world: GraphWorld): GraphEntrance[];
     get_accessible_entrances_for_world(world: GraphWorld): GraphEntrance[];
-    get_locations_for_world(world: GraphWorld): GraphLocation[] {}
+    get_locations_for_world(world: GraphWorld): GraphLocation[];
     get_visited_locations_for_world(world: GraphWorld): GraphLocation[];
     get_required_locations_for_world(world: GraphWorld): GraphLocation[];  // not currently implemented for ootr
     get_required_locations_for_items(world: GraphWorld, goal_items: GraphItem[]): GraphLocation[];  // not currently implemented for ootr
     get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
-    get_regions_for_world(world: GraphWorld): GraphRegion[] {}
+    get_regions_for_world(world: GraphWorld): GraphRegion[];
 
     // World building interface
     set_location_item(location: GraphLocation, item: GraphItem): void;
