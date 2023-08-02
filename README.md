@@ -140,12 +140,12 @@ class GameVersion {
     eq(version: string): boolean;
 }
 
-export type GraphGameVersions = {
+type GraphGameVersions = {
     game: string,
     versions: GameVersion[],
 }
 
-export type GraphSetting = {
+type GraphSetting = {
     name: string,
     type: string,
     default: any,
@@ -170,7 +170,7 @@ interface GraphLocation {
     viewable(): boolean;
 }
 
-export interface GraphEntrance {
+interface GraphEntrance {
     name: string;
     alias: string;
     type: string | null;
@@ -181,17 +181,17 @@ export interface GraphEntrance {
     viewable(): boolean;
 }
 
-export interface GraphItem {
+interface GraphItem {
     name: string;
     player?: number;
 }
 
-export interface GraphWorld {
+interface GraphWorld {
     id: number;
     regions: GraphRegion[];
 }
 
-export interface GraphRegion {
+interface GraphRegion {
     name: string;
     exits: GraphEntrance[];
     entrances: GraphEntrance[];
