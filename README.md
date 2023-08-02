@@ -56,12 +56,12 @@ _user\_overrides_ - Valid plando file for the selected game and version.
 
 _version_ - Randomizer version for the game. Supported versions are:
 
-    - ootr
-        - 7.1.117
-        - 7.1.143
-        - 7.1.154
-        - 7.1.143 R-1
-        - 7.1.154 R-1
+- ootr
+    - 7.1.117
+    - 7.1.143
+    - 7.1.154
+    - 7.1.143 R-1
+    - 7.1.154 R-1
 
 _global\_cache_ - Instance of ExternalFileCache (see below) containing required randomizer files as strings. If not specified, files are retrieved automatically from the internet. In a development environment with many requests from repeated startups, this may lead to ratelimiting from Github. A local cache for dev work is highly recommended.
 
