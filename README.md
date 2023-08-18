@@ -249,6 +249,10 @@ npm publish --access=public
 
 ## Changelog
 
+### 1.1.1
+
+* Fix GraphSettingType export
+
 ### 1.1.0
 
 * Advertise shuffled entrances and locations correctly
