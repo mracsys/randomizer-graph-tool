@@ -1,7 +1,7 @@
 {
   "name": "@mracsys/randomizer-graph-tool",
   "description": "Ocarina of Time Randomizer Logic Interpreter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "types": "./lib/cjs/types/WorldGraph.d.ts",
   "main": "./lib/cjs/WorldGraph.js",
@@ -43,13 +43,13 @@
   "scripts": {
     "test": "jest",
     "clean": "rm -rf ./lib",
-    "debug": "npm run clean && npm run build:dev",
-    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "debug": "yarn run clean && yarn run build:dev",
+    "build": "yarn run clean && yarn run build:esm && yarn run build:cjs",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",
     "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
     "build:dev": "tsc -p ./configs/tsconfig.dev.json",
     "semantic-release": "semantic-release",
-    "prepack": "npm run build"
+    "prepack": "yarn run build"
   },
   "repository": {
     "type": "git",

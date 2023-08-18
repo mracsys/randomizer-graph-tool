@@ -417,6 +417,7 @@ class OotrGraphPlugin extends GraphPlugin {
             for (let entrance of world.get_entrances()) {
                 if (!!(entrance.type) && world.shuffled_entrance_types.includes(entrance.type)) {
                     entrance.disconnect();
+                    entrance.shuffled = true;
                 }
             }
             // Special handling for spawns since they have the same type but
@@ -424,10 +425,12 @@ class OotrGraphPlugin extends GraphPlugin {
             if (!!(world.settings.spawn_positions) && world.settings.spawn_positions.includes('child')) {
                 let entrance = world.get_entrance('Child Spawn -> KF Links House');
                 entrance.disconnect();
+                entrance.shuffled = true;
             }
             if (!!(world.settings.spawn_positions) && world.settings.spawn_positions.includes('adult')) {
                 let entrance = world.get_entrance('Adult Spawn -> Temple of Time');
                 entrance.disconnect();
+                entrance.shuffled = true;
             }
 
             // reconnect only shuffled entrances with user targets
@@ -607,12 +610,13 @@ class OotrGraphPlugin extends GraphPlugin {
         world.skipped_locations.push(world.get_location('Links Pocket'));
         if (!(world.settings.shuffle_gerudo_card) && world.settings.gerudo_fortress === 'open') {
             world.state.collect(ItemFactory('Gerudo Membership Card', world)[0]);
-            world.skipped_locations.push(world.get_location('Hideout Gerudo Membership Card'));
+            world.skip_location('Hideout Gerudo Membership Card');
         }
         if (world.skip_child_zelda) {
             world.state.collect(ItemFactory('Weird Egg', world)[0]);
+            if (!(world.get_location('HC Malon Egg').shuffled)) world.skip_location('HC Malon Egg');
             for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
-                world.skipped_locations.push(world.get_location(loc_name));
+                world.skip_location(loc_name);
             }
         }
         if (world.settings.free_scarecrow) {

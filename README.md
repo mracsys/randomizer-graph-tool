@@ -61,7 +61,10 @@ the graph object between uses to speed up calculations. See the _GraphPlugin_ ty
 
 ***Parameters***
 
-_game_ - Game to analyze. Currently only `ootr` is supported.
+_game_ - Game to analyze. Supported games are:
+
+- `ootr` - Ocarina of Time Randomizer, https://github.com/OoTRandomizer/OoT-Randomizer
+- `empty` - Empty `GraphPlugin` object with no locations, entrances, or settings
 
 _user\_overrides_ - Valid plando file for the selected game and version.
 
@@ -167,6 +170,8 @@ type GraphSetting = {
     maximum?: number,
 }
 
+type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
+
 interface GraphLocation {
     name: string;
     alias: string;
@@ -200,6 +205,9 @@ interface GraphItem {
 interface GraphWorld {
     id: number;
     regions: GraphRegion[];
+    settings: {
+        [internal_name: string]: GraphSettingType,
+    },
 }
 
 interface GraphRegion {
@@ -238,3 +246,15 @@ npm login
 npm publish --dry-run
 npm publish --access=public
 ```
+
+## Changelog
+
+### 1.1.0
+
+* Advertise shuffled entrances and locations correctly
+* Provide read/write access to individual world settings
+* Add `empty` graph type for state placeholder applications
+
+### 1.0.0
+
+Initial Release

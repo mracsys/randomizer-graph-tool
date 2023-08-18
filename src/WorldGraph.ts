@@ -11,6 +11,7 @@ import {
     GraphLocation,
     GraphItem,
 } from "./plugins/GraphPlugin.js";
+import EmptyGraphPlugin from "./plugins/EmptyGraphPlugin.js";
 import OotrGraphPlugin from './plugins/ootr-latest/OotrGraphPlugin.js';
 
 // Creates a new world graph.
@@ -24,6 +25,8 @@ async function WorldGraphRemoteFactory(
         debug: boolean = false
     ): Promise<GraphPlugin> {
         switch(game) {
+            case 'empty':
+                return new EmptyGraphPlugin();
             case 'ootr':
                 return await OotrGraphPlugin.create_remote_graph(user_overrides, version, global_cache, debug);
             default:
@@ -65,6 +68,8 @@ function WorldGraphFactory(
         debug: boolean = false
     ): GraphPlugin {
         switch(game) {
+            case 'empty':
+                return new EmptyGraphPlugin();
             case 'ootr':
                 return OotrGraphPlugin.create_graph(user_overrides, version, global_cache, debug);
             default:

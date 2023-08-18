@@ -1,10 +1,10 @@
 import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
+import type { GraphSettingType } from "../GraphPlugin.js";
 
-type SettingType = boolean | string | number | string[] | object | null | undefined;
 type Setting = {
     name: string,
-    default: SettingType,
+    default: GraphSettingType,
     type: string,
     tab: string,
     section: string,
@@ -19,7 +19,7 @@ type SettingTypeDictionary = {
     [type_function: string]: Setting
 };
 export type SettingsDictionary = {
-    [key: string]: SettingType,
+    [key: string]: GraphSettingType,
     starting_items?: {
         [item_name: string]: number,
     },

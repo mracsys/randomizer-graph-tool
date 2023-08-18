@@ -457,6 +457,15 @@ class World implements GraphWorld {
         location.vanilla_item.location = location;
         location.vanilla_item.price = location.price !== null ? location.price : location.vanilla_item.price;
         location.price = location.vanilla_item.price;
+        location.shuffled = false;
+    }
+
+    skip_location(location: Location | string) {
+        if (!(location instanceof Location)) {
+            location = this.get_location(location);
+        }
+        this.skipped_locations.push(location);
+        location.internal = true;
     }
 
     get_locations(): Location[] {

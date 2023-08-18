@@ -39,10 +39,13 @@ export class Location implements GraphLocation {
         public never: boolean = false,
         public sphere: number = -1,
         public alias: string = '',
-        public shuffled: boolean = false,
+        public shuffled: boolean = true,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
-        if (this.type === "Event" || this.name === "Gift from Sages") this.internal = true;
+        if (this.type === "Event" || this.name === "Gift from Sages") {
+            this.internal = true;
+            this.shuffled = false;
+        }
     }
 
     add_rule(rule: AccessRule): void {

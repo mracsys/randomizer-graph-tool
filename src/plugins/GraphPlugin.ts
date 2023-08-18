@@ -41,6 +41,9 @@ export interface GraphRegion {
 export interface GraphWorld {
     id: number;
     regions: GraphRegion[];
+    settings: {
+        [internal_name: string]: GraphSettingType,
+    },
 }
 
 export type GraphGameVersions = {
@@ -70,6 +73,8 @@ export type GraphSetting = {
     minimum?: number,
     maximum?: number,
 };
+
+export type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
 
 export abstract class GraphPlugin {
     abstract worlds: GraphWorld[];
