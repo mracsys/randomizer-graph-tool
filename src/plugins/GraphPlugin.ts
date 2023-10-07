@@ -22,16 +22,24 @@ export interface GraphItem {
 export interface GraphEntrance {
     name: string;
     alias: string;
+    target_alias: string;
     type: string | null;
+    type_alias: string;
     shuffled: boolean;
+    coupled: boolean;
+    is_warp: boolean;
     parent_region: GraphRegion;
     connected_region: GraphRegion | null;
+    original_connection: GraphRegion | null;
+    reverse: GraphEntrance | null,
     world: GraphWorld;
+    sphere: number;
     viewable(): boolean;
 }
 
 export interface GraphRegion {
     name: string;
+    alias: string;
     exits: GraphEntrance[];
     entrances: GraphEntrance[];
     locations: GraphLocation[];
@@ -41,9 +49,12 @@ export interface GraphRegion {
 export interface GraphWorld {
     id: number;
     regions: GraphRegion[];
-    settings: {
-        [internal_name: string]: GraphSettingType,
-    },
+    region_groups: GraphRegion[];
+    readonly settings: GraphSettingsConfiguration,
+    get_entrance(entrance: GraphEntrance | string): GraphEntrance,
+    get_location(location: GraphLocation | string): GraphLocation,
+    get_entrances(): GraphEntrance[],
+    get_locations(): GraphLocation[],
 }
 
 export type GraphGameVersions = {
@@ -61,12 +72,19 @@ export abstract class GameVersion {
     abstract lt(version: string): boolean;
     abstract lte(version: string): boolean;
     abstract eq(version: string): boolean;
-}
+};
+
+export type GraphSettingsConfiguration = {
+    [internal_name: string]: GraphSettingType,
+};
 
 export type GraphSetting = {
     name: string,
     type: string,
-    default: any,
+    default: GraphSettingType,
+    disabled_default: GraphSettingType,
+    disabled(settings: GraphSettingsConfiguration): boolean,
+    display_name: string,
     tab: string,
     section: string,
     choices?: {[internal_name: string]: string},
@@ -76,6 +94,12 @@ export type GraphSetting = {
 
 export type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
 
+export type GraphItemDictionary = {
+    [world_id: number]: {
+        [item_name: string]: GraphItem,
+    },
+};
+
 export abstract class GraphPlugin {
     abstract worlds: GraphWorld[];
     abstract file_cache: ExternalFileCache;
@@ -83,21 +107,30 @@ export abstract class GraphPlugin {
     constructor(
         private entrance_cache: {[world_id: number]: GraphEntrance[]} = {},
         private location_cache: {[world_id: number]: GraphLocation[]} = {},
-        private item_cache: {[world_id: number]: GraphItem[]} = {},
+        private item_cache: GraphItemDictionary = {},
         public initialized: boolean = false,
     ) {}
 
     reset() {
         this.worlds = [];
+        this.reset_cache();
+    }
+
+    reset_cache() {
         this.entrance_cache = [];
         this.location_cache = [];
         this.item_cache = [];
     }
 
+    // plando file processing
+    abstract import(save_file: any): void;
+    abstract export(pretty: boolean): string;
+
     // Version/branch list for selection, static class method
     abstract get_game_versions(): GraphGameVersions;
 
     abstract get_settings_options(): {[setting_name: string]: GraphSetting};
+    abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
     // Search interface
     abstract collect_locations(): void;
@@ -115,6 +148,7 @@ export abstract class GraphPlugin {
 
     // World building interface
     abstract set_location_item(location: GraphLocation, item: GraphItem): void;
+    abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): {[category: string]: GraphEntrance[]};
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
@@ -153,14 +187,14 @@ export abstract class GraphPlugin {
         return world.regions;
     }
 
-    get_items(): {[world_id: number]: GraphItem[]} {
+    get_items(): GraphItemDictionary {
         if (Object.keys(this.item_cache).length === 0) {
             for (let world of this.worlds) {
-                this.item_cache[world.id] = [];
+                this.item_cache[world.id] = {};
                 for (let region of world.regions) {
                     for (let location of region.locations) {
-                        if (location.viewable() && !!location.vanilla_item) {
-                            this.item_cache[world.id].push(location.vanilla_item);
+                        if (location.viewable() && !!location.vanilla_item && !(Object.keys(this.item_cache[world.id]).includes(location.vanilla_item.name))) {
+                            this.item_cache[world.id][location.vanilla_item.name] = location.vanilla_item;
                         }
                     }
                 }

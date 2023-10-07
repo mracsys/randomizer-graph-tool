@@ -27,12 +27,20 @@ class Search {
     public state_list: WorldState[];
     public _cache: SearchCache;
     cached_spheres: SearchCache[];
+    public current_sphere: number;
 
     constructor(state_list: WorldState[], initial_cache=null) {
         this.state_list = state_list;
+        this.current_sphere = 0;
 
         for (let state of this.state_list) {
             state.search = this;
+            for (let entrance of state.world.get_entrances()) {
+                entrance.sphere = -1;
+            }
+            for (let location of state.world.get_locations()) {
+                location.sphere = -1;
+            }
         }
 
         if (initial_cache) {
@@ -87,7 +95,7 @@ class Search {
 
     _expand_regions(exit_queue: Entrance[], regions: Region[], tods: TimeOfDayMap, age: string): Entrance[] {
         let failed = [];
-        for (const exit of exit_queue) {
+        for (let exit of exit_queue) {
             if (!!exit.connected_region && !(regions.includes(exit.connected_region))) {
                 if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
                     if (exit.connected_region.provides_time && !((tods[exit.world.id][exit.world.get_region('Root').name] & exit.connected_region.provides_time) === exit.connected_region.provides_time)) {
@@ -167,21 +175,32 @@ class Search {
     collect_spheres(locations=null) {
         this.collect_pseudo_starting_items();
         let l = !!locations ? locations : this.progression_locations();
+        let remaining_entrances = new Set(this.state_list.flatMap((state) => state.world.get_entrances()));
+        let unaccessed_entrances: Set<Entrance>;
         let collected;
-        let sphere = 0;
+        this.current_sphere = 0;
         while (true) {
             collected = Array.from(this.iter_reachable_locations(l));
             if (collected.length === 0) {
                 break;
             }
-            this._cache.spheres[sphere] = collected;
+            unaccessed_entrances = new Set();
+            for (let e of remaining_entrances) {
+                if (this.spot_access(e)) {
+                    e.sphere = this.current_sphere;
+                } else {
+                    unaccessed_entrances.add(e);
+                }
+            }
+            remaining_entrances = unaccessed_entrances;
+            this._cache.spheres[this.current_sphere] = collected;
             for (let location of collected) {
-                location.sphere = sphere;
+                location.sphere = this.current_sphere;
                 if (!!(location.item)) {
                     this.collect(location.item);
                 }
             }
-            sphere++;
+            this.current_sphere++;
         }
     }
 
@@ -249,6 +268,29 @@ class Search {
             return this.can_reach(region, 'adult', tod) && this.can_reach(region, 'child', tod);
         } else {
             return this.can_reach(region, 'adult', tod) || this.can_reach(region, 'child', tod);
+        }
+    }
+
+    spot_access(spot: Entrance | Location, age: string | null = null, tod: number = TimeOfDay.NONE): boolean {
+        if (spot.parent_region === null) return false;
+        if (age === 'adult' || age === 'child') {
+            return (
+                this.can_reach(spot.parent_region, age, tod) &&
+                spot.access_rule(this.state_list[spot.world.id], {age: age, spot: spot, tod: tod})
+            );
+        } else if (age === 'both') {
+            return (
+                this.can_reach(spot.parent_region, age, tod) &&
+                spot.access_rule(this.state_list[spot.world.id], {age: 'adult', spot: spot, tod: tod}) &&
+                spot.access_rule(this.state_list[spot.world.id], {age: 'child', spot: spot, tod: tod})
+            );
+        } else {
+            return (
+                (this.can_reach(spot.parent_region, 'adult', tod) &&
+                spot.access_rule(this.state_list[spot.world.id], {age: 'adult', spot: spot, tod: tod})) ||
+                (this.can_reach(spot.parent_region, 'child', tod) &&
+                spot.access_rule(this.state_list[spot.world.id], {age: 'child', spot: spot, tod: tod}))
+            );
         }
     }
 

@@ -30,6 +30,8 @@ export class Location implements GraphLocation {
         public rule_string: string = '',
         public transformed_rule: string = '',
         public access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
+        // original non-dynamic access rule from the logic files, referenced when resetting dynamic shop rules
+        public static_access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
         public access_rules: AccessRule[] = [],
         public locked: boolean = false,
         public price: number | null = null,
@@ -46,13 +48,12 @@ export class Location implements GraphLocation {
             this.internal = true;
             this.shuffled = false;
         }
+        this.alias = this.name;
     }
 
     add_rule(rule: AccessRule): void {
         if (this.always) {
-            this.set_rule(rule);
             this.always = false;
-            return;
         }
         if (this.never) {
             return;
@@ -69,7 +70,13 @@ export class Location implements GraphLocation {
 
     set_rule(rule: AccessRule): void {
         this.access_rule = rule;
+        this.static_access_rule = rule;
         this.access_rules = [rule];
+    }
+
+    reset_rules(): void {
+        this.access_rule = this.static_access_rule;
+        this.access_rules = [this.static_access_rule];
     }
 
     dungeon(): string | null {

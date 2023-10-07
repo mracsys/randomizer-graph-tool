@@ -6,6 +6,7 @@ type Setting = {
     name: string,
     default: GraphSettingType,
     type: string,
+    display_name: string,
     tab: string,
     section: string,
     choices?: {
@@ -14,6 +15,15 @@ type Setting = {
     minimum?: number,
     maximum?: number,
     cosmetic?: boolean,
+    disables?: {
+        [opt: string]: {
+            settings?: string[],
+            sections?: string[],
+            tabs?: string[],
+        },
+    },
+    disabled(settings: SettingsDictionary): boolean,
+    disabled_default: GraphSettingType,
 };
 type SettingTypeDictionary = {
     [type_function: string]: Setting
@@ -32,28 +42,171 @@ export type SettingsDictionary = {
     key_rings?: string[],
     world_count: number,
     debug_parser?: boolean,
+    graphplugin_song_melodies: {
+        [song_name: string]: string,
+    },
+    graphplugin_trials_specific: string[],
+    ocarina_songs?: boolean,
+    mq_dungeons_specific?: string[],
 };
 
 class SettingsList {
     [index: string]: any;
     public settings: SettingsDictionary;
-    public setting_definitions: SettingTypeDictionary = {};
+    public setting_definitions: SettingTypeDictionary;
 
     constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
-        this.settings = { world_count: 1 };
+        this.settings = {
+            world_count: 1,
+            graphplugin_trials_specific: [
+                'Forest',
+                'Fire',
+                'Water',
+                'Spirit',
+                'Shadow',
+                'Light',
+            ],
+            graphplugin_song_melodies: {
+                "Zeldas Lullaby": "<^><^>",
+                "Eponas Song": "^<>^<>",
+                "Sarias Song": "v><v><",
+                "Suns Song": ">v^>v^",
+                "Song of Time": ">Av>Av",
+                "Song of Storms": "Av^Av^",
+                "Minuet of Forest": "A^<><>",
+                "Bolero of Fire": "vAvA>v>v",
+                "Serenade of Water": "Av>><",
+                "Requiem of Spirit": "AvA>vA",
+                "Nocturne of Shadow": "<>>A<>v",
+                "Prelude of Light": "^>^><^",
+            }
+        };
+        this.setting_definitions = {};
+
         switch(ootr_version.branch) {
             case '':
             case 'R':
                 if (ootr_version.gte('7.1.143')) {
                     this.readSettingsList_7_1_143(file_cache);
-                } else if (ootr_version.gte('7.1.117')) {
-                    this.readSettingsList_7_1_117(file_cache);
                 } else {
-                    throw('OOTR version prior to 7.1.117 not implemented');
+                    throw('OOTR version prior to 7.1.143 not implemented');
                 }
                 break;
             default:
                 throw(`Unknown branch for version ${ootr_version.to_string()}`);
+        }
+
+        this.setting_definitions['graphplugin_trials_specific'] = {
+            name: 'graphplugin_trials_specific',
+            default: [
+                'Forest',
+                'Fire',
+                'Water',
+                'Spirit',
+                'Shadow',
+                'Light',
+            ],
+            disabled_default: [
+                'Forest',
+                'Fire',
+                'Water',
+                'Spirit',
+                'Shadow',
+                'Light',
+            ],
+            type: 'list',
+            display_name: 'Enabled Trials',
+            tab: this.setting_definitions['trials_random'].tab,
+            section: this.setting_definitions['trials_random'].section,
+            cosmetic: false,
+            choices: {
+                'Forest': 'Forest Trial',
+                'Fire': 'Fire Trial',
+                'Water': 'Water Trial',
+                'Spirit': 'Spirit Trial',
+                'Shadow': 'Shadow Trial',
+                'Light': 'Light Trial',
+            },
+            disabled: (settings) => { return false },
+        };
+
+        this.setting_definitions['graphplugin_song_melodies'] = {
+            name: 'graphplugin_song_melodies',
+            default: {
+                "Zeldas Lullaby": "<^><^>",
+                "Eponas Song": "^<>^<>",
+                "Sarias Song": "v><v><",
+                "Suns Song": ">v^>v^",
+                "Song of Time": ">Av>Av",
+                "Song of Storms": "Av^Av^",
+                "Minuet of Forest": "A^<><>",
+                "Bolero of Fire": "vAvA>v>v",
+                "Serenade of Water": "Av>><",
+                "Requiem of Spirit": "AvA>vA",
+                "Nocturne of Shadow": "<>>A<>v",
+                "Prelude of Light": "^>^><^",
+            },
+            disabled_default: {
+                "Zeldas Lullaby": "<^><^>",
+                "Eponas Song": "^<>^<>",
+                "Sarias Song": "v><v><",
+                "Suns Song": ">v^>v^",
+                "Song of Time": ">Av>Av",
+                "Song of Storms": "Av^Av^",
+                "Minuet of Forest": "A^<><>",
+                "Bolero of Fire": "vAvA>v>v",
+                "Serenade of Water": "Av>><",
+                "Requiem of Spirit": "AvA>vA",
+                "Nocturne of Shadow": "<>>A<>v",
+                "Prelude of Light": "^>^><^",
+            },
+            type: 'dict',
+            display_name: 'Known Ocarina Melodies',
+            tab: this.setting_definitions['ocarina_songs'].tab,
+            section: this.setting_definitions['ocarina_songs'].section,
+            cosmetic: false,
+            disabled: (settings) => { return false },
+        };
+
+        this.setting_definitions['debug_parser'] = {
+            name: 'debug_parser',
+            default: false,
+            disabled_default: false,
+            type: 'bool',
+            display_name: 'Debug Rule Parser',
+            tab: '',
+            section: '',
+            cosmetic: false,
+            disabled: (settings) => { return false },
+        };
+
+        for (let def of Object.values(this.setting_definitions)) {
+            if (def.disables) {
+                for (let [option, disabling] of Object.entries(def.disables)) {
+                    let negative = false;
+                    let remote_option = option;
+                    if (option.startsWith('!')) {
+                        negative = true;
+                        remote_option = option.slice(1);
+                    }
+                    if (disabling.settings) {
+                        for (let affected_setting of disabling.settings) {
+                            if (Object.keys(this.setting_definitions).includes(affected_setting)) {
+                                this.create_dependency(this.setting_definitions[affected_setting], def, remote_option, negative);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    create_dependency(affected_setting: Setting, remote_setting: Setting, remote_option: GraphSettingType, negative: boolean = false): void {
+        let old_dependency = affected_setting.disabled;
+        if (negative) {
+            affected_setting.disabled = (settings) => { return settings[remote_setting.name] !== remote_option || old_dependency(settings) }
+        } else {
+            affected_setting.disabled = (settings) => { return settings[remote_setting.name] === remote_option || old_dependency(settings) }
         }
     }
 
@@ -107,156 +260,12 @@ class SettingsList {
         return merged_settings;
     }
 
-    readSettingsList_7_1_117(file_cache: ExternalFileCache): void {
-        if (file_cache.files['SettingsList.py'] === undefined) return;
-        const settingslist: string = file_cache.files['SettingsList.py'];
-        const lines: string[] = settingslist.split('\n').filter(Boolean);
-
-        var setting: Setting = {
-            name: '',
-            default: null,
-            type: 'bool',
-            tab: '',
-            section: '',
-        };
-        var parsing: boolean = false;
-        var split_char: string = ':';
-        var info: string[], d: string | null = null, arg_test: string[], args: string[];
-
-        for (var line of lines) {
-            line = line.trim();
-            if (line === 'si_dict = {si.name: si for si in setting_infos}') {
-                parsing = false;
-            }
-            if (parsing) {
-                if (['setting_info(', 'checkbutton(', 'combobox(', 'scale('].some((prefix) => line.toLowerCase().startsWith(prefix))) {
-                    split_char = '=';
-                    if (setting.name !== '' && !(setting.name in this.settings)) {
-                        if (setting.default === null) {
-                            switch(setting.type) {
-                                case 'bool':
-                                    this.settings[setting.name] = false;
-                                    break;
-                                case 'str':
-                                    this.settings[setting.name] = '';
-                                    break;
-                                case 'int':
-                                    this.settings[setting.name] = 0;
-                                    break;
-                                case 'list':
-                                    this.settings[setting.name] = [];
-                                    break;
-                                case 'dict':
-                                    this.settings[setting.name] = {};
-                                    break;
-                            }
-                        } else {
-                            this.settings[setting.name] = setting.default;
-                        }
-                    }
-                    arg_test = line.split('(');
-                    switch(arg_test[0].toLowerCase()) {
-                        // checkbuttons don't always list an explicit default, class assumes false
-                        case 'checkbutton':
-                            setting = {
-                                name: '',
-                                default: false,
-                                type: 'bool',
-                                tab: '',
-                                section: '',
-                            };
-                            break;
-                        case 'combobox':
-                            setting = {
-                                name: '',
-                                default: false,
-                                type: 'str',
-                                tab: '',
-                                section: '',
-                            };
-                            break;
-                        case 'scale':
-                            setting = {
-                                name: '',
-                                default: false,
-                                type: 'int',
-                                tab: '',
-                                section: '',
-                            };
-                            break;
-                        // all other settings type guaranteed to have a default listed
-                        default:
-                            setting = {
-                                name: '',
-                                default: null,
-                                type: 'bool',
-                                tab: '',
-                                section: '',
-                            };
-                            break;
-                    }
-                    if (arg_test[1] !== '') {
-                        args = arg_test[1].split(',');
-                        setting.name = args[0].trim().replaceAll(/['",]+/g, '');
-                        if (args.length > 1) {
-                            setting.type = args[1].trim();
-                        }
-                    }
-                } else {
-                    info = line.split(split_char);
-                    info[0] = info[0].trim().toLowerCase();
-                    if (info.length > 1 || info[0] === '),') {
-                        if (d) {
-                            d = d.replaceAll(/[']+/g, '"');
-                            // lists won't parse if they're wrapped in quotes
-                            if (d === 'True' || d === 'False') {
-                                d = d.toLowerCase();
-                            }
-                            try {
-                                setting.default = JSON.parse(d);
-                            } catch {
-                                setting.default = d.replaceAll(/['",]+/g, '');
-                            }
-                            d = null;
-                        }
-                    }
-                    if (info.length > 1) {
-                        if (info[0] === 'name' || info[0] === "'name'") {
-                            setting.name = info[1].trim().replaceAll(/['",]+/g, '');
-                            // logic rules always assumed off, no explicit default in dictionary
-                            if (split_char === ':') {
-                                this.settings[setting.name] = false;
-                                setting = {
-                                    name: '',
-                                    default: null,
-                                    type: 'bool',
-                                    tab: '',
-                                    section: '',
-                                };
-                            }
-                        } else if (info[0] === 'type') {
-                            setting.type = info[1].trim().replaceAll(/['",]+/g, '');
-                        } else if (info[0] === 'multiple_select') {
-                            setting.type = info[1].trim().replaceAll(/['",]+/g, '') == 'True' ? 'list' : 'str';
-                        } else if (info[0].toLowerCase() === 'default') {
-                            d = info[1].trim();
-                            if (d.endsWith(',')) {
-                                d = d.slice(0, -1);
-                            }
-                        }
-                    } else {
-                        if (d) {
-                            // long defaults can be spread across multiple lines
-                            d += ',' + line.trim();
-                            if (d.endsWith(',')) {
-                                d = d.slice(0, -1);
-                            }
-                        }
-                    }
-                }
-            }
-            if (line === 'logic_tricks = {') {
-                parsing = true;
+    set_to_defaults(): void {
+        for (let setting of Object.keys(this.settings)) {
+            if (!!(this.setting_definitions.allowed_tricks.choices) && Object.keys(this.setting_definitions.allowed_tricks.choices).includes(setting)) {
+                this.settings[setting] = false;
+            } else {
+                this.settings[setting] = this.setting_definitions[setting].default;
             }
         }
     }
@@ -276,185 +285,64 @@ class SettingsList {
         const lines: string[] = settingslist.split('\n').filter(Boolean);
         const tricklines: string[] = trickslist.split('\n').filter(Boolean);
 
-        var setting: Setting = {
-            name: '',
-            default: false,
-            type: 'bool',
-            tab: '',
-            section: '',
-        };
-        var parsing: boolean = false;
-        var split_char: string = ':';
-        var info: string[], d: string | null = null, c: {[s: string]: string} | null = null, trick_desc: string = '';
+        let setting = new_setting('bool');
+        let parsing: boolean = false;
+        let split_char: string = ':';
+        let info: string[], d: string | null = null, c: {[s: string]: string} | null = null, disable: string | null = null;
 
         let trick_list: {[trick: string]: string} = {};
         for (let line of tricklines) {
-            info = line.split(split_char);
+            let code_line = line.split('#')[0];
+            info = code_line.split(split_char);
             if (info.length > 1) {
                 if (info[0].startsWith("    '")) {
-                    trick_desc = info[0].trim().replaceAll(/['"\\]+/g, '');
+                    setting.display_name = info[0].trim().replaceAll(/['"\\]+/g, '');
                 }
                 if (info[0].trim().toLowerCase() === 'name' || info[0].trim().toLowerCase() === "'name'") {
                     setting.name = info[1].trim().replaceAll(/['",]+/g, '');
                     // logic rules always assumed off, no explicit default in dictionary
                     this.settings[setting.name] = false;
-                    trick_list[setting.name] = trick_desc;
+                    trick_list[setting.name] = setting.display_name;
                     setting = {
                         name: '',
                         default: false,
+                        disabled_default: false,
                         type: 'bool',
+                        display_name: '',
                         tab: '',
                         section: '',
+                        disabled: (settings) => { return false },
                     };
-                    trick_desc = '';
                 }
             }
         }
-        this.setting_definitions['allowed_tricks'] = {
-            name: 'allowed_tricks',
-            default: [],
-            type: 'list',
-            tab: '',
-            section: '',
-            cosmetic: false,
-            choices: trick_list,
-        };
+        this.setting_definitions['allowed_tricks'] = new_setting('list');
+        this.setting_definitions['allowed_tricks'].name = 'allowed_tricks';
+        this.setting_definitions['allowed_tricks'].display_name = 'Enable Tricks';
+        this.setting_definitions['allowed_tricks'].cosmetic = false;
+        this.setting_definitions['allowed_tricks'].choices = trick_list;
         this.settings['allowed_tricks'] = [];
 
         let setting_types: SettingTypeDictionary = {
-            'settinginfonone(': {
-                name: '',
-                default: null,
-                type: 'null',
-                tab: '',
-                section: '',
-            },
-            'settinginfobool(': {
-                name: '',
-                default: false,
-                type: 'bool',
-                tab: '',
-                section: '',
-            },
-            'settinginfostr(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'settinginfoint(': {
-                name: '',
-                default: 0,
-                type: 'int',
-                tab: '',
-                section: '',
-            },
-            'settinginfolist(': {
-                name: '',
-                default: [],
-                type: 'list',
-                tab: '',
-                section: '',
-            },
-            'settinginfodict(': {
-                name: '',
-                default: {},
-                type: 'dict',
-                tab: '',
-                section: '',
-            },
-            'button(': {
-                name: '',
-                default: null,
-                type: 'null',
-                tab: '',
-                section: '',
-            },
-            'textbox(': {
-                name: '',
-                default: null,
-                type: 'null',
-                tab: '',
-                section: '',
-            },
-            'checkbutton(': {
-                name: '',
-                default: false,
-                type: 'bool',
-                tab: '',
-                section: '',
-            },
-            'combobox(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'radiobutton(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'fileinput(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'directoryinput(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'textinput(': {
-                name: '',
-                default: '',
-                type: 'str',
-                tab: '',
-                section: '',
-            },
-            'comboboxint(': {
-                name: '',
-                default: 0,
-                type: 'int',
-                tab: '',
-                section: '',
-            },
-            'scale(': {
-                name: '',
-                default: 0,
-                type: 'int',
-                tab: '',
-                section: '',
-            },
-            'numberinput(': {
-                name: '',
-                default: 0,
-                type: 'int',
-                tab: '',
-                section: '',
-            },
-            'multipleselect(': {
-                name: '',
-                default: [],
-                type: 'list',
-                tab: '',
-                section: '',
-            },
-            'searchbox(': {
-                name: '',
-                default: [],
-                type: 'list',
-                tab: '',
-                section: '',
-            },
+            'settinginfonone(': new_setting('null'),
+            'settinginfobool(': new_setting('bool'),
+            'settinginfostr(':  new_setting('str'),
+            'settinginfoint(':  new_setting('int'),
+            'settinginfolist(': new_setting('list'),
+            'settinginfodict(': new_setting('dict'),
+            'button(':          new_setting('null'),
+            'textbox(':         new_setting('null'),
+            'checkbutton(':     new_setting('bool'),
+            'combobox(':        new_setting('str'),
+            'radiobutton(':     new_setting('str'),
+            'fileinput(':       new_setting('str'),
+            'directoryinput(':  new_setting('str'),
+            'textinput(':       new_setting('str'),
+            'comboboxint(':     new_setting('int'),
+            'scale(':           new_setting('int'),
+            'numberinput(':     new_setting('int'),
+            'multipleselect(':  new_setting('list'),
+            'searchbox(':       new_setting('list'),
         }
 
         let dynamic_choice_settings = [
@@ -468,12 +356,13 @@ class SettingsList {
 
         split_char = '=';
         for (let line of lines) {
-            line = line.trim();
-            if (line === 'def get_settings_from_section(section_name: str) -> Iterable[str]:') {
+            let code_line = line.split('#')[0];
+            code_line = code_line.trim();
+            if (code_line === 'def get_settings_from_section(section_name: str) -> Iterable[str]:') {
                 parsing = false;
             }
             if (parsing) {
-                info = line.split('=');
+                info = code_line.split('=');
                 info[0] = info[0].trim();
                 if (info.length > 1) {
                     if (d) {
@@ -489,13 +378,33 @@ class SettingsList {
                         }
                         d = null;
                     }
+                    if (disable) {
+                        disable = disable.replaceAll(/[']+/g, '"');
+                        let sanitized_str = '';
+                        for (let i = 0; i < disable.length; i++) {
+                            let chr = disable.charAt(i);
+                            if (chr !== ',' && chr !== ')') {
+                                sanitized_str += chr;
+                            } else if (chr === ',') {
+                                if (i !== disable.length - 1) {
+                                    let lookahead = disable.charAt(i + 1);
+                                    if (!([']', '}', ')'].includes(lookahead))) {
+                                        sanitized_str += chr;
+                                    }
+                                }
+                            }
+                        }
+                        setting.disables = JSON.parse(sanitized_str);
+                        disable = null;
+                    }
                     if (Object.keys(setting_types).some((prefix) => info[1].trim().toLowerCase().startsWith(prefix))) {
-                        if (setting.name !== '' && !(setting.name in this.settings) && !setting.cosmetic) {
+                        if (setting.name !== '' && setting.name !== 'allowed_tricks' && !setting.cosmetic) {
                             this.settings[setting.name] = setting.default;
                             this.setting_definitions[setting.name] = Object.assign({}, setting);
                         }
                         setting = setting_types[`${info[1].trim().toLowerCase().split('(')[0]}(`];
                         setting.name = info[0];
+                        setting.display_name = setting.name;
                         setting.cosmetic = false;
                     } else {
                         if (info[0].toLowerCase() === 'default') {
@@ -529,18 +438,31 @@ class SettingsList {
                             }
                             setting.cosmetic = JSON.parse(m);
                         }
+                        if (info[0].toLowerCase() === 'gui_text') {
+                            let m = info[1].trim().replaceAll(/['",]+/g, '');
+                            if (m.endsWith(',')) {
+                                m = m.slice(0, -1);
+                            }
+                            setting.display_name = m;
+                        }
+                        if (info[0].toLowerCase() === 'disable') {
+                            disable = info[1].trim();
+                            if (disable.endsWith(',')) {
+                                disable = disable.slice(0, -1);
+                            }
+                        }
                     }
                 } else {
                     if (d) {
                         // long defaults can be spread across multiple lines
                         // e.g. adult_trade_start
-                        d += ',' + line.trim();
+                        d += ',' + code_line.trim();
                         if (d.endsWith(',')) {
                             d = d.slice(0, -1);
                         }
                     }
-                    if (c !== null && line.split(':').length > 1) {
-                        let i = line.split(':');
+                    if (c !== null && code_line.split(':').length > 1) {
+                        let i = code_line.split(':');
                         if (i[1].trim().endsWith(',')) {
                             i[1] = i[1].trim().slice(0, -1);
                         }
@@ -549,9 +471,20 @@ class SettingsList {
                         setting.choices = Object.assign({}, c);
                         c = null;
                     }
+                    if (disable) {
+                        let disable_line: string;
+                        if (code_line.trim().toLowerCase().startsWith('true')) {
+                            disable_line = `"true"${code_line.trim().slice(4)}`;
+                        } else if (code_line.trim().toLowerCase().startsWith('false')) {
+                            disable_line = `"false"${code_line.trim().slice(5)}`;
+                        } else {
+                            disable_line = code_line.trim();
+                        }
+                        disable += disable_line;
+                    }
                 }
             }
-            if (line === 'class SettingInfos:') {
+            if (code_line === 'class SettingInfos:') {
                 parsing = true;
             }
         }
@@ -572,6 +505,42 @@ class SettingsList {
             }
         }
     }
+}
+
+function new_setting(type: string): Setting {
+    let setting: Setting = {
+        name: '',
+        default: false,
+        disabled_default: false,
+        type: 'bool',
+        display_name: '',
+        tab: '',
+        section: '',
+        disabled: (settings) => { return false },
+    };
+    if (type === 'str') {
+        setting.type = 'str';
+        setting.default = '';
+        setting.disabled_default = '';
+    } else if (type === 'int') {
+        setting.type = 'int';
+        setting.default = 0;
+        setting.disabled_default = 0;
+    } else if (type === 'null') {
+        setting.type = 'null';
+        setting.default = null;
+        setting.disabled_default = null;
+    } else if (type === 'list') {
+        setting.type = 'list';
+        setting.default = [];
+        setting.disabled_default = [];
+    } else if (type === 'dict') {
+        setting.type = 'dict';
+        setting.default = {};
+        setting.disabled_default = {};
+    }
+
+    return setting;
 }
 
 export default SettingsList;

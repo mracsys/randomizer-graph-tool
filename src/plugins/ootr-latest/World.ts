@@ -14,6 +14,7 @@ import OotrVersion from "./OotrVersion.js";
 import OotrGraphPlugin from "./OotrGraphPlugin.js";
 import SettingsList from "./SettingsList.js";
 import type { SettingsDictionary } from "./SettingsList.js";
+import { RegionGroup } from "./RegionGroup.js";
 
 type Dictionary<T> = {
     [key: string]: T,
@@ -53,6 +54,9 @@ class World implements GraphWorld {
     public version: OotrVersion;
     public parent_graph: OotrGraphPlugin;
     public regions: Region[] = [];
+    public dungeons: {[dungeon_variant_name: string]: Region[]} = {};
+    public dungeon_variant: string = '';
+    public region_groups: RegionGroup[] = [];
     public _cached_locations: Location[];
     public _cached_entrances: Entrance[];
     public _entrance_cache: Dictionary<Entrance>;
@@ -67,22 +71,22 @@ class World implements GraphWorld {
     public dungeon_mq: Dictionary<boolean>;
     public song_notes: Dictionary<string>;
 
-    public keysanity: boolean;
-    public shuffle_silver_rupees: boolean;
-    public check_beatable_only: boolean;
-    public shuffle_special_interior_entrances: boolean;
-    public shuffle_interior_entrances: boolean;
-    public shuffle_special_dungeon_entrances: boolean;
-    public shuffle_dungeon_entrances: boolean;
-    public spawn_shuffle: boolean;
-    public entrance_shuffle: boolean;
-    public mixed_pools_bosses: boolean;
-    public ensure_tod_access: boolean;
-    public disable_trade_revert: boolean;
-    public skip_child_zelda: boolean;
-    public triforce_goal: number;
+    public keysanity: boolean = false;
+    public shuffle_silver_rupees: boolean = false;
+    public check_beatable_only: boolean = false;
+    public shuffle_special_interior_entrances: boolean = false;
+    public shuffle_interior_entrances: boolean = false;
+    public shuffle_special_dungeon_entrances: boolean = false;
+    public shuffle_dungeon_entrances: boolean = false;
+    public spawn_shuffle: boolean = false;
+    public entrance_shuffle: boolean = false;
+    public mixed_pools_bosses: boolean = false;
+    public ensure_tod_access: boolean = false;
+    public disable_trade_revert: boolean = false;
+    public skip_child_zelda: boolean = false;
+    public triforce_goal: number = 0;
 
-    public shuffled_entrance_types: string[];
+    public shuffled_entrance_types: string[] = [];
 
     public state: WorldState;
 
@@ -113,6 +117,18 @@ class World implements GraphWorld {
         this.parser = new RuleParser(this, this.version, debug);
         this.event_items = new Set();
 
+        // Trials are enabled by default assuming the provided plando has a trials section
+        // to disable specific trials.
+        // Plando takes precedence over the plugin API for initial setup as the API will
+        // not yet have any user input.
+        this.skipped_trials = {
+            'Forest': false,
+            'Fire': false,
+            'Water': false,
+            'Spirit': false,
+            'Shadow': false,
+            'Light': false,
+        };
         if (Object.keys(settings).includes('trials')) {
             let trials_settings;
             if (!!(settings.settings.world_count) && settings.settings.world_count > 1) {
@@ -120,21 +136,41 @@ class World implements GraphWorld {
             } else {
                 trials_settings = settings.trials;
             }
-            this.skipped_trials = {};
             for (let [trial, enabled] of Object.entries(trials_settings)) {
                 this.skipped_trials[trial] = enabled == 'inactive';
             }
         } else {
+            // If there is no trials plando section provided, assume trials
+            // are skipped unless specified in the plugin API. The API defaults
+            // to all trials enabled.
             this.skipped_trials = {
-                "Forest": false,
-                "Fire":   false,
-                "Water":  false,
-                "Spirit": false,
-                "Shadow": false,
-                "Light":  false
+                'Forest': true,
+                'Fire': true,
+                'Water': true,
+                'Spirit': true,
+                'Shadow': true,
+                'Light': true,
             };
+            for (let trial of this.settings.graphplugin_trials_specific) {
+                this.skipped_trials[trial] = false;
+            }
         }
 
+        // same situation as trials for MQ dungeons
+        this.dungeon_mq = {
+            'Deku Tree': false,
+            'Dodongos Cavern': false,
+            'Jabu Jabus Belly': false,
+            'Bottom of the Well': false,
+            'Ice Cavern': false,
+            'Gerudo Training Ground': false,
+            'Forest Temple': false,
+            'Fire Temple': false,
+            'Water Temple': false,
+            'Spirit Temple': false,
+            'Shadow Temple': false,
+            'Ganons Castle': false
+        }
         if (Object.keys(settings).includes('dungeons')) {
             let dungeon_settings;
             if (!!(settings.settings.world_count) && settings.settings.world_count > 1) {
@@ -142,46 +178,55 @@ class World implements GraphWorld {
             } else {
                 dungeon_settings = settings.dungeons;
             }
-            this.dungeon_mq = {};
             for (let [dungeon, dtype] of Object.entries(dungeon_settings)) {
                 this.dungeon_mq[dungeon] = dtype === 'mq';
             }
         } else {
-            this.dungeon_mq = {
-                'Deku Tree': false,
-                'Dodongos Cavern': false,
-                'Jabu Jabus Belly': false,
-                'Bottom of the Well': false,
-                'Ice Cavern': false,
-                'Gerudo Training Ground': false,
-                'Forest Temple': false,
-                'Fire Temple': false,
-                'Water Temple': false,
-                'Spirit Temple': false,
-                'Shadow Temple': false,
-                'Ganons Castle': false
+            // There is a randomizer setting for specific MQ dungeons, but
+            // this will always match the plando section for initialization.
+            // This branch is kept as a failsafe.
+            if (Array.isArray(this.settings.mq_dungeons_specific)) {
+                for (let dungeon of this.settings.mq_dungeons_specific) {
+                    this.dungeon_mq[dungeon] = true;
+                }
             }
         }
 
-        if (Object.keys(settings).includes('songs')) {
-            this.song_notes = settings.songs;
-        } else {
+        // assume all notes are required for all songs if melodies
+        // are shuffled and a given song melody isn't known
+        if (this.settings.ocarina_songs) {
             this.song_notes = {
-                "Zeldas Lullaby":     "<^><^>",
-                "Eponas Song":        "^<>^<>",
-                "Sarias Song":        "v><v><",
-                "Suns Song":          ">v^>v^",
-                "Song of Time":       ">Av>Av",
-                "Song of Storms":     "Av^Av^",
-                "Minuet of Forest":   "A^<><>",
-                "Bolero of Fire":     "vAvA>v>v",
-                "Serenade of Water":  "Av>><",
-                "Requiem of Spirit":  "AvA>vA",
-                "Nocturne of Shadow": "<>>A<>v",
-                "Prelude of Light":   "^>^><^"
+                "Zeldas Lullaby": "<^>vA",
+                "Eponas Song": "<^>vA",
+                "Sarias Song": "<^>vA",
+                "Suns Song": "<^>vA",
+                "Song of Time": "<^>vA",
+                "Song of Storms": "<^>vA",
+                "Minuet of Forest": "<^>vA",
+                "Bolero of Fire": "<^>vA",
+                "Serenade of Water": "<^>vA",
+                "Requiem of Spirit": "<^>vA",
+                "Nocturne of Shadow": "<^>vA",
+                "Prelude of Light": "<^>vA",
+            }
+            this.settings.graphplugin_song_melodies = {};
+        } else {
+            this.song_notes = this.settings.graphplugin_song_melodies;
+        }
+        // add known melodies, skipping unknown (assumed all notes if shuffled)
+        if (Object.keys(settings).includes('songs')) {
+            for (let [song_name, melody] of Object.entries(settings.songs)) {
+                this.song_notes[song_name] = melody as string;
+                this.settings.graphplugin_song_melodies[song_name] = melody as string;
             }
         }
 
+        this.update_internal_settings();
+
+        this.state = new WorldState(this);
+    }
+
+    update_internal_settings(): void {
         this.keysanity = ['keysanity', 'remove', 'any_dungeon', 'overworld', 'regional'].includes(<string>this.settings.shuffle_smallkeys);
         this.shuffle_silver_rupees = this.settings.shuffle_silver_rupees !== 'vanilla';
         this.check_beatable_only = this.settings.reachable_locations !== 'all';
@@ -230,11 +275,21 @@ class World implements GraphWorld {
         if (this.settings.shuffle_gerudo_valley_river_exit) this.shuffled_entrance_types.push('OverworldOneWay');
         if (this.settings.owl_drops) this.shuffled_entrance_types.push('OwlDrop');
         if (this.settings.warp_songs) this.shuffled_entrance_types.push('WarpSong');
-
-        this.state = new WorldState(this);
     }
 
-    load_regions_from_json(file_path: string): SavewarpConnection[] {
+    reset_all_access_rules(): void {
+        for (let location of this.get_locations()) {
+            location.reset_rules();
+        }
+
+        // Currently no dynamic entrance rules
+        // Disable until required to avoid unnecessary iteration
+        // for (let entrance of this.get_entrances()) {
+        //     entrance.reset_rules();
+        // }
+    }
+
+    load_regions_from_json(file_path: string, is_dungeon_variant: boolean = false): SavewarpConnection[] {
         let world_folder;
         if (this.settings.logic_rules === 'glitched') {
             world_folder = 'Glitched World';
@@ -316,7 +371,11 @@ class World implements GraphWorld {
                 new_region.savewarp = new_exit;
                 savewarps_to_connect.push([new_exit, region.savewarp]);
             }
-            this.regions.push(new_region);
+            if (is_dungeon_variant) {
+                this.dungeons[this.dungeon_variant].push(new_region);
+            } else {
+                this.regions.push(new_region);
+            }
         }
         return savewarps_to_connect;
     }
@@ -326,16 +385,108 @@ class World implements GraphWorld {
         for (const hint_area in HintAreas) {
             let name = HintAreas[hint_area].dungeon_name;
             if (!!name) {
-                let dungeon_json: string;
+                this.dungeon_variant = name;
+                this.dungeons[this.dungeon_variant] = [];
+                let vanilla_savewarps = this.load_regions_from_json(`${this.dungeon_variant}.json`, true);
+                this.dungeon_variant = `${name} MQ`;
+                this.dungeons[this.dungeon_variant] = [];
+                let mq_savewarps = this.load_regions_from_json(`${this.dungeon_variant}.json`, true);
+                this.dungeon_variant = '';
                 if (!this.dungeon_mq[name]) {
-                    dungeon_json = `${name}.json`;
+                    this.regions.push(...(this.dungeons[name]));
+                    savewarps_to_connect.push(...vanilla_savewarps);
                 } else {
-                    dungeon_json = `${name} MQ.json`;
+                    this.regions.push(...(this.dungeons[`${name} MQ`]));
+                    savewarps_to_connect.push(...mq_savewarps);
                 }
-                savewarps_to_connect.push(...(this.load_regions_from_json(dungeon_json)));
             }
         }
         return savewarps_to_connect;
+    }
+
+    swap_dungeon(dungeon_to_connect: string, dungeon_to_disconnect: string): void {
+        this.connect_dungeon(dungeon_to_connect);
+        this.disconnect_dungeon(dungeon_to_disconnect);
+
+        // clean out any stray references to removed dungeon objects in the caches
+        this._cached_locations = [];
+        this._cached_entrances = [];
+        this._entrance_cache = {};
+        this._region_cache = {};
+        this._location_cache = {};
+        this.parent_graph.reset_cache();
+    }
+
+    connect_dungeon(dungeon_variant_name: string): void {
+        // copy regions to main region cache
+        let group_copied = false;
+        for (let region of this.dungeons[dungeon_variant_name]) {
+            // add region group
+            this.regions.push(region);
+            if (!!(region.parent_group) && !group_copied) {
+                this.region_groups.push(region.parent_group);
+                group_copied = true;
+            }
+            // connect outside interface entrances to world
+            // and disconnect connections from the other variant
+            for (let exit of region.exits) {
+                if (!!(exit.alternate)) {
+                    if (!!(exit.alternate.reverse)) {
+                        exit.bind_two_way(exit.alternate.reverse);
+                        if (!!(exit.reverse)) {
+                            exit.reverse.original_connection = region;
+                        }
+                    }
+                    if (!!(exit.alternate.connected_region)) {
+                        let target = exit.alternate.disconnect();
+                        exit.connect(target);
+                        exit.replaces = exit.alternate.replaces;
+                        exit.alternate.replaces = null;
+                        if (!!(exit.replaces)) {
+                            if (!!(exit.replaces.reverse)) {
+                                exit.replaces.reverse.disconnect();
+                                exit.replaces.reverse.connect(region);
+                                exit.replaces.reverse.replaces = exit.reverse;
+                            }
+                        } else if (!exit.shuffled && !!(exit.reverse)) {
+                            exit.reverse.disconnect();
+                            exit.reverse.connect(region);
+                        }
+                    }
+                }
+            }
+        }
+        // handle unshuffled reverse entrances, such as Farore's Wind
+        let alt_dungeon_variant_name = dungeon_variant_name.substring(dungeon_variant_name.length - 2) === 'MQ' ? dungeon_variant_name.substring(0, dungeon_variant_name.length - 3) : `${dungeon_variant_name} MQ`;
+        let all_dungeon_regions = Object.values(this.dungeons).flat();
+        let alt_dungeon_regions = Object.values(this.dungeons[alt_dungeon_variant_name]);
+        let other_regions = this.regions.filter((r) => !(all_dungeon_regions.includes(r)));
+        for (let region of other_regions) {
+            for (let exit of region.exits) {
+                if (exit.type === null && !!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
+                    // no need to update original connection property as these entrances aren't shuffled
+                    let alt_region = exit.disconnect();
+                    exit.connect(this.get_region(alt_region.name, dungeon_variant_name));
+                }
+            }
+        }
+    }
+
+    disconnect_dungeon(dungeon_variant_name: string): void {
+        for (let region of this.dungeons[dungeon_variant_name]) {
+            // remove regions from main region cache
+            let region_index = this.regions.indexOf(region);
+            if (region_index > -1) {
+                this.regions.splice(region_index, 1);
+            }
+            // remove region group
+            if (!!(region.parent_group)) {
+                let region_group_index = this.region_groups.indexOf(region.parent_group);
+                if (region_group_index > -1) {
+                    this.region_groups.splice(region_group_index, 1);
+                }
+            }
+        }
     }
 
     create_internal_locations(): void {
@@ -347,27 +498,87 @@ class World implements GraphWorld {
 
     initialize_entrances(): void {
         let target_region;
+        let dungeon_region_names = Object.values(this.dungeons).flat().map((r) => r.name);
+        // regions include dungeon regions from initial MQ selection settings, filter out to Overworld+Bosses only
+        let region_names = this.regions.filter((r) => !(dungeon_region_names.includes(r.name))).map((r) => r.name);
         for (let region of this.regions) {
             for (let exit of region.exits) {
+                exit.world = this;
                 if (exit.original_connection_name === null) throw `Region has exits without assigned region`;
                 target_region = this.get_region(exit.original_connection_name);
                 exit.connect(target_region);
-                exit.world = this;
                 exit.original_connection = target_region;
+                // link vanilla and MQ dungeon entrance interfaces to outside regions
+                // to enable swapping connections on settings change
+                if (dungeon_region_names.includes(region.name) && region_names.includes(target_region.name)) {
+                    if (region.dungeon === null) throw `Tried to link dungeon variant entrance for invalid dungeon region ${region.name}`;
+                    let dungeon_variant_name = this.dungeon_mq[region.dungeon] ? region.dungeon : `${region.dungeon} MQ`;
+                    // For now, hard code Ganon's Castle<->Tower handling since Tower isn't shuffled and connects
+                    // to different Castle regions in Vanilla and MQ.
+                    // Similar problem for Spirit Temple<->Colossus Hands.
+                    let alt_region: Region;
+                    let exit_name = exit.name;
+                    if (region.dungeon === 'Ganons Castle' && target_region.name === 'Ganons Castle Tower') {
+                        let region_override = this.dungeon_mq[region.dungeon] ? 'Ganons Castle Lobby' : 'Ganons Castle Main';
+                        alt_region = this.get_region(region_override, dungeon_variant_name);
+                        exit_name = `${alt_region.name} -> ${target_region.name}`;
+                    } else if (region.dungeon === 'Spirit Temple' && target_region.name === 'Desert Colossus Hands') {
+                        let region_override = this.dungeon_mq[region.dungeon] ? 'Spirit Temple Central Chamber' : 'Spirit Temple Shared';
+                        alt_region = this.get_region(region_override, dungeon_variant_name);
+                        exit_name = `${alt_region.name} -> ${target_region.name}`;
+                    } else {
+                        alt_region = this.get_region(region.name, dungeon_variant_name);
+                    }
+                    for (let alt_exit of alt_region.exits) {
+                        if (alt_exit.name === exit_name) {
+                            exit.alternate = alt_exit;
+                            alt_exit.alternate = exit;
+                        }
+                    }
+                }
+            }
+        }
+        for (let [dungeon_variant_name, dungeon_regions] of Object.entries(this.dungeons)) {
+            for (let region of dungeon_regions) {
+                for (let exit of region.exits) {
+                    // skip regions already connected
+                    if (!!(exit.connected_region)) continue;
+                    exit.world = this;
+                    if (exit.original_connection_name === null) throw `Region has exits without assigned region`;
+                    try {
+                        target_region = this.get_region(exit.original_connection_name, dungeon_variant_name);
+                    } catch {
+                        // interface original target regions are in the overworld list, not variant
+                        target_region = this.get_region(exit.original_connection_name);
+                    }
+                    exit.original_connection = target_region;
+                    // don't connect dungeon interfaces to outside
+                    if (!!(exit.alternate)) continue;
+                    exit.connect(target_region);
+                }
             }
         }
     }
 
-    get_region(region_name: Region | string): Region {
+    get_region(region_name: Region | string, dungeon_variant_name: string = ''): Region {
         if (region_name instanceof Region) {
             return region_name;
         }
-        if (region_name in this._region_cache) {
+        // only search cache if requested region isn't from a dungeon vanilla/mq variant
+        if (region_name in this._region_cache && dungeon_variant_name === '') {
             return this._region_cache[region_name];
         } else {
-            let region = this.regions.filter(r => r.name === region_name);
+            let region: Region[];
+            if (dungeon_variant_name === '') {
+                region = this.regions.filter(r => r.name === region_name);
+            } else {
+                region = this.dungeons[dungeon_variant_name].filter(r => r.name === region_name);
+            }
             if (region.length === 1) {
-                this._region_cache[region_name] = region[0];
+                // only keep connected regions in the cache, not disconnected dungeon variants
+                if (dungeon_variant_name === '') {
+                    this._region_cache[region_name] = region[0];
+                }
                 return region[0];
             } else {
                 throw(`No such region ${region_name}`);
@@ -375,18 +586,28 @@ class World implements GraphWorld {
         }
     }
 
-    get_entrance(entrance: Entrance | string): Entrance {
+    get_entrance(entrance: Entrance | string, dungeon_variant_name: string = ''): Entrance {
         if (entrance instanceof Entrance) {
             return entrance;
         }
-        if (entrance in this._entrance_cache) {
+        // only search cache if requested region isn't from a dungeon vanilla/mq variant
+        if (entrance in this._entrance_cache && dungeon_variant_name === '') {
             return this._entrance_cache[entrance];
         } else {
-            for (let i = 0; i < this.regions.length; i++) {
-                for (let j = 0; j < this.regions[i].exits.length; j++) {
-                    if (this.regions[i].exits[j].name === entrance) {
-                        this._entrance_cache[entrance] = this.regions[i].exits[j];
-                        return this.regions[i].exits[j];
+            let regions: Region[];
+            if (dungeon_variant_name === '') {
+                regions = this.regions;
+            } else {
+                regions = this.dungeons[dungeon_variant_name];
+            }
+            for (let i = 0; i < regions.length; i++) {
+                for (let j = 0; j < regions[i].exits.length; j++) {
+                    if (regions[i].exits[j].name === entrance) {
+                        // only keep connected regions in the cache, not disconnected dungeon variants
+                        if (dungeon_variant_name === '') {
+                            this._entrance_cache[entrance] = regions[i].exits[j];
+                        }
+                        return regions[i].exits[j];
                     }
                 }
             }
@@ -453,11 +674,19 @@ class World implements GraphWorld {
         }
 
         if (location.vanilla_item === null) throw `Fill error: tried to push null vanilla item to location ${location.name}`;
-        location.item = location.vanilla_item;
-        location.vanilla_item.location = location;
-        location.vanilla_item.price = location.price !== null ? location.price : location.vanilla_item.price;
-        location.price = location.vanilla_item.price;
+        let item = location.vanilla_item.copy();
+        this.push_item(location, item);
         location.shuffled = false;
+    }
+
+    pop_item(location: Location | string) {
+        if (!(location instanceof Location)) {
+            location = this.get_location(location);
+        }
+
+        location.item = null;
+        location.price = null;
+        location.shuffled = true;
     }
 
     skip_location(location: Location | string) {
@@ -468,13 +697,35 @@ class World implements GraphWorld {
         location.internal = true;
     }
 
-    get_locations(): Location[] {
+    clear_skipped_locations(): void {
+        for (let l of this.skipped_locations) {
+            if (l.type !== 'Event') l.internal = false;
+        }
+        this.skipped_locations = [];
+    }
+
+    get_locations(with_disconnected_regions: boolean = false): Location[] {
         if (this._cached_locations.length === 0) {
             for (const region of this.regions) {
                 this._cached_locations.push(...(region.locations));
             }
         }
-        return this._cached_locations;
+        // Locations in disconnected regions is only required to change
+        // drop location names to include their parent region names
+        // during initialization
+        if (with_disconnected_regions) {
+            let dungeon_regions: Location[] = [];
+            for (let [dungeon, is_mq] of Object.entries(this.dungeon_mq)) {
+                let dungeon_variant_name = is_mq ? dungeon : `${dungeon} MQ`;
+                for (let regions of this.dungeons[dungeon_variant_name]) {
+                    dungeon_regions.push(...(regions.locations));
+                }
+            }
+            dungeon_regions.push(...(this._cached_locations));
+            return dungeon_regions;
+        } else {
+            return this._cached_locations;
+        }
     }
 
     get_entrances(): Entrance[] {

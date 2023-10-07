@@ -6,11 +6,13 @@ import {
     GraphGameVersions,
     GraphSetting,
     GraphSettingType,
+    GraphSettingsConfiguration,
     GraphWorld,
     GraphRegion,
     GraphEntrance,
     GraphLocation,
     GraphItem,
+    GraphItemDictionary,
 } from "./plugins/GraphPlugin.js";
 import EmptyGraphPlugin from "./plugins/EmptyGraphPlugin.js";
 import OotrGraphPlugin from './plugins/ootr-latest/OotrGraphPlugin.js';
@@ -89,9 +91,11 @@ export {
     GraphGameVersions,
     GraphSetting,
     GraphSettingType,
+    GraphSettingsConfiguration,
     GraphWorld,
     GraphRegion,
     GraphEntrance,
     GraphLocation,
     GraphItem,
+    GraphItemDictionary,
 };

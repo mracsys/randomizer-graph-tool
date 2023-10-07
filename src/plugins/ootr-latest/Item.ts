@@ -94,6 +94,10 @@ export class Item implements GraphItem {
         this.index = this.info.index;
         this.alias = this.info.alias;
     }
+
+    copy(): Item {
+        return ItemFactory(this.name, this.world, this.event)[0];
+    }
 }
 
 export function ItemFactory(items: string | string[], world: World, event: boolean = false): Item[] {

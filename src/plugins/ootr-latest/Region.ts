@@ -4,6 +4,7 @@ import { HintAreas } from "./Hints.js";
 import Entrance from './Entrance.js';
 import { Location } from "./Location.js";
 import World from './World.js';
+import { RegionGroup } from "./RegionGroup.js";
 
 export const TimeOfDay = {
     NONE: 0,
@@ -35,7 +36,11 @@ export class Region implements GraphRegion {
         public scene: string | null = null,
         public is_boss_room: boolean = false,
         public savewarp: Entrance | null = null,
-    ) {}
+        public alias: string = '',
+        public parent_group: RegionGroup | null = null,
+    ) {
+        this.alias = this.name;
+    }
 
     hint() {
         if (!!this.hint_name) {

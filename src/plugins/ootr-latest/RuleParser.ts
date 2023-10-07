@@ -14,6 +14,7 @@ import escape_name from "./RulesCommon.js";
 import ExternalFileCache from "./OotrFileCache.js";
 import World from "./World.js";
 import OotrVersion from "./OotrVersion.js";
+import { Region } from "./Region.js";
 
 export type Spot = Entrance | Location;
 export type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -23,6 +24,7 @@ type DelayedRule = {
     node: babeltypes.Node,
     subrule: string,
     subrule_name: string,
+    dungeon_variant: string,
 };
 type RuleCache = {
     [rule_str: string]: AccessRule,
@@ -68,6 +70,12 @@ export default class RuleParser {
     public original_rule: string;
     public debug: boolean;
     public logicVisitor: babel.PluginItem[];
+    public found_bombchus: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public wallet: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public wallet2: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public wallet3: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public is_adult: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public has_bottle: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
     private escaped_items: {[escaped_name: string]: string};
     private event_name: RegExp;
     private rule_aliases: {
@@ -347,7 +355,16 @@ export default class RuleParser {
         }
         if (t.isIdentifier(num)) {
             if (!!(self.world.settings[num.name])) {
-                num = t.numericLiteral(<number>self.world.settings[num.name]);
+                num = t.memberExpression(
+                    t.memberExpression(
+                        t.memberExpression(
+                            t.identifier('worldState'),
+                            t.identifier('world')
+                        ),
+                        t.identifier('settings')
+                    ),
+                    t.identifier(num.name)
+                );
             } else {
                 throw `Parse error: Tuple second value was a world setting, and the world setting was null: ${num.name}`;
             }
@@ -700,21 +717,31 @@ export default class RuleParser {
     replace_subrule(self: RuleParser, path: NodePath, target: string, node: babeltypes.Node): void {
         const rule = new CodeGenerator(node, {}, '').generate().code;
         const t = babeltypes;
-        if (target in self.replaced_rules && rule in self.replaced_rules[target]) {
-            path.replaceWith(self.replaced_rules[target][rule]);
+        // dungeon_variant is blank for overworld, effectively just target outside dungeons
+        const full_target = `${target}${self.world.dungeon_variant}`;
+        if (full_target in self.replaced_rules && rule in self.replaced_rules[full_target]) {
+            path.replaceWith(self.replaced_rules[full_target][rule]);
         } else {
+            if (!(full_target in self.replaced_rules)) {
+                self.replaced_rules[full_target] = {};
+            }
+            // handle overworld at() subrules to dungeon variant regions
             if (!(target in self.replaced_rules)) {
                 self.replaced_rules[target] = {};
             }
-            let subrule_name = `${target} Subrule ${1 + Object.keys(self.replaced_rules[target]).length}`;
-            self.delayed_rules.push({"target": target, "node": node, "subrule": rule, "subrule_name": subrule_name});
+            let subrule_number = 1 + Object.keys(self.replaced_rules[target]).length;
+            if (self.world.dungeon_variant !== '') {
+                subrule_number += Object.keys(self.replaced_rules[full_target]).length;
+            }
+            let subrule_name = `${target} Subrule ${subrule_number}`;
+            self.delayed_rules.push({"target": target, "node": node, "subrule": rule, "subrule_name": subrule_name, "dungeon_variant": self.world.dungeon_variant});
             let item_rule = t.callExpression(
                 t.memberExpression(
                     t.identifier('worldState'),
                     t.identifier('has')),
                 [t.stringLiteral(subrule_name)]
             );
-            self.replaced_rules[target][rule] = item_rule;
+            self.replaced_rules[full_target][rule] = item_rule;
             path.replaceWith(item_rule);
         }
         path.skip();
@@ -727,23 +754,33 @@ export default class RuleParser {
             let region_name = rule['target'];
             let node = rule['node'];
             let subrule_name = rule['subrule_name'];
+            let dungeon_variant = rule['dungeon_variant']
             if (this.debug) console.log(`parsing event ${subrule_name} in ${region_name}`);
-            let region = self.world.get_region(region_name);
-            let event = new Location(subrule_name, 'Event', region, true, self.world);
-            event.rule_string = rule['subrule'].trim();
-            event.world = self.world;
-            self.current_spot = event;
-            let access_rule_str = new CodeGenerator(self.visit_AST(self, node), {}, '').generate().code;
-            let access_rule = self.make_access_rule(access_rule_str);
-            if (access_rule_str === 'false') {
-                event.never = true;
-            } else {
-                if (access_rule_str === 'true') {
-                    event.always = true;
+            let source_region = self.world.get_region(region_name, dungeon_variant);
+            let regions = [source_region];
+            // Overworld at() subrules into dungeons need to be added to both variants
+            if (!!(source_region.dungeon) && dungeon_variant === '') {
+                let dungeon_variant_name = self.world.dungeon_mq[source_region.dungeon] ? source_region.dungeon : `${source_region.dungeon} MQ`;
+                let alt_region = self.world.get_region(region_name, dungeon_variant_name);
+                regions.push(alt_region);
+            }
+            for (let region of regions) {
+                let event = new Location(subrule_name, 'Event', region, true, self.world);
+                event.rule_string = rule['subrule'].trim();
+                event.world = self.world;
+                self.current_spot = event;
+                let access_rule_str = new CodeGenerator(self.visit_AST(self, node), {}, '').generate().code;
+                let access_rule = self.make_access_rule(access_rule_str);
+                if (access_rule_str === 'false') {
+                    event.never = true;
+                } else {
+                    if (access_rule_str === 'true') {
+                        event.always = true;
+                    }
+                    event.set_rule(access_rule);
+                    region.locations.push(event);
+                    MakeEventItem(subrule_name, event);
                 }
-                event.set_rule(access_rule);
-                region.locations.push(event);
-                MakeEventItem(subrule_name, event);
             }
         });
         self.delayed_rules = [];
@@ -856,39 +893,29 @@ export default class RuleParser {
     //       with numeric values in each of the at_* rule strings as a workaround.
 
     at_day(self: RuleParser, path: NodePath) {
-        if (self.world.ensure_tod_access) {
-            let day = parse("!!tod ? (tod & 1) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 1))");
-            if (day === null || day === undefined) throw `Parse error: Unable to parse static at_day logic string`;
-            path.replaceWith(self.get_visited_node(babeltypes, day));
-        } else {
-            path.replaceWith(babeltypes.booleanLiteral(true));
-        }
+        let day = parse("!(worldState.world.ensure_tod_access) || (!!tod ? (tod & 1) : ((worldState.has_all_of(['Ocarina', 'Suns Song']) && worldState.has_all_notes_for_song('Suns Song')) || worldState.search.can_reach(spot.parent_region, age, 1)))");
+        if (day === null || day === undefined) throw `Parse error: Unable to parse static at_day logic string`;
+        path.replaceWith(self.get_visited_node(babeltypes, day));
         path.skip();
     }
 
     at_dampe_time(self: RuleParser, path: NodePath) {
-        if (self.world.ensure_tod_access) {
-            let dampe = parse("!!tod ? (tod & 2) : worldState.search.can_reach(spot.parent_region, age, 2)");
-            if (dampe === null || dampe === undefined) throw `Parse error: Unable to parse static at_dampe_time logic string`;
-            path.replaceWith(self.get_visited_node(babeltypes, dampe));
-        } else {
-            path.replaceWith(babeltypes.booleanLiteral(true));
-        }
+        let dampe = parse("!(worldState.world.ensure_tod_access) || (!!tod ? (tod & 2) : worldState.search.can_reach(spot.parent_region, age, 2))");
+        if (dampe === null || dampe === undefined) throw `Parse error: Unable to parse static at_dampe_time logic string`;
+        path.replaceWith(self.get_visited_node(babeltypes, dampe));
         path.skip();
     }
 
     at_night(self: RuleParser, path: NodePath) {
         if (self.current_spot === null) throw `Parse error: Tried to use time of day event generation with a null spot`;
-        if (self.current_spot.type === 'GS Token' && self.world.settings.logic_no_night_tokens_without_suns_song) {
-            let skull = parse(self.visit(self, 'can_play(Suns_Song)'));
+        if (self.current_spot.type === 'GS Token') {
+            let skull = parse("worldState.world.settings.logic_no_night_tokens_without_suns_song ? (worldState.has_all_of(['Ocarina', 'Suns Song']) && worldState.has_all_notes_for_song('Suns Song')) : !(worldState.world.ensure_tod_access) || (!!tod ? (tod & 2) : ((worldState.has_all_of(['Ocarina', 'Suns Song']) && worldState.has_all_notes_for_song('Suns Song')) || worldState.search.can_reach(spot.parent_region, age, 2)))");
             if (skull === null || skull === undefined) throw `Parse error: Unable to parse static at_night logic string`;
             path.replaceWith(self.get_visited_node(babeltypes, skull));
-        } else if (self.world.ensure_tod_access) {
-            let night = parse("!!tod ? (tod & 2) : (worldState.has_all_of(['Ocarina', 'Suns Song']) || worldState.search.can_reach(spot.parent_region, age, 2))");
+        } else {
+            let night = parse("!(worldState.world.ensure_tod_access) || (!!tod ? (tod & 2) : ((worldState.has_all_of(['Ocarina', 'Suns Song']) && worldState.has_all_notes_for_song('Suns Song')) || worldState.search.can_reach(spot.parent_region, age, 2)))");
             if (night === null || night === undefined) throw `Parse error: Unable to parse static at_night logic string`;
             path.replaceWith(self.get_visited_node(babeltypes, night));
-        } else {
-            path.replaceWith(babeltypes.booleanLiteral(true));
         }
         path.skip();
     }
@@ -910,5 +937,14 @@ export default class RuleParser {
         if (access_rule === this.rule_cache['true;']) {
             spot.always = true;
         }
+    }
+
+    parse_shop_rules(): void {
+        this.found_bombchus = this.parse_rule('found_bombchus');
+        this.wallet = this.parse_rule('Progressive_Wallet');
+        this.wallet2 = this.parse_rule('(Progressive_Wallet, 2)');
+        this.wallet3 = this.parse_rule('(Progressive_Wallet, 3)');
+        this.is_adult = this.parse_rule('is_adult');
+        this.has_bottle = this.parse_rule('has_bottle');
     }
 }

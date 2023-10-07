@@ -20,25 +20,32 @@ class Entrance implements GraphEntrance {
         public rule_string: string = '',
         public transformed_rule: string = '',
         public access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
+        public static_access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
         public access_rules: AccessRule[] = [],
         public reverse: Entrance | null = null,
+        public alternate: Entrance | null = null,
         public replaces: Entrance | null = null,
         public assumed: Entrance | null = null,
         public type: string | null = null,
         public shuffled: boolean = false,
         public primary: boolean = false,
+        public secondary: boolean = false,
         public always: boolean = false,
         public never: boolean = false,
         public alias: string = '',
+        public type_alias: string = '',
+        public target_alias: string = '',
+        public coupled: boolean = true,
+        public is_warp: boolean = false,
+        public sphere: number = -1,
     ) {
         this.world = this.parent_region.world;
+        this.alias = this.name;
     }
 
     add_rule(rule: AccessRule): void {
         if (this.always) {
-            this.set_rule(rule);
             this.always = false;
-            return;
         }
         if (this.never) {
             return;
@@ -55,7 +62,13 @@ class Entrance implements GraphEntrance {
 
     set_rule(rule: AccessRule): void {
         this.access_rule = rule;
+        this.static_access_rule = rule;
         this.access_rules = [rule];
+    }
+
+    reset_rules(): void {
+        this.access_rule = this.static_access_rule;
+        this.access_rules = [this.static_access_rule];
     }
 
     connect(region: Region): void {
@@ -63,7 +76,7 @@ class Entrance implements GraphEntrance {
         region.entrances.push(this);
     }
 
-    disconnect(): Region | null {
+    disconnect(): Region {
         if (!!(this.connected_region)) {
             let i = this.connected_region.entrances.indexOf(this);
             if (i > -1) {
@@ -82,6 +95,11 @@ class Entrance implements GraphEntrance {
     bind_two_way(other_entrance: Entrance): void {
         this.reverse = other_entrance;
         other_entrance.reverse = this;
+    }
+
+    unbind_two_way(other_entrance: Entrance): void {
+        this.reverse = null;
+        other_entrance.reverse = null;
     }
 
     get_new_target(): Entrance {
@@ -108,6 +126,17 @@ class Entrance implements GraphEntrance {
     viewable(): boolean {
         // only shufflable entrances are given a type from the entrance table
         return this.type !== null;
+    }
+
+    copy_metadata(other_entrance: Entrance): void {
+        this.type = other_entrance.type;
+        this.primary = other_entrance.primary;
+        this.secondary = other_entrance.secondary;
+        this.alias = other_entrance.alias;
+        this.target_alias = other_entrance.target_alias;
+        this.is_warp = other_entrance.is_warp;
+        this.coupled = other_entrance.coupled;
+        this.type_alias = other_entrance.type_alias;
     }
 }
 

@@ -19,7 +19,7 @@ let parser: RuleParser;
 
 beforeAll(async () =>{
     test_version = '7.1.143';
-    _cache = await OotrFileCache.load_ootr_files(test_version);
+    _cache = await OotrFileCache.load_ootr_files(test_version, { local_files: 'tests/ootr-local-143' });
 });
 
 beforeEach(async () => {

@@ -249,6 +249,22 @@ npm publish --access=public
 
 ## Changelog
 
+### 2.0.0
+
+* Introduced GraphPlugin.change_setting
+    - Replaces direct mutation of GraphWorld.settings
+    - Handles other internal changes required for a setting, such as swapping between Ocarina of Time vanilla and Master Quest region files
+* GraphWorld.settings changed to readonly
+* Settings display names parsing for OOTR lists added
+* Custom display names added for regions, entrances, and locations
+* Managed entrance pools added
+* Entrance metadata added
+    - Original forward and reverse entrance connections pre-shuffle, where applicable
+    - is_warp property for unidirectional entrances
+    - coupled property to implicitly support randomizers that do not have a decoupled entrances setting
+* Fixed bug in OOTR settings list parsing for inline python comments
+* Added GraphPlugin.export() method to save graph state to a text file that can be fed back into a new graph instance
+
 ### 1.1.1
 
 * Fix GraphSettingType export

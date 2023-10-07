@@ -1,6 +1,6 @@
 import ExternalFileCache from "./ExternalFileCache.js";
 import { GraphPlugin } from "./GraphPlugin.js";
-import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphWorld, GraphItem } from "./GraphPlugin.js";
+import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphWorld, GraphItem, GraphSettingType } from "./GraphPlugin.js";
 
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
@@ -12,10 +12,14 @@ export default class EmptyGraphPlugin extends GraphPlugin {
         this.file_cache = { files: {} };
     }
 
+    import(save_file: any): void { return };
+    export(pretty: boolean): string { return '' };
+
     // Version/branch list for selection, static class method
     get_game_versions(): GraphGameVersions { return { game: 'empty', versions: [] }; };
 
     get_settings_options(): {[setting_name: string]: GraphSetting} { return {} };
+    change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void { return };
 
     // Search interface
     collect_locations(): void { return };
@@ -33,5 +37,6 @@ export default class EmptyGraphPlugin extends GraphPlugin {
 
     // World building interface
     set_location_item(location: GraphLocation, item: GraphItem): void { return };
+    get_entrance_pool(world: GraphWorld, entrance: GraphEntrance) { return {} };
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
 }

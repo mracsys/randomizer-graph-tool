@@ -21,6 +21,10 @@ class WorldState {
         this._won = this.world.settings.triforce_hunt ? this.won_triforce_hunt : this.won_normal;
     }
 
+    reset(): void {
+        this.prog_items = {};
+    }
+
     won(): boolean {
         return this._won();
     }

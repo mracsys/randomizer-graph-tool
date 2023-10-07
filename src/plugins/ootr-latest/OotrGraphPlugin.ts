@@ -1,7 +1,7 @@
-import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld } from '../GraphPlugin.js';
+import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType } from '../GraphPlugin.js';
 
 import SettingsList from './SettingsList.js';
-import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList } from "./World.js";
+import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList, PlandoEntranceTarget, PlandoItem } from "./World.js";
 import EntranceList from './EntranceList.js';
 import { Item, ItemFactory, ItemInfo, _ItemInfo } from "./Item.js";
 import OotrVersion from './OotrVersion.js';
@@ -11,6 +11,20 @@ import { Location } from './Location.js';
 import Search from './Search.js';
 import LocationList from './LocationList.js';
 import ItemList from './ItemList.js';
+import { SettingsDictionary } from './SettingsList.js';
+import { display_names } from './DisplayNames.js';
+import { RegionGroup } from './RegionGroup.js';
+import { Region } from './Region.js';
+
+interface OotrPlando {
+    ':version': string,
+    settings: SettingsDictionary,
+    dungeons: { [dungeon_name: string]: string },
+    trials: { [trial_name: string]: string },
+    songs: { [song_name: string]: string },
+    entrances: PlandoEntranceList | PlandoMWEntranceList,
+    locations: PlandoLocationList | PlandoMWLocationList,
+};
 
 class OotrGraphPlugin extends GraphPlugin {
     private version_list = [
@@ -97,7 +111,7 @@ class OotrGraphPlugin extends GraphPlugin {
         if (Object.keys(this.settings_list).includes('entrances')) {
             this.set_entrances(this.settings_list.entrances);
         }
-        this.finalize_world();
+        this.finalize_world(true);
         this.search = new Search(this.worlds.map((world) => world.state));
         this.initialized = true;
     }
@@ -116,6 +130,142 @@ class OotrGraphPlugin extends GraphPlugin {
     static create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache, debug: boolean = false, test_only: boolean = false) {
         let ootr_version = new OotrVersion(version);
         return new OotrGraphPlugin(user_overrides, ootr_version, global_cache, debug, test_only);
+    }
+
+    import(plando: any): void {
+        // modify the existing GraphPlugin object to avoid running the rule parser
+        this.settings_list.set_to_defaults();
+        this.settings_list.override_settings(plando);
+        let graph_settings = this.get_settings_options();
+
+        for (let world of this.worlds) {
+            for (let [setting, def] of Object.entries(graph_settings)) {
+                let randomized_settings: any = {};
+                if (Object.keys(plando).includes('randomized_settings')) {
+                    if (!!(plando.settings.world_count) && plando.settings.world_count > 1) {
+                        randomized_settings = plando.randomized_settings[`World ${world.id+1}`];
+                    } else {
+                        randomized_settings = plando.randomized_settings;
+                    }
+                }
+                if (Object.keys(randomized_settings).includes(setting)) {
+                    this.change_setting(world, def, <GraphSettingType>randomized_settings[setting], false);
+                } else if (Object.keys(plando).includes('settings')) {
+                    if (Object.keys(plando.settings).includes(setting)) {
+                        this.change_setting(world, def, <GraphSettingType>plando.settings[setting], false);
+                    } else {
+                        this.change_setting(world, def, def.default, false);
+                    }
+                } else {
+                    this.change_setting(world, def, def.default, false);
+                }
+            }
+            let mq_dungeons: string[] = [];
+            if (Object.keys(plando).includes('dungeons')) {
+                for (let [dungeon, variant] of Object.entries(plando.dungeons)) {
+                    if (variant === 'mq') {
+                        mq_dungeons.push(dungeon);
+                    }
+                }
+            }
+            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, false);
+            let active_trials: string[] = [];
+            if (Object.keys(plando).includes('trials')) {
+                for (let [trial, active] of Object.entries(plando.trials)) {
+                    if (active === 'active') {
+                        active_trials.push(trial);
+                    }
+                }
+            }
+            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, false);
+            if (Object.keys(plando).includes('songs')) {
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, false);
+            } else {
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], null, false);
+            }
+        }
+
+        this.worlds.forEach((world) => world.state.reset());
+        if (Object.keys(plando).includes('locations')) {
+            this.set_items(plando.locations);
+        } else {
+            this.set_items(null);
+        }
+        if (Object.keys(plando).includes('entrances')) {
+            this.set_entrances(plando.entrances);
+        } else {
+            this.set_entrances(null);
+        }
+        this.finalize_world();
+        this.search = new Search(this.worlds.map((world) => world.state));
+    }
+
+    export(): any {
+        let plando: OotrPlando = {
+            ':version': this.ootr_version.to_string(),
+            settings: this.worlds[0].settings,
+            dungeons: {},
+            trials: {},
+            songs: {},
+            entrances: {},
+            locations: {},
+        };
+        if (this.settings_list.settings.world_count === 1) {
+            if (Array.isArray(this.worlds[0].settings.mq_dungeons_specific)) {
+                if (!!(this.settings_list.setting_definitions.mq_dungeons_specific?.choices)) {
+                    for (let dungeon of Object.keys(this.settings_list.setting_definitions['mq_dungeons_specific'].choices)) {
+                        plando.dungeons[dungeon] = this.worlds[0].settings.mq_dungeons_specific.includes(dungeon) ? 'mq' : 'vanilla';
+                    }
+                }
+            }
+
+            if (Array.isArray(this.worlds[0].settings.graphplugin_trials_specific)) {
+                if (!!(this.settings_list.setting_definitions.graphplugin_trials_specific.choices)) {
+                    for (let trial of Object.keys(this.settings_list.setting_definitions.graphplugin_trials_specific.choices)) {
+                        plando.trials[trial] = this.worlds[0].settings.graphplugin_trials_specific.includes(trial) ? 'active' : 'inactive';
+                    }
+                }
+            }
+
+            // this is either the full list of vanilla songs or, if melodies are randomized,
+            // only known song melodies
+            plando.songs = this.worlds[0].settings.graphplugin_song_melodies;
+
+            let locations = this.worlds[0].get_locations();
+            for (let location of locations) {
+                if (location.shuffled && location.type !== 'Event' && !!(location.item)) {
+                    let location_item: PlandoItem | string;
+                    if (!!(location.item.price)) {
+                        location_item = { item: location.item.name, price: location.item.price };
+                    } else {
+                        location_item = location.item.name;
+                    }
+                    plando.locations[location.name] = location_item;
+                }
+            }
+
+            let entrances = this.worlds[0].get_entrances();
+            let simplified_target_types: string[] = [
+                'Interior',
+                'SpecialInterior',
+                'Grotto',
+                'Grave'
+            ];
+            for (let entrance of entrances) {
+                if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.connected_region) && !!(entrance.replaces.type) && (!(entrance.coupled) || entrance.primary || entrance.type === 'overworld')) {
+                    let target: PlandoEntranceTarget | string;
+                    if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
+                        target = entrance.name;
+                    } else {
+                        target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
+                    }
+                    plando.entrances[entrance.name] = target;
+                }
+            }
+        } else {
+        }
+
+        return plando;
     }
 
     get_game_versions(): GraphGameVersions {
@@ -178,6 +328,108 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
+    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, update_vanilla_items: boolean = true) {
+        world.settings[setting.name] = value;
+        this.settings_list.settings[setting.name] = value;
+        switch(setting.name) {
+            case 'allowed_tricks':
+                if (!!(this.settings_list.setting_definitions.allowed_tricks.choices)) {
+                    for (let trick of Object.keys(this.settings_list.setting_definitions.allowed_tricks.choices)) {
+                        if (Array.isArray(value) && value.includes(trick)) {
+                            world.settings[trick] = true;
+                        } else {
+                            world.settings[trick] = false;
+                        }
+                    }
+                }
+                break;
+            case 'mq_dungeons_specific':
+                if (Array.isArray(value)) {
+                    for (let [dungeon, is_mq] of Object.entries(world.dungeon_mq)) {
+                        if (value.includes(dungeon) && !is_mq) {
+                            world.dungeon_mq[dungeon] = true;
+                            world.swap_dungeon(`${dungeon} MQ`, dungeon);
+                        } else if (is_mq) {
+                            world.dungeon_mq[dungeon] = false;
+                            world.swap_dungeon(dungeon, `${dungeon} MQ`);
+                        }
+                    }
+                } else {
+                    for (let [dungeon, is_mq] of Object.entries(world.dungeon_mq)) {
+                        if (is_mq) {
+                            // disable all mq
+                            world.dungeon_mq[dungeon] = false;
+                            world.swap_dungeon(dungeon, `${dungeon} MQ`);
+                        }
+                    }
+                }
+                break;
+            case 'graphplugin_trials_specific':
+                if (Array.isArray(value)) {
+                    for (let trial_name of Object.keys(world.skipped_trials)) {
+                        if (value.includes(trial_name)) {
+                            world.skipped_trials[trial_name] = false;
+                        } else {
+                            world.skipped_trials[trial_name] = true;
+                        }
+                    }
+                } else {
+                    world.skipped_trials = {
+                        "Forest": false,
+                        "Fire":   false,
+                        "Water":  false,
+                        "Spirit": false,
+                        "Shadow": false,
+                        "Light":  false
+                    }
+                }
+                break;
+            case 'graphplugin_song_melodies':
+                let changed_songs: {[song_name: string]: string} = {};
+                if (!!value && typeof(value) === 'object' && !Array.isArray(value)) {
+                    changed_songs = <{[song: string]: string}>value;
+                } else {
+                    changed_songs = {
+                        "Zeldas Lullaby": "<^><^>",
+                        "Eponas Song": "^<>^<>",
+                        "Sarias Song": "v><v><",
+                        "Suns Song": ">v^>v^",
+                        "Song of Time": ">Av>Av",
+                        "Song of Storms": "Av^Av^",
+                        "Minuet of Forest": "A^<><>",
+                        "Bolero of Fire": "vAvA>v>v",
+                        "Serenade of Water": "Av>><",
+                        "Requiem of Spirit": "AvA>vA",
+                        "Nocturne of Shadow": "<>>A<>v",
+                        "Prelude of Light": "^>^><^",
+                    };
+                }
+                for (let [song_name, melody] of Object.entries(changed_songs)) {
+                    world.song_notes[song_name] = melody;
+                    world.settings.graphplugin_song_melodies[song_name] = melody;
+                    this.settings_list.settings.graphplugin_song_melodies[song_name] = melody;
+                }
+                break;
+            default:
+                break;
+        }
+        world.update_internal_settings();
+        // updates unshuffled items
+        // can be disabled for bulk setting updates to avoid looping through locations repeatedly,
+        // but this requires running set_items manually
+        world.state.reset();
+        if (update_vanilla_items) {
+            let world_fill = this.export();
+            this.set_items(world_fill.locations);
+            this.set_entrances(world_fill.entrances);
+            this.set_blue_warps(world);
+            this.set_shop_rules(world);
+            world.state.collect_starting_items();
+            this.collect_skipped_locations(world);
+        }
+        this.search = new Search(this.worlds.map((world) => world.state));
+    }
+
     set_location_item(location: GraphLocation, item: GraphItem): void {
         if (location.world !== null) {
             let l: Location = this.worlds[location.world.id].get_location(location.name);
@@ -188,6 +440,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 l.price = location.price;
                 i.price = location.price;
             }
+            this.set_shop_rule(l);
         } else {
             throw `Attempted to set item for location in non-existent world: ${location.name}`;
         }
@@ -205,6 +458,107 @@ class OotrGraphPlugin extends GraphPlugin {
             t.reverse.connect(e.reverse.original_connection);
             t.reverse.replaces = e.reverse;
         }
+        // link blue warp to boss room exit
+        if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type)) {
+            let boss_exit: Entrance | null = null;
+            if (e.primary && e.coupled) {
+                boss_exit = e.reverse;
+            } else if (e.secondary) {
+                boss_exit = e;
+            }
+            if (!!boss_exit) {
+                let blue_warp: Entrance | null = null;
+                for (let exit of boss_exit.parent_region.exits) {
+                    if (exit.type === 'BlueWarp') {
+                        blue_warp = exit;
+                    }
+                }
+                if (!!blue_warp) {
+                    this.set_blue_warp(blue_warp, boss_exit);
+                }
+            }
+        }
+    }
+
+    get_entrance_pool(world: World, entrance: Entrance): {[category: string]: Entrance[]} {
+        let pool: {[category: string]: Entrance[]} = {};
+        let targets = world.get_entrances();
+        let valid_target_types: {[entrance_type: string]: string[]} = {
+            'Dungeon':          ['Dungeon', 'DungeonSpecial'],
+            'DungeonSpecial':   ['Dungeon', 'DungeonSpecial'],
+            'ChildBoss':        ['ChildBoss', 'AdultBoss'],
+            'AdultBoss':        ['ChildBoss', 'AdultBoss'],
+            'Interior':         ['Interior', 'SpecialInterior', 'Hideout'],
+            'SpecialInterior':  ['Interior', 'SpecialInterior', 'Hideout'],
+            'Hideout':          ['Interior', 'SpecialInterior', 'Hideout'],
+            'Grotto':           ['Grotto', 'Grave'],
+            'Grave':            ['Grotto', 'Grave'],
+            'Overworld':        ['Overworld'],
+        };
+        let mixed_valid_target_types: {[entrance_type: string]: string[]} = {
+            'Dungeon':          ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'DungeonSpecial':   ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'ChildBoss':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'AdultBoss':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'Interior':         ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'SpecialInterior':  ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'Hideout':          ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'Grotto':           ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'Grave':            ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+            'Overworld':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+        };
+        let warp_valid_target_types: {[entrance_type: string]: string[]} = {
+            'OverworldOneWay':  ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra'],
+            'OwlDrop':          ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra'],
+            'Spawn':            ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
+            'WarpSong':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
+        };
+
+        let simplified_target_types: string[] = [
+            'Dungeon',
+            'DungeonSpecial',
+            'ChildBoss',
+            'AdultBoss',
+            'Interior',
+            'SpecialInterior',
+            'Hideout',
+            'Grotto',
+            'Grave',
+        ];
+        for (let target of targets) {
+            if (!!(target.type) && !!(entrance.type)) {
+                if (entrance.is_warp) {
+                    if (warp_valid_target_types[entrance.type].includes(target.type)) {
+                        pool[target.type_alias].push(target);
+                    }
+                } else {
+                    if ((simplified_target_types.includes(target.type) && target.primary)
+                        || (!(entrance.primary) && !(target.primary))
+                        || !(simplified_target_types.includes(target.type))) {
+                        if (Object.keys(world.settings).includes('mixed_pools') && Array.isArray(world.settings['mixed_pools'])) {
+                            if (world.settings['mixed_pools'].includes(entrance.type) && mixed_valid_target_types[entrance.type].includes(target.type) && target.shuffled) {
+                                pool[target.type_alias].push(target);
+                                // only need to check decoupled reverse entrances for simplified types
+                                // since both primary/secondary of other types are added by default.
+                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type)) {
+                                    pool[target.reverse.type_alias].push(target.reverse);
+                                }
+                            } else {
+                                
+                            }
+                        } else {
+                            if (valid_target_types[entrance.type].includes(target.type) && target.shuffled) {
+                                pool[target.type_alias].push(target);
+                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type)) {
+                                    pool[target.reverse.type_alias].push(target.reverse);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return pool;
     }
 
     build_world_graphs(settings: SettingsList, ootr_version: OotrVersion): void {
@@ -232,23 +586,160 @@ class OotrGraphPlugin extends GraphPlugin {
             savewarp.replaces = savewarp.world.get_entrance(replaces);
             if (savewarp.replaces === null || savewarp.replaces.connected_region === null) throw `Attempted to connect savewarp with no equivalent entrance`;
             savewarp.connect(savewarp.replaces.connected_region);
+            // Vanilla/mq interface regions to the outside/boss have the same region, savewarp, and exit names
+            // (excluding exits to internal regions). We can pre-connect the dungeon savewarps from the boss door
+            // region to the beginning of the dungeon using the same names as the opposite variant.
+            // This saves a step when swapping dungeon variants during setting changes.
+            if (!!(savewarp.parent_region.dungeon)) {
+                let dungeon_variant_name = savewarp.world.dungeon_mq[savewarp.parent_region.dungeon] ?
+                    savewarp.parent_region.dungeon :
+                    `${savewarp.parent_region.dungeon} MQ`;
+                let alt_savewarp = savewarp.world.get_entrance(savewarp.name, dungeon_variant_name);
+                let alt_savewarp_target = savewarp.world.get_region(savewarp.replaces.connected_region.name, dungeon_variant_name);
+                alt_savewarp.connect(alt_savewarp_target);
+            }
         }
 
+        let warp_entrance_types = [
+            'OverworldOneWay',
+            'Spawn',
+            'WarpSong',
+            'BlueWarp',
+            'Extra',
+        ];
+
+        let grouped_entrance_type_names: {[entrance_type: string]: string} = {
+            'Dungeon': 'Dungeons',
+            'DungeonSpecial': 'Dungeons',
+            'ChildBoss': 'Bosses',
+            'AdultBoss': 'Bosses',
+            'Interior': 'Interiors',
+            'SpecialInterior': 'Interiors',
+            'Hideout': 'Hideout',
+            'Grotto': 'Grottos',
+            'Grave': 'Grottos',
+            'Spawn': 'Spawn Points',
+            'WarpSong': 'Warp Songs',
+            'BlueWarp': 'Blue Warps',
+        };
+
         for (let world of this.worlds) {
+            // set entrance metadata
+            let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let forward_entrance = world.get_entrance(forward_entry[0]);
                 forward_entrance.type = type;
                 forward_entrance.primary = true;
+                if (Object.keys(display_names.entrance_aliases).includes(forward_entrance.name)) {
+                    forward_entrance.alias = display_names.entrance_aliases[forward_entrance.name];
+                }
+                for (let [entrance_group, entrances] of Object.entries(display_names.entrance_groups)) {
+                    if (entrances.includes(forward_entrance.name)) {
+                        forward_entrance.target_alias = entrance_group;
+                    }
+                }
+                if (warp_entrance_types.includes(type)) forward_entrance.is_warp = true;
+                forward_entrance.coupled = !decoupled;
+                if (Object.keys(grouped_entrance_type_names).includes(type)) {
+                    forward_entrance.type_alias = grouped_entrance_type_names[type];
+                } else {
+                    if (!!(forward_entrance.original_connection)) {
+                        forward_entrance.type_alias = forward_entrance.original_connection.name;
+                    }
+                }
+
+                if (!!(forward_entrance.parent_region.dungeon)) {
+                    let dungeon_variant_name = forward_entrance.world.dungeon_mq[forward_entrance.parent_region.dungeon] ?
+                        forward_entrance.parent_region.dungeon :
+                        `${forward_entrance.parent_region.dungeon} MQ`;
+                    let alt_forward_entrance = forward_entrance.world.get_entrance(forward_entrance.name, dungeon_variant_name);
+                    alt_forward_entrance.copy_metadata(forward_entrance);
+                }
+
                 if (!!return_entry) {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     return_entrance.type = type;
+                    return_entrance.secondary = true;
+                    return_entrance.alias = display_names.entrance_aliases[return_entrance.name];
+                    if (warp_entrance_types.includes(type)) return_entrance.is_warp = true;
+                    return_entrance.coupled = !decoupled;
+                    // group interior exits with other overworld entrances for the exit region
+                    if (!!(return_entrance.original_connection)) {
+                        return_entrance.type_alias = return_entrance.original_connection.name;
+                    }
+
+                    if (!!(return_entrance.parent_region.dungeon)) {
+                        let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
+                            return_entrance.parent_region.dungeon :
+                            `${return_entrance.parent_region.dungeon} MQ`;
+                        let alt_return_entrance = return_entrance.world.get_entrance(return_entrance.name, dungeon_variant_name);
+                        alt_return_entrance.copy_metadata(return_entrance);
+                    }
                     forward_entrance.bind_two_way(return_entrance);
                 }
+            }
+
+            let root_region = world.get_region('Root');
+            let base_region_groups = this.create_region_groups(root_region);
+            world.region_groups.push(...base_region_groups);
+            for (let [dungeon, is_mq] of Object.entries(world.dungeon_mq)) {
+                let dungeon_variant_name = is_mq ? dungeon : `${dungeon} MQ`;
+                // first region defined for a dungeon is the only region guaranteed to have
+                // a path to every other region within the dungeon
+                let root_dungeon_region = world.dungeons[dungeon_variant_name][0];
+                // Don't need to add the group to the world. The group is
+                // saved in its child regions
+                this.create_region_groups(root_dungeon_region);
             }
         }
     }
 
-    set_items(locations: PlandoLocationList | PlandoMWLocationList): void {
+    create_region_groups(root_region: Region): RegionGroup[] {
+        // create grouped regions based on shufflable entrance boundaries
+        let current_group = new RegionGroup('Root', root_region.world, root_region);
+        let exit_queue: Entrance[] = [];
+        let region_queue = [root_region];
+        let processed_regions: Region[] = [];
+        let region_groups: RegionGroup[] = [];
+        exit_queue_loop:
+        while (region_queue.length > 0 || exit_queue.length > 0) {
+            let current_region = region_queue.pop();
+            // Check if sub regions exhausted within the entrance boundary.
+            // If so, save the region group and start a new one
+            if (current_region === undefined) {
+                if (current_group.alias !== '') region_groups.push(current_group);
+                let exit = exit_queue.pop();
+                if (exit === undefined || exit.connected_region === null) throw `Unable to build region groups: empty region and exit queues in middle of loop`;
+                while (processed_regions.includes(exit.connected_region)) {
+                    exit = exit_queue.pop();
+                    if (exit === undefined) break exit_queue_loop;
+                    if (exit.connected_region === null) throw `Unable to build region groups: disconnected exit`;
+                }
+                current_region = exit.connected_region;
+                current_group = new RegionGroup(`${current_region.name} from ${exit.name}`, current_region.world, current_region);
+            }
+            // check if somehow unable to traverse to next region group
+            if (current_region === undefined) throw `Unable to build region groups: shufflable entrance has disconnected region`;
+            processed_regions.push(current_region);
+            for (let exit of current_region.exits) {
+                if ((exit.primary || exit.secondary) && !!(exit.connected_region)) {
+                    if (!(processed_regions.includes(exit.connected_region)) && !(exit_queue.includes(exit))) {
+                        exit_queue.push(exit);
+                    }
+                } else if (!!(exit.connected_region)) {
+                    if (!(processed_regions.includes(exit.connected_region))) {
+                        current_group.add_region(exit.connected_region);
+                        region_queue.push(exit.connected_region);
+                    }
+                }
+            }
+        }
+        // save the last region group
+        if (current_group.alias !== '') region_groups.push(current_group);
+        return region_groups;
+    }
+
+    set_items(locations: PlandoLocationList | PlandoMWLocationList | null): void {
         let filled_locations: PlandoLocationList;
         let adult_trade_items = [
             "Pocket Egg",
@@ -279,21 +770,28 @@ class OotrGraphPlugin extends GraphPlugin {
         for (let world of this.worlds) {
             // vanilla item fill based on settings
             for (let loc of world.get_locations()) {
+                // reset location item in case shuffle settings changed
+                if (loc.type !== 'Event') {
+                    world.pop_item(loc);
+                }
+
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
                 } else if (loc.name === 'Gift from Sages' && !!(world.settings.shuffle_ganon_bosskey)
                             && ['stones', 'medallions', 'dungeons', 'tokens', 'hearts', 'triforce'].includes(world.settings.shuffle_ganon_bosskey)) {
                     world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
+                    loc.shuffled = false;
                     continue;
                 } else {
                     continue;
                 }
                 if (loc.name === 'ToT Light Arrows Cutscene' && world.settings.shuffle_ganon_bosskey === 'on_lacs') {
                     world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
+                    loc.shuffled = false;
                 } else if (world.settings.shopsanity === 'off' && loc.type === 'Shop') {
                     world.push_vanilla_item(loc);
                 } else if ((world.settings.shuffle_scrubs === 'off' || world.settings.shuffle_scrubs === 'regular') && ['Scrub', 'GrottoScrub'].includes(loc.type)) {
-                    if (world.settings.shuffle_scrubs === 'off' || !(['Piece of Heart', 'Deku Stick Capacity', 'Deku Nut Capacity'].includes(loc.vanilla_item.name))) {
+                    if (world.settings.shuffle_scrubs === 'off' && !(['Piece of Heart', 'Deku Stick Capacity', 'Deku Nut Capacity'].includes(loc.vanilla_item.name))) {
                         world.push_vanilla_item(loc);
                         if (loc.item === null) throw `Error assigning vanilla scrub item`;
                         loc.item.price = this.location_list.business_scrub_prices[loc.vanilla_item.name];
@@ -364,8 +862,9 @@ class OotrGraphPlugin extends GraphPlugin {
                         shuffle_setting = dungeon !== 'Ganons Castle' ? <string>world.settings.shuffle_bosskeys : <string>world.settings.shuffle_ganon_bosskey;
                         // OOTR bug, BKs are starting items if key rings are on,
                         // key rings give BKs, and small keysy is on
-                        if (!!(world.settings.key_rings) && !!dungeon && world.settings.key_rings.includes(dungeon) && dungeon !== 'Ganons Castle' && world.settings.keyring_give_bk && world.settings.shuffle_smallkeys == 'remove') {
-                            world.state.collect(loc.vanilla_item);
+                        if (!!(world.settings.key_rings) && !!dungeon && world.settings.key_rings.includes(dungeon) && dungeon !== 'Ganons Castle' && world.settings.keyring_give_bk && !!world.settings.shuffle_smallkeys && world.settings.shuffle_smallkeys !== 'vanilla') {
+                            shuffle_setting = shuffle_setting === 'remove' || !(['any_dungeon','overworld','keysanity','regional','remove'].includes(<string>world.settings.shuffle_smallkeys)) ? shuffle_setting : <string>world.settings.shuffle_smallkeys;
+                            //world.state.collect(loc.vanilla_item);
                         }
                     } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon)) {
                         shuffle_setting = <string>world.settings.shuffle_smallkeys;
@@ -381,6 +880,8 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
+            // exit if we're only resetting vanilla items
+            if (locations === null) return;
             // user fill overrides
             if (world.settings.world_count > 1) {
                 filled_locations = <PlandoLocationList>(locations[`World ${world.id + 1}`]);
@@ -388,29 +889,32 @@ class OotrGraphPlugin extends GraphPlugin {
                 filled_locations = <PlandoLocationList>locations;
             }
             for (let [location, item] of Object.entries(filled_locations)) {
-                if (typeof(item) === 'string') {
-                    let world_item = ItemFactory(item, world)[0];
-                    world.get_location(location).item = world_item;
-                } else {
-                    // dict-style for ice traps and shop items
-                    let world_item: Item;
-                    if (!!item.player) {
-                        world_item = ItemFactory(item.item, this.worlds[item.player-1])[0];
+                let world_location = world.get_location(location);
+                // don't override vanilla items
+                if (world_location.item === null) {
+                    if (typeof(item) === 'string') {
+                        let world_item = ItemFactory(item, world)[0];
+                        world_location.item = world_item;
                     } else {
-                        world_item = ItemFactory(item.item, world)[0];
+                        // dict-style for ice traps and shop items
+                        let world_item: Item;
+                        if (!!item.player) {
+                            world_item = ItemFactory(item.item, this.worlds[item.player-1])[0];
+                        } else {
+                            world_item = ItemFactory(item.item, world)[0];
+                        }
+                        if (!!item.price) {
+                            world_item.price = item.price;
+                        }
+                        world_location.item = world_item;
+                        world_location.price = world_item.price;
                     }
-                    if (!!item.price) {
-                        world_item.price = item.price;
-                    }
-                    let world_location = world.get_location(location);
-                    world_location.item = world_item;
-                    world_location.price = world_item.price;
                 }
             }
         }
     }
 
-    set_entrances(entrances: PlandoEntranceList | PlandoMWEntranceList): void {
+    set_entrances(entrances: PlandoEntranceList | PlandoMWEntranceList | null): void {
         let connected_entrances: PlandoEntranceList;
         for (let world of this.worlds) {
             // disconnect all shuffled entrances
@@ -418,6 +922,13 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (!!(entrance.type) && world.shuffled_entrance_types.includes(entrance.type)) {
                     entrance.disconnect();
                     entrance.shuffled = true;
+                // reset unshuffled entrances to vanilla targets to handle settings changes
+                } else if (!!(entrance.type)) {
+                    entrance.disconnect();
+                    entrance.shuffled = false;
+                    if (entrance.original_connection === null) throw `Tried to reconnect null vanilla entrance`;
+                    entrance.connect(entrance.original_connection);
+                    entrance.replaces = null;
                 }
             }
             // Special handling for spawns since they have the same type but
@@ -433,6 +944,10 @@ class OotrGraphPlugin extends GraphPlugin {
                 entrance.shuffled = true;
             }
 
+            if (entrances === null) {
+                this.set_blue_warps(world);
+                return;
+            };
             // reconnect only shuffled entrances with user targets
             if (world.settings.world_count > 1) {
                 connected_entrances = <PlandoEntranceList>entrances[`World ${world.id + 1}`];
@@ -440,30 +955,34 @@ class OotrGraphPlugin extends GraphPlugin {
                 connected_entrances = <PlandoEntranceList>entrances;
             }
             for (let [entrance, target] of Object.entries(connected_entrances)) {
-                let dest = world.get_entrance_from_target(target);
                 let src = world.get_entrance(entrance);
-                if (dest.original_connection === null) throw `Plando tried to connect entrance target without original region connection`;
-                src.connect(dest.original_connection);
-                src.replaces = dest;
-                if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection)) {
-                    dest.reverse.connect(src.reverse.original_connection);
-                    dest.reverse.replaces = src.reverse;
+                // don't override unshuffled entrances if they are defined in the plando
+                if (src.connected_region === null) {
+                    let dest = world.get_entrance_from_target(target);
+                    if (dest.original_connection === null) throw `Plando tried to connect entrance target without original region connection`;
+                    src.connect(dest.original_connection);
+                    src.replaces = dest;
+                    if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection)) {
+                        dest.reverse.connect(src.reverse.original_connection);
+                        dest.reverse.replaces = src.reverse;
+                    }
                 }
             }
 
-            // adjust blue warp exits based on dungeon/boss shuffles, if enabled
-            if (world.shuffle_dungeon_entrances || world.settings.shuffle_bosses !== 'off') {
-                this.set_blue_warps(world);
-            }
+            // adjust blue warp exits even if dungeon/boss shuffles are off, in case they were previously shuffled.
+            this.set_blue_warps(world);
         }
     }
 
-    finalize_world(): void {
+    finalize_world(initializing: boolean = false): void {
         // must run after item fill to allow location table names
         // to line up during fill and prices to get set
         for (let world of this.worlds) {
+            if (initializing) {
+                world.parser.parse_shop_rules();
+                this.set_drop_location_names(world);
+            }
             this.set_shop_rules(world);
-            this.set_drop_location_names(world);
             world.state.collect_starting_items();
             this.collect_skipped_locations(world);
         }
@@ -471,28 +990,6 @@ class OotrGraphPlugin extends GraphPlugin {
 
     set_blue_warps(world: World): void {
         // Determine blue warp targets
-        // if a boss room is inside a boss door, make the blue warp go outside the dungeon's entrance
-        let boss_exits: {[e: string]: Entrance} = {
-            'Queen Gohma Boss Room -> Deku Tree Before Boss': world.get_entrance('Deku Tree Lobby -> KF Outside Deku Tree'),
-            'King Dodongo Boss Room -> Dodongos Cavern Mouth': world.get_entrance('Dodongos Cavern Beginning -> Death Mountain'),
-            'Barinade Boss Room -> Jabu Jabus Belly Before Boss': world.get_entrance('Jabu Jabus Belly Beginning -> Zoras Fountain'),
-            'Phantom Ganon Boss Room -> Forest Temple Before Boss': world.get_entrance('Forest Temple Lobby -> SFM Forest Temple Entrance Ledge'),
-            'Volvagia Boss Room -> Fire Temple Before Boss': world.get_entrance('Fire Temple Lower -> DMC Fire Temple Entrance'),
-            'Morpha Boss Room -> Water Temple Before Boss': world.get_entrance('Water Temple Lobby -> Lake Hylia'),
-            'Bongo Bongo Boss Room -> Shadow Temple Before Boss': world.get_entrance('Shadow Temple Entryway -> Graveyard Warp Pad Region'),
-            'Twinrova Boss Room -> Spirit Temple Before Boss': world.get_entrance('Spirit Temple Lobby -> Desert Colossus From Spirit Lobby'),
-        };
-        // if a boss room is inside a dungeon entrance (or inside a dungeon which is inside a dungeon entrance), make the blue warp go to that dungeon's blue warp target
-        let dungeon_exits: {[e: string]: Entrance} = {
-            'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
-            'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
-            'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Boss Room -> Zoras Fountain'),
-            'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'),
-            'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Boss Room -> DMC Central Local'),
-            'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Boss Room -> Lake Hylia'),
-            'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'),
-            'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Boss Room -> Desert Colossus'),
-        };
         let blue_warps: [Entrance, Entrance][] = [
             [world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
             [world.get_entrance('King Dodongo Boss Room -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
@@ -505,26 +1002,48 @@ class OotrGraphPlugin extends GraphPlugin {
         ];
 
         for (let [blue_warp, boss_door_exit] of blue_warps) {
-            let target = this.get_original_or_replaced_entrance(boss_door_exit);
-            if (true) { //TODO not world.settings.decouple_entrances
-                while (true) {
-                    if (target === null) {
-                        break;
-                    }
-                    if (!(target.name in boss_exits)) {
-                        break;
-                    }
-                    target = boss_exits[target.name].replaces || boss_exits[target.name];
-                }
-                if (!!target) {
-                    if (target.name in dungeon_exits) {
-                        target = dungeon_exits[target.name];
-                    }
-                }
+            this.set_blue_warp(blue_warp, boss_door_exit);
+        }
+    }
+
+    set_blue_warp(blue_warp: Entrance, boss_door_exit: Entrance) {
+        let world = blue_warp.world;
+        // if a boss room is inside a boss door, make the blue warp go outside the dungeon's entrance
+        let boss_exits: {[e: string]: Entrance} = {
+            'Queen Gohma Boss Room -> Deku Tree Before Boss': world.get_entrance('Deku Tree Lobby -> KF Outside Deku Tree'),
+            'King Dodongo Boss Room -> Dodongos Cavern Mouth': world.get_entrance('Dodongos Cavern Beginning -> Death Mountain'),
+            'Barinade Boss Room -> Jabu Jabus Belly Before Boss': world.get_entrance('Jabu Jabus Belly Beginning -> Zoras Fountain'),
+            'Phantom Ganon Boss Room -> Forest Temple Before Boss': world.get_entrance('Forest Temple Lobby -> SFM Forest Temple Entrance Ledge'),
+            'Volvagia Boss Room -> Fire Temple Before Boss': world.get_entrance('Fire Temple Lower -> DMC Fire Temple Entrance'),
+            'Morpha Boss Room -> Water Temple Before Boss': world.get_entrance('Water Temple Lobby -> Lake Hylia'),
+            'Bongo Bongo Boss Room -> Shadow Temple Before Boss': world.get_entrance('Shadow Temple Entryway -> Graveyard Warp Pad Region'),
+            'Twinrova Boss Room -> Spirit Temple Before Boss': world.get_entrance('Spirit Temple Lobby -> Desert Colossus From Spirit Lobby'),
+        };
+        let blue_warp_exits: {[e: string]: Entrance} = {
+            'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
+            'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
+            'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Boss Room -> Zoras Fountain'),
+            'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'),
+            'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Boss Room -> DMC Central Local'),
+            'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Boss Room -> Lake Hylia'),
+            'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'),
+            'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Boss Room -> Desert Colossus'),
+        };
+        let target = this.get_original_or_replaced_entrance(boss_door_exit);
+        // if a boss room is inside a dungeon entrance (or inside a dungeon which is inside a dungeon entrance), make the blue warp go to the furthest dungeon's blue warp target
+        while (true) {
+            if (target === null || !(target?.name in boss_exits)) {
+                break;
             }
-            blue_warp.disconnect();
-            if (!!target) {
-                blue_warp.connect(world.get_region(target.name.split(' -> ')[1]));
+            target = !!(boss_exits[target.name].replaces) ? boss_exits[target.name].replaces : boss_exits[target.name];
+        }
+        blue_warp.disconnect();
+        if (!!target) {
+            if (target.name in blue_warp_exits) {
+                target = blue_warp_exits[target.name];
+            }
+            if (!!(target?.original_connection)) {
+                blue_warp.connect(target.original_connection);
                 blue_warp.replaces = target;
             }
         }
@@ -534,12 +1053,14 @@ class OotrGraphPlugin extends GraphPlugin {
         let ret: Entrance;
         if (!!(entrance.replaces)) {
             ret = entrance.replaces;
-        } else {
+        } else if (!(entrance.shuffled)) {
             ret = entrance;
+        } else {
+            return null;
         }
         // only provide a target if the provided entrance is connected
         // in order to work with partially connected worlds
-        if (!!(ret.connected_region)) {
+        if (!!(ret?.connected_region)) {
             return ret;
         } else {
             return null;
@@ -547,7 +1068,7 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     set_drop_location_names(world: World): void {
-        for (let loc of world.get_locations()) {
+        for (let loc of world.get_locations(true)) {
             if (loc.type === 'Drop' && !!(loc.parent_region)) {
                 loc.name = `${loc.parent_region.name} ${loc.name}`;
             }
@@ -555,12 +1076,12 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     set_shop_rules(world: World): void {
-        let found_bombchus = world.parser.parse_rule('found_bombchus');
-        let wallet = world.parser.parse_rule('Progressive_Wallet');
-        let wallet2 = world.parser.parse_rule('(Progressive_Wallet, 2)');
-        let wallet3 = world.parser.parse_rule('(Progressive_Wallet, 3)');
-        let is_adult = world.parser.parse_rule('is_adult');
-        let has_bottle = world.parser.parse_rule('has_bottle');
+        for (let loc of world.get_locations(true)) {
+            this.set_shop_rule(loc);
+        }
+    }
+
+    set_shop_rule(loc: Location): void {
         let adult_items = [
             'Buy Goron Tunic',
             'Buy Zora Tunic',
@@ -582,31 +1103,34 @@ class OotrGraphPlugin extends GraphPlugin {
             'Buy Bombchu (20)',
             'Buy Bombchu (5)',
         ];
-        for (let loc of world.get_locations()) {
-            if (!!(loc.price)) {
-                if (loc.price > 500) {
-                    loc.add_rule(wallet3);
-                } else if (loc.price > 200) {
-                    loc.add_rule(wallet2);
-                } else if (loc.price > 99) {
-                    loc.add_rule(wallet);
-                }
+
+        // if other dynamic rules besides shops are added in the future, this likely needs to be moved
+        loc.reset_rules();
+
+        if (!!(loc.price)) {
+            if (loc.price > 500) {
+                loc.add_rule(loc.world.parser.wallet3);
+            } else if (loc.price > 200) {
+                loc.add_rule(loc.world.parser.wallet2);
+            } else if (loc.price > 99) {
+                loc.add_rule(loc.world.parser.wallet);
             }
-            if (!!(loc.item)) {
-                if (adult_items.includes(loc.item.name)) {
-                    loc.add_rule(is_adult);
-                }
-                if (bottle_items.includes(loc.item.name)) {
-                    loc.add_rule(has_bottle);
-                }
-                if (bombchu_items.includes(loc.item.name)) {
-                    loc.add_rule(found_bombchus);
-                }
+        }
+        if (!!(loc.item)) {
+            if (adult_items.includes(loc.item.name)) {
+                loc.add_rule(loc.world.parser.is_adult);
+            }
+            if (bottle_items.includes(loc.item.name)) {
+                loc.add_rule(loc.world.parser.has_bottle);
+            }
+            if (bombchu_items.includes(loc.item.name)) {
+                loc.add_rule(loc.world.parser.found_bombchus);
             }
         }
     }
 
     collect_skipped_locations(world: World): void {
+        world.clear_skipped_locations();
         world.skipped_locations.push(world.get_location('Links Pocket'));
         if (!(world.settings.shuffle_gerudo_card) && world.settings.gerudo_fortress === 'open') {
             world.state.collect(ItemFactory('Gerudo Membership Card', world)[0]);

@@ -3,16 +3,49 @@ import { readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { WorldGraphRemoteFactory, WorldGraphFactory, ExternalFileCacheFactory } from '..//WorldGraph.js';
 import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
-import { GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
+import { GraphEntrance, GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
 import { Location } from '../plugins/ootr-latest/Location.js';
+import Entrance from '../plugins/ootr-latest/Entrance.js';
+import World from '../plugins/ootr-latest/World.js';
 
 // local paths to RSL script and OOTR for generating/validating world searches
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_spoiler(false);
+//test_import(true);
+//test_spoiler(false, true);
 //test_remote_files();
-//test_random_settings(1000, 'tests/ootr-local-143');
+//test_random_settings(1000);
+add_entrance_spheres_to_tests();
+
+async function test_import(debug: boolean = false) {
+    let result_file = 'python_spheres_U2GCEY0APU.json';
+
+    let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers', result_file), 'utf-8'));
+    let seed = result_file.split('_')[2];
+    let plando = JSON.parse(readFileSync(resolve('tests/seeds', `python_plando_${seed}`), { encoding: 'utf8'}));
+    let [version, local_files] = get_plando_randomizer_version(plando);
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+
+    graph.import(plando);
+    graph.collect_spheres();
+
+    compare_js_to_python(graph, data);
+
+
+    result_file = 'python_spheres_U3CJUBQAKH.json';
+    data = JSON.parse(readFileSync(resolve('tests/spoilers', result_file), 'utf-8'));
+    seed = result_file.split('_')[2];
+    plando = JSON.parse(readFileSync(resolve('tests/seeds', `python_plando_${seed}`), { encoding: 'utf8'}));
+    graph.import(plando);
+    graph.collect_spheres();
+
+    compare_js_to_python(graph, data);
+
+
+    if (debug) save_python_output_as_unit_test(plando, graph, data, false);
+}
 
 async function test_remote_files() {
     //let _cache = {files: {}};
@@ -21,9 +54,22 @@ async function test_remote_files() {
     console.log(graph.get_game_versions().versions[0].version);
 }
 
-async function test_spoiler(convert: boolean = false) {
-    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', 'seed143.json'));
+async function test_spoiler(convert: boolean = false, debug: boolean = false) {
+    // python_plando_U3CJUBQAKH
+    // python_plando_VNTW9E7QFO
+    // python_plando_YQQVR7YQ0G
+    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', 'python_plando_YQQVR7YQ0G.json'));
     if (convert) save_python_output_as_unit_test(plando, graph, data, success);
+    if (debug) save_python_output_as_unit_test(plando, graph, data, false);
+}
+
+async function add_entrance_spheres_to_tests() {
+    let python_results = readdirSync(resolve('tests/seeds'));
+
+    for (let result_file of python_results) {
+        let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', result_file));
+        save_python_output_as_unit_test(plando, graph, data, success);
+    }
 }
 
 async function test_specific_random_settings(f: string = '') {
@@ -58,15 +104,16 @@ async function test_settings(plando_file: string, export_spheres: boolean = fals
     }
 
     console.log('Running JS search');
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', { local_files: 'tests/ootr-local-143' });
-    let graph = await WorldGraphRemoteFactory('ootr', plando, '7.1.143', global_cache);
+    let [version, local_files] = get_plando_randomizer_version(plando);
+    let global_cache = await OotrFileCache.load_ootr_files(version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', plando, version, global_cache);
     graph.collect_spheres();
 
     let success = compare_js_to_python(graph, data);
     return [plando, graph, data, success];
 }
 
-async function test_random_settings(max_seeds: number = 1, local_files: string | null = null) {
+async function test_random_settings(max_seeds: number = 1) {
     var rsl_output, pythonGraph, data, files, plando, graph;
     files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
     if (files.length > 0) {
@@ -80,7 +127,8 @@ async function test_random_settings(max_seeds: number = 1, local_files: string |
         }
     }
 
-    let global_cache = await OotrFileCache.load_ootr_files('7.1.143', { local_files: local_files });
+    let [version, local_files] = get_plando_randomizer_version({});
+    let global_cache = await OotrFileCache.load_ootr_files(version, { local_files: local_files });
 
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`);
@@ -109,7 +157,7 @@ async function test_random_settings(max_seeds: number = 1, local_files: string |
         data = read_python_stdout(pythonGraph);
 
         console.log('Running JS search');
-        graph = await WorldGraphRemoteFactory('ootr', plando, '7.1.143', global_cache);
+        graph = await WorldGraphRemoteFactory('ootr', plando, version, global_cache);
         graph.collect_spheres();
 
         let success = compare_js_to_python(graph, data);
@@ -126,20 +174,45 @@ async function test_random_settings(max_seeds: number = 1, local_files: string |
     }
 }
 
+function get_plando_randomizer_version(plando: {[key: string]: any}): [string, string] {
+    let version: string;
+    let local_files: string;
+    if (Object.keys(plando).includes(':version')) {
+        version = plando[':version'];
+        switch (version) {
+            case '7.1.117 f.LUM':
+                local_files = 'tests/ootr-local-117';
+                break;
+            default:
+                local_files = 'tests/ootr-local-143';
+        }
+    } else {
+        version = '7.1.143';
+        local_files = 'tests/ootr-local-143';
+    }
+    return [version, local_files];
+}
+
 function save_python_output_as_unit_test(plando: {[key: string]: any}, graph: GraphPlugin, data: PythonData, success: boolean) {
+    let sorted_data = sort_spheres(data);
     if (success) {
         let seed_string = plando[':seed'];
         writeFileSync(resolve('./tests/seeds/', `python_plando_${seed_string}.json`), JSON.stringify(plando, null, 4), 'utf-8');
-        writeFileSync(resolve('./tests/spoilers/', `python_spheres_${seed_string}.json`), JSON.stringify(data, null, 4), 'utf-8');
+        writeFileSync(resolve('./tests/spoilers/', `python_spheres_${seed_string}.json`), JSON.stringify(sorted_data, null, 4), 'utf-8');
     } else {
         writeFileSync('./python_plando.json', JSON.stringify(plando, null, 4), 'utf-8');
-        writeFileSync('./python_spheres.json', JSON.stringify(data.spheres, null, 4), 'utf-8');
-        writeFileSync('./python_sphere_logic.json', JSON.stringify(data.sphere_logic_rules, null, 4), 'utf-8');
+        writeFileSync('./python_spheres.json', JSON.stringify(sorted_data.spheres, null, 4), 'utf-8');
+        writeFileSync('./python_sphere_logic.json', JSON.stringify(sorted_data.sphere_logic_rules, null, 4), 'utf-8');
+        if (!!(data.entrance_spheres))
+            writeFileSync('./python_entrance_sphere_logic.json', JSON.stringify(sorted_data.entrance_spheres, null, 4), 'utf-8');
         let locs = graph.get_visited_locations();
+        let world = <World>graph.worlds[0];
+        let ents = world.get_entrances();
         let jsdata: PythonData = {
             locations: {},
             spheres: {},
             sphere_logic_rules: {},
+            entrance_spheres: {},
         };
         for (let l of locs) {
             if (!!l.item) {
@@ -152,15 +225,57 @@ function save_python_output_as_unit_test(plando: {[key: string]: any}, graph: Gr
                 jsdata.sphere_logic_rules[l.sphere.toString()][l.name] = ootr_loc.transformed_rule;
             }
         }
-        writeFileSync('./js_spheres.json', JSON.stringify(jsdata.spheres, null, 4), 'utf-8');
-        writeFileSync('./js_sphere_logic.json', JSON.stringify(jsdata.sphere_logic_rules, null, 4), 'utf-8');
+        for (let e of ents) {
+            if (e.sphere === -1) continue;
+            if (!(Object.keys(jsdata.entrance_spheres).includes(e.sphere.toString()))) {
+                jsdata.entrance_spheres[e.sphere.toString()] = {};
+            }
+            let ootr_ent = <Entrance>e;
+            jsdata.entrance_spheres[e.sphere.toString()][e.name] = ootr_ent.transformed_rule;
+        }
+        let sorted_jsdata = sort_spheres(jsdata);
+        writeFileSync('./js_spheres.json', JSON.stringify(sorted_jsdata.spheres, null, 4), 'utf-8');
+        writeFileSync('./js_sphere_logic.json', JSON.stringify(sorted_jsdata.sphere_logic_rules, null, 4), 'utf-8');
+        writeFileSync('./js_entrance_sphere_logic.json', JSON.stringify(sorted_jsdata.entrance_spheres, null, 4), 'utf-8');
     }
+}
+
+function sort_spheres(data: PythonData): PythonData {
+    let ordered_spheres: PythonData = {
+        locations: data.locations,
+        spheres: {},
+        sphere_logic_rules: {},
+        entrance_spheres: {},
+    };
+    for (let sphere_num of Object.keys(data.spheres).sort()) {
+        ordered_spheres.spheres[sphere_num] = sphere_reducer(data.spheres[sphere_num]);
+    }
+    for (let sphere_num of Object.keys(data.sphere_logic_rules).sort()) {
+        ordered_spheres.sphere_logic_rules[sphere_num] = sphere_reducer(data.sphere_logic_rules[sphere_num]);
+    }
+    if (!!(data.entrance_spheres)) {
+        for (let sphere_num of Object.keys(data.entrance_spheres).sort()) {
+            ordered_spheres.entrance_spheres[sphere_num] = sphere_reducer(data.entrance_spheres[sphere_num]);
+        }
+    }
+    return ordered_spheres;
+}
+
+function sphere_reducer(sphere: SinglePythonSphere): SinglePythonSphere {
+    return Object.keys(sphere).sort().reduce(
+        (obj: SinglePythonSphere, key: string) => {
+            obj[key] = sphere[key];
+            return obj;
+        },
+        {}
+    );
 }
 
 type PythonData = {
     locations: PythonLocation,
     spheres: PythonSphere,
     sphere_logic_rules: PythonSphere,
+    entrance_spheres: PythonSphere,
 };
 type PythonLocation = {
     [location_name: string]: {
@@ -177,9 +292,10 @@ type PythonLocation = {
     }
 };
 type PythonSphere = {
-    [sphere: string]: {
-        [location_name: string]: string,
-    }
+    [sphere: string]: SinglePythonSphere,
+};
+type SinglePythonSphere = {
+    [location_name: string]: string,
 };
 
 function read_python_stdout(pythonGraph: SpawnSyncReturns<string>): PythonData {
@@ -210,6 +326,8 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
                     === Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length;
     let locs = graph.get_visited_locations();
     let loc_names = locs.map((loc: GraphLocation): string => loc.name);
+    let world = <World>graph.worlds[0];
+    let ents = world.get_entrances();
 
     for (const loc of locs) {
         if (Object.keys(ldata).includes(loc.name)) {
@@ -252,21 +370,36 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     }
     console.log('Finished python comparison');
 
-    // Only do sphere comparison if searched locations match
-    if (success && Object.keys(data).includes('spheres')) {
-        let sdata = data.spheres;
-        for (let [sphere, sphere_locs] of Object.entries(sdata)) {
+    if (Object.keys(data).includes('entrance_spheres')) {
+        let pyents = Object.keys(data.entrance_spheres).flatMap((sphere) => Object.keys(data.entrance_spheres[sphere]));
+        for (const ent of ents) {
+            if (!(pyents.includes(ent.name)) && ent.sphere >= 0) {
+                console.log(`Extra entrance: ${ent.name}`);
+                success = false;
+            }
+        }
+        for (let e of pyents) {
+            let ent = ents.filter((entrance: GraphEntrance): boolean => entrance.name === e)[0];
+            if (ent === undefined){
+                console.log(`Missing entrance: ${e}`);
+                success = false;
+            } else if (ent.sphere === -1) {
+                console.log(`Missing entrance: ${e}`);
+                success = false;
+            }
+        }
+
+        // entrance spheres more impactful than locations, so check first
+        let edata = data.entrance_spheres;
+        for (let [sphere, sphere_entrance] of Object.entries(edata)) {
             let nsphere = parseInt(sphere);
-            for (let l of Object.keys(sphere_locs)) {
-                let loc = locs.filter((location: GraphLocation): boolean => location.name === l)[0];
-                // Subrule numbering between python and js can differ, rely on real locations being out of order
-                if (loc === undefined && ldata[l].type !== 'Event'){
-                    console.log(`Location in python spheres not found in JS: ${l} in python sphere ${nsphere}`);
+            for (let e of Object.keys(sphere_entrance)) {
+                let ent = ents.filter((entrance: GraphEntrance): boolean => entrance.name === e)[0];
+                if (ent === undefined){
+                    console.log(`Missing entrance in python spheres not found in JS: ${e} in python sphere ${nsphere}`);
                     success = false;
-                } else if (loc === undefined && ldata[l].type === 'Event') {
-                    continue;
-                } else if (loc.sphere !== nsphere && loc.type !== 'Event') {
-                    console.log(`Sphere mismatch: ${l} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
+                } else if (ent.sphere !== nsphere) {
+                    console.log(`Entrance sphere mismatch: ${e} in python sphere ${nsphere} and JS sphere ${ent.sphere}`);
                     success = false;
                 }
             }
@@ -274,6 +407,33 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
             // so skip them if a problem was found in this sphere.
             if (!success) {
                 break;
+            }
+        }
+    }
+    if (Object.keys(data).includes('spheres')) {
+        // Only do location sphere comparison if searched locations and entrance spheres match
+        if (success) {
+            let sdata = data.spheres;
+            for (let [sphere, sphere_locs] of Object.entries(sdata)) {
+                let nsphere = parseInt(sphere);
+                for (let l of Object.keys(sphere_locs)) {
+                    let loc = locs.filter((location: GraphLocation): boolean => location.name === l)[0];
+                    // Subrule numbering between python and js can differ, rely on real locations being out of order
+                    if (loc === undefined && ldata[l].type !== 'Event'){
+                        console.log(`Location in python spheres not found in JS: ${l} in python sphere ${nsphere}`);
+                        success = false;
+                    } else if (loc === undefined && ldata[l].type === 'Event') {
+                        continue;
+                    } else if (loc.sphere !== nsphere && loc.type !== 'Event') {
+                        console.log(`Location sphere mismatch: ${l} in python sphere ${nsphere} and JS sphere ${loc.sphere}`);
+                        success = false;
+                    }
+                }
+                // out of order spheres will affect later spheres,
+                // so skip them if a problem was found in this sphere.
+                if (!success) {
+                    break;
+                }
             }
         }
     }
