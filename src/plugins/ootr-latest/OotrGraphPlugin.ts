@@ -679,64 +679,8 @@ class OotrGraphPlugin extends GraphPlugin {
                 }
             }
 
-            let root_region = world.get_region('Root');
-            let base_region_groups = this.create_region_groups(root_region);
-            world.region_groups.push(...base_region_groups);
-            for (let [dungeon, is_mq] of Object.entries(world.dungeon_mq)) {
-                let dungeon_variant_name = is_mq ? dungeon : `${dungeon} MQ`;
-                // first region defined for a dungeon is the only region guaranteed to have
-                // a path to every other region within the dungeon
-                let root_dungeon_region = world.dungeons[dungeon_variant_name][0];
-                // Don't need to add the group to the world. The group is
-                // saved in its child regions
-                this.create_region_groups(root_dungeon_region);
-            }
+            world.create_region_groups();
         }
-    }
-
-    create_region_groups(root_region: Region): RegionGroup[] {
-        // create grouped regions based on shufflable entrance boundaries
-        let current_group = new RegionGroup('Root', root_region.world, root_region);
-        let exit_queue: Entrance[] = [];
-        let region_queue = [root_region];
-        let processed_regions: Region[] = [];
-        let region_groups: RegionGroup[] = [];
-        exit_queue_loop:
-        while (region_queue.length > 0 || exit_queue.length > 0) {
-            let current_region = region_queue.pop();
-            // Check if sub regions exhausted within the entrance boundary.
-            // If so, save the region group and start a new one
-            if (current_region === undefined) {
-                if (current_group.alias !== '') region_groups.push(current_group);
-                let exit = exit_queue.pop();
-                if (exit === undefined || exit.connected_region === null) throw `Unable to build region groups: empty region and exit queues in middle of loop`;
-                while (processed_regions.includes(exit.connected_region)) {
-                    exit = exit_queue.pop();
-                    if (exit === undefined) break exit_queue_loop;
-                    if (exit.connected_region === null) throw `Unable to build region groups: disconnected exit`;
-                }
-                current_region = exit.connected_region;
-                current_group = new RegionGroup(`${current_region.name} from ${exit.name}`, current_region.world, current_region);
-            }
-            // check if somehow unable to traverse to next region group
-            if (current_region === undefined) throw `Unable to build region groups: shufflable entrance has disconnected region`;
-            processed_regions.push(current_region);
-            for (let exit of current_region.exits) {
-                if ((exit.primary || exit.secondary) && !!(exit.connected_region)) {
-                    if (!(processed_regions.includes(exit.connected_region)) && !(exit_queue.includes(exit))) {
-                        exit_queue.push(exit);
-                    }
-                } else if (!!(exit.connected_region)) {
-                    if (!(processed_regions.includes(exit.connected_region))) {
-                        current_group.add_region(exit.connected_region);
-                        region_queue.push(exit.connected_region);
-                    }
-                }
-            }
-        }
-        // save the last region group
-        if (current_group.alias !== '') region_groups.push(current_group);
-        return region_groups;
     }
 
     set_items(locations: PlandoLocationList | PlandoMWLocationList | null): void {

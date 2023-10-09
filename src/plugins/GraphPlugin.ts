@@ -40,6 +40,7 @@ export interface GraphEntrance {
 export interface GraphRegion {
     name: string;
     alias: string;
+    page: string;
     exits: GraphEntrance[];
     entrances: GraphEntrance[];
     locations: GraphLocation[];

@@ -12,11 +12,11 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-//test_import(true);
+test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
 //test_random_settings(1000);
-add_entrance_spheres_to_tests();
+//add_entrance_spheres_to_tests();
 
 async function test_import(debug: boolean = false) {
     let result_file = 'python_spheres_U2GCEY0APU.json';
@@ -32,18 +32,6 @@ async function test_import(debug: boolean = false) {
     graph.collect_spheres();
 
     compare_js_to_python(graph, data);
-
-
-    result_file = 'python_spheres_U3CJUBQAKH.json';
-    data = JSON.parse(readFileSync(resolve('tests/spoilers', result_file), 'utf-8'));
-    seed = result_file.split('_')[2];
-    plando = JSON.parse(readFileSync(resolve('tests/seeds', `python_plando_${seed}`), { encoding: 'utf8'}));
-    graph.import(plando);
-    graph.collect_spheres();
-
-    compare_js_to_python(graph, data);
-
-
     if (debug) save_python_output_as_unit_test(plando, graph, data, false);
 }
 

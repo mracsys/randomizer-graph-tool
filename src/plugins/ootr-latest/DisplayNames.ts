@@ -2262,12 +2262,12 @@ export const display_names: DisplayNames = {
     "entrance_aliases": {
         "Child Spawn -> KF Links House": "Child Spawn",
         "Adult Spawn -> Temple of Time": "Adult Spawn",
-        "Prelude of Light Warp -> Temple of Time": "Prelude of Light",
         "Minuet of Forest Warp -> Sacred Forest Meadow": "Minuet of Forest",
         "Bolero of Fire Warp -> DMC Central Local": "Bolero of Fire",
         "Serenade of Water Warp -> Lake Hylia": "Serenade of Water",
         "Nocturne of Shadow Warp -> Graveyard Warp Pad Region": "Nocturne of Shadow",
         "Requiem of Spirit Warp -> Desert Colossus": "Requiem of Spirit",
+        "Prelude of Light Warp -> Temple of Time": "Prelude of Light",
         "Kokiri Forest -> KF Links House": "Link's House",
         "Kokiri Forest -> KF Midos House": "Mido's House",
         "Kokiri Forest -> KF Sarias House": "Saria's House",

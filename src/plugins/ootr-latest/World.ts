@@ -15,6 +15,7 @@ import OotrGraphPlugin from "./OotrGraphPlugin.js";
 import SettingsList from "./SettingsList.js";
 import type { SettingsDictionary } from "./SettingsList.js";
 import { RegionGroup } from "./RegionGroup.js";
+import { display_names } from './DisplayNames.js';
 
 type Dictionary<T> = {
     [key: string]: T,
@@ -62,6 +63,7 @@ class World implements GraphWorld {
     public _entrance_cache: Dictionary<Entrance>;
     public _region_cache: Dictionary<Region>;
     public _location_cache: Dictionary<Location>;
+    public _region_group_cache: Dictionary<RegionGroup>;
     public skipped_locations: Location[];
 
     public parser: RuleParser;
@@ -111,6 +113,7 @@ class World implements GraphWorld {
         this._entrance_cache = {};
         this._region_cache = {};
         this._location_cache = {};
+        this._region_group_cache = {};
         this.skipped_locations = [];
 
         let debug: boolean = (!!(this.settings.debug_parser)) ? this.settings.debug_parser : false;
@@ -558,6 +561,55 @@ class World implements GraphWorld {
                 }
             }
         }
+    }
+
+    create_region_groups() {
+        this._region_group_cache = {};
+        this.region_groups = [];
+        for (let region of this.regions) {
+            this.create_region_group(region);
+        }
+        for (let region_group of Object.values(this._region_group_cache)) {
+            region_group.sort_lists();
+            this.region_groups.push(region_group);
+        }
+        // Clear region group cache to ensure region variants create new groups
+        this._region_group_cache = {};
+        // Don't need to add the group to the world for alternate region variants.
+        // The group is saved in its child regions.
+        for (let [dungeon, is_mq] of Object.entries(this.dungeon_mq)) {
+            let dungeon_variant_name = is_mq ? dungeon : `${dungeon} MQ`;
+            let region_group: RegionGroup | undefined;
+            for (let region of this.dungeons[dungeon_variant_name]) {
+                region_group = this.create_region_group(region);
+            }
+            // Each dungeon guaranteed to be one region group
+            if (!!region_group) {
+                region_group.sort_lists();
+            }
+        }
+    }
+
+    create_region_group(region: Region): RegionGroup | undefined {
+        let alias: string = '';
+        for (let [group_alias, sub_regions] of Object.entries(display_names.region_groups)) {
+            if (sub_regions.includes(region.name)) {
+                alias = group_alias;
+                break;
+            }
+        }
+        if (alias !== '') {
+            let region_group = this.get_region_group(alias);
+            region_group.add_region(region);
+            return region_group;
+        }
+    }
+
+    get_region_group(region_name: string): RegionGroup {
+        if (!(region_name in this._region_group_cache)) {
+            this._region_group_cache[region_name] = new RegionGroup(region_name, this);
+        }
+        return this._region_group_cache[region_name];
     }
 
     get_region(region_name: Region | string, dungeon_variant_name: string = ''): Region {

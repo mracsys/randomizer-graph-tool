@@ -38,6 +38,7 @@ export class Region implements GraphRegion {
         public savewarp: Entrance | null = null,
         public alias: string = '',
         public parent_group: RegionGroup | null = null,
+        public page: string = '',
     ) {
         this.alias = this.name;
     }
