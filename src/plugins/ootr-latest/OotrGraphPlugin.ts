@@ -27,7 +27,6 @@ interface OotrPlando {
 
 class OotrGraphPlugin extends GraphPlugin {
     private version_list = [
-        '7.1.117',
         '7.1.143',
         '7.1.154',
         '7.1.198',

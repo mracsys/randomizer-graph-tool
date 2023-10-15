@@ -114,11 +114,18 @@ class GraphPlugin {
     public file_cache: ExternalFileCache;
     public initialized: boolean;
 
-    reset(): void {}
+    reset(): void;
+    reset_cache(): void;
+
+    // plando file processing
+    import(save_file: any): void;
+    export(pretty: boolean): string;
 
     // Version/branch list for selection, static class method
     get_game_versions(): GraphGameVersions;
+    
     get_settings_options(): {[setting_name: string]: GraphSetting};
+    change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
     // Search interface
     collect_locations(): void;
@@ -126,7 +133,7 @@ class GraphPlugin {
     get_accessible_entrances(): GraphEntrance[];
     get_visited_locations(): GraphLocation[];
     get_required_locations(): GraphLocation[]; // not currently implemented for ootr
-    get_items(): {[world_id: number]: GraphItem[]} {}
+    get_items(): {[world_id: number]: GraphItem[]};
 
     // Search interface world-specific convenience functions
     get_entrances_for_world(world: GraphWorld): GraphEntrance[];
@@ -140,6 +147,7 @@ class GraphPlugin {
 
     // World building interface
     set_location_item(location: GraphLocation, item: GraphItem): void;
+    get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): {[category: string]: GraphEntrance[]};
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
 }
 
@@ -163,6 +171,10 @@ type GraphSetting = {
     name: string,
     type: string,
     default: any,
+    disabled_default: GraphSettingType,
+    disables: GraphSetting[],
+    disabled(settings: GraphSettingsConfiguration): boolean,
+    display_name: string,
     tab: string,
     section: string,
     choices?: {[internal_name: string]: string},
@@ -171,6 +183,9 @@ type GraphSetting = {
 }
 
 type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
+type GraphSettingsConfiguration = {
+    [internal_name: string]: GraphSettingType,
+};
 
 interface GraphLocation {
     name: string;
@@ -189,11 +204,19 @@ interface GraphLocation {
 interface GraphEntrance {
     name: string;
     alias: string;
+    target_alias: string;
+    use_target_alias: boolean;
     type: string | null;
+    type_alias: string;
     shuffled: boolean;
+    coupled: boolean;
+    is_warp: boolean;
     parent_region: GraphRegion;
     connected_region: GraphRegion | null;
+    original_connection: GraphRegion | null;
+    reverse: GraphEntrance | null,
     world: GraphWorld;
+    sphere: number;
     viewable(): boolean;
 }
 
@@ -205,13 +228,18 @@ interface GraphItem {
 interface GraphWorld {
     id: number;
     regions: GraphRegion[];
-    settings: {
-        [internal_name: string]: GraphSettingType,
-    },
+    region_groups: GraphRegion[];
+    readonly settings: GraphSettingsConfiguration,
+    get_entrance(entrance: GraphEntrance | string): GraphEntrance,
+    get_location(location: GraphLocation | string): GraphLocation,
+    get_entrances(): GraphEntrance[],
+    get_locations(): GraphLocation[],
 }
 
 interface GraphRegion {
     name: string;
+    alias: string;
+    page: string;
     exits: GraphEntrance[];
     entrances: GraphEntrance[];
     locations: GraphLocation[];
@@ -251,19 +279,48 @@ npm publish --access=public
 
 ### 2.0.0
 
+* Removed support for Ocarina of Time Randomizer dev versions before 7.1.143. Files are temporarily archived in the `src/plugins/ootr-7.1` folder in case support is restored in the future.
+* New OOTR versions and branches supported
+    - Main branch
+        - 7.1.198
+    - Roman971's branch
+        - 7.1.195 R-1
+    - RealRob's branch
+        - 7.1.198 Rob-49
 * Introduced GraphPlugin.change_setting
     - Replaces direct mutation of GraphWorld.settings
     - Handles other internal changes required for a setting, such as swapping between Ocarina of Time vanilla and Master Quest region files
+    - Handles setting dependencies by disabling child settings when necessary. Settings are disabled by setting them to their `disabled_default` value.
 * GraphWorld.settings changed to readonly
+* GraphWorld convenience functions in parallel with existing GraphPlugin per-world methods
 * Settings display names parsing for OOTR lists added
 * Custom display names added for regions, entrances, and locations
-* Managed entrance pools added
+    - `alias` is the default display name
+    - GraphEntrance `target_alias` overrides the default alias when considering valid destinations for a GraphRegion exit. These values can be the same between different entrances, such as multiple Great Fairy Fountain interiors in Ocarina of Time.
+    - GraphEntrance `use_target_alias` property to specify if the target alias should be used given the current world settings
+    - GraphEntrance `type_alias` provides a display name for the entrance type when considering valid destinations. Targets can be grouped by destination region or entrance type.
+* Grouped regions added for display purposes
+    - Accessed via GraphWorld.region_groups
+    - `page` property of each region specifies a suggested grouping method for region groups, such as Overworld and Dungeons
+    - Region groups have all the same properties as lower level GraphRegion objects
+* Added GraphPlugin.get_entrance_pools() method to retrieve remaining unconnected entrances for a given entrance type
 * Entrance metadata added
     - Original forward and reverse entrance connections pre-shuffle, where applicable
     - is_warp property for unidirectional entrances
     - coupled property to implicitly support randomizers that do not have a decoupled entrances setting
-* Fixed bug in OOTR settings list parsing for inline python comments
+    - sphere property for the item collection sphere in which the entrance can be traversed per the chosen randomizer logic settings
 * Added GraphPlugin.export() method to save graph state to a text file that can be fed back into a new graph instance
+* Added GraphPlugin.import() method to reset graph state with a given input file instead of creating a completely new graph
+* GraphPlugin.get_items() return type is now a per-world dictionary of item names to item objects.
+    - Previous implementation was a per-world array of item objects for all locations in the game, including duplicate items.
+    - Item dictionary values are now unique with no duplicates.
+* New OOTR settings appended to upstream settings lists
+    - `graphplugin_trials_specific` to set specific enabled trials in the `settings` key instead of requiring a `trials` key
+    - `graphplugin_song_melodies` to set known song melodies with Ocarina Melody randomization enabled instead of relying on the `songs` key.
+* Unit tests use local cached copies of randomizer files except for the remote file retrieval test
+* Bug fixes
+    - Fixed bug in OOTR settings list parsing for inline python comments
+    - Decoupled entrances do not try to always link reverse entrances, frequently overriding previously set connections from the imported file with invalid connections
 
 ### 1.1.1
 

@@ -23,6 +23,7 @@ export interface GraphEntrance {
     name: string;
     alias: string;
     target_alias: string;
+    use_target_alias: boolean;
     type: string | null;
     type_alias: string;
     shuffled: boolean;
