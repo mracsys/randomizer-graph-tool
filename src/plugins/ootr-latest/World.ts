@@ -75,6 +75,7 @@ class World implements GraphWorld {
 
     public keysanity: boolean = false;
     public shuffle_silver_rupees: boolean = false;
+    public shuffle_enemy_spawns: boolean = false;
     public check_beatable_only: boolean = false;
     public shuffle_special_interior_entrances: boolean = false;
     public shuffle_interior_entrances: boolean = false;
@@ -232,6 +233,9 @@ class World implements GraphWorld {
     update_internal_settings(): void {
         this.keysanity = ['keysanity', 'remove', 'any_dungeon', 'overworld', 'regional'].includes(<string>this.settings.shuffle_smallkeys);
         this.shuffle_silver_rupees = this.settings.shuffle_silver_rupees !== 'vanilla';
+        if (Object.keys(this.settings).includes('shuffle_enemy_spawns')) {
+            this.shuffle_enemy_spawns = this.settings.shuffle_enemy_spawns !== 'off';
+        }
         this.check_beatable_only = this.settings.reachable_locations !== 'all';
         this.shuffle_special_interior_entrances = this.settings.shuffle_interior_entrances === 'all';
         this.shuffle_interior_entrances = ['simple', 'all'].includes(<string>this.settings.shuffle_interior_entrances);
@@ -317,7 +321,7 @@ class World implements GraphWorld {
                 new_region.dungeon = region.dungeon;
             }
             if (!!region.is_boss_room) {
-                new_region.is_boss_room = region.is_boss_room === "true"; // should probably fix this in upstream...
+                new_region.is_boss_room = region.is_boss_room.toLowerCase() === "true"; // should probably fix this in upstream...
             }
             if (!!region.time_passes) {
                 new_region.time_passes = region.time_passes;
@@ -445,7 +449,7 @@ class World implements GraphWorld {
                         exit.connect(target);
                         exit.replaces = exit.alternate.replaces;
                         exit.alternate.replaces = null;
-                        if (!!(exit.replaces)) {
+                        /*if (!!(exit.replaces) && exit.coupled) {
                             if (!!(exit.replaces.reverse)) {
                                 exit.replaces.reverse.disconnect();
                                 exit.replaces.reverse.connect(region);
@@ -454,19 +458,21 @@ class World implements GraphWorld {
                         } else if (!exit.shuffled && !!(exit.reverse)) {
                             exit.reverse.disconnect();
                             exit.reverse.connect(region);
-                        }
+                        }*/
                     }
                 }
             }
         }
-        // handle unshuffled reverse entrances, such as Farore's Wind
+        // Handle both coupled and decoupled entrances from the overworld to dungeons.
+        // Decoupled connections are not discoverable with exit.replaces.reverse or exit.reverse.
+        // Also handle never shuffled reverse entrances, such as Farore's Wind.
         let alt_dungeon_variant_name = dungeon_variant_name.substring(dungeon_variant_name.length - 2) === 'MQ' ? dungeon_variant_name.substring(0, dungeon_variant_name.length - 3) : `${dungeon_variant_name} MQ`;
         let all_dungeon_regions = Object.values(this.dungeons).flat();
         let alt_dungeon_regions = Object.values(this.dungeons[alt_dungeon_variant_name]);
         let other_regions = this.regions.filter((r) => !(all_dungeon_regions.includes(r)));
         for (let region of other_regions) {
             for (let exit of region.exits) {
-                if (exit.type === null && !!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
+                if (!!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
                     // no need to update original connection property as these entrances aren't shuffled
                     let alt_region = exit.disconnect();
                     exit.connect(this.get_region(alt_region.name, dungeon_variant_name));

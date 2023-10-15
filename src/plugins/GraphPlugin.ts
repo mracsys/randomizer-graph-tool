@@ -84,6 +84,7 @@ export type GraphSetting = {
     type: string,
     default: GraphSettingType,
     disabled_default: GraphSettingType,
+    disables: GraphSetting[],
     disabled(settings: GraphSettingsConfiguration): boolean,
     display_name: string,
     tab: string,

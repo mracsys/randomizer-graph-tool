@@ -35,6 +35,7 @@ class Entrance implements GraphEntrance {
         public alias: string = '',
         public type_alias: string = '',
         public target_alias: string = '',
+        public use_target_alias: boolean = false,
         public coupled: boolean = true,
         public is_warp: boolean = false,
         public sphere: number = -1,

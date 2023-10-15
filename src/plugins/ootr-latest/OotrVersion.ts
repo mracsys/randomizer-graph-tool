@@ -15,8 +15,15 @@ class OotrVersion implements GameVersion {
     public file_list: string[];
 
     static devr_version_commit_ids: VersionCommitMap = {
+        '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
         '7.1.154 R-1': 'c5af1e9df2dd280b70b25f02d80d13dce9680d58',
         '7.1.143 R-1': '06390ece7e38fce1dd02ca60a28a7b1ff9fceb10',
+    }
+    static devrob_version_commit_ids: VersionCommitMap = {
+        '7.1.198 Rob-49': 'd3fcfa72c833a2e6fb2dffcab3461394aa6765c8',
+    }
+    static devfenhl_version_commit_ids: VersionCommitMap = {
+        '7.1.118 fenhl-19': '321290e9feec5ffc2d7a0be51f64911305f0bd2a',
     }
     constructor(ootr_version: string, generate_files: boolean = true) {
         this.version = ootr_version;
@@ -100,16 +107,48 @@ class OotrVersion implements GameVersion {
                 return `https://raw.githubusercontent.com/OoTRandomizer/OoT-Randomizer/${this.to_string()}`;
             case 'R':
                 return `https://raw.githubusercontent.com/Roman971/OoT-Randomizer/${OotrVersion.devr_version_commit_ids[this.to_string()]}`;
+            case 'Rob':
+                return `https://raw.githubusercontent.com/rrealmuto/OoT-Randomizer/${OotrVersion.devrob_version_commit_ids[this.to_string()]}`;
+            case 'fenhl':
+                return `https://raw.githubusercontent.com/fenhl/OoT-Randomizer/${OotrVersion.devfenhl_version_commit_ids[this.to_string()]}`;
             default:
                 throw(`Unsupported branch for remote file retrieval: ${this.to_string()}`);
         }
     }
 
     local_folder(): string {
-        if (this.gte('7.1.143')) {
-            return './ootr-local-143';
-        } else {
-            throw(`Unsupported branch for remote file retrieval: ${this.to_string()}`);
+        switch(this.branch) {
+            case '':
+                if (this.gte('7.1.143')) {
+                    return './ootr-local-143';
+                } else {
+                    throw(`Unsupported version for local file retrieval (minimum 7.1.143 f.LUM): ${this.to_string()}`);
+                }
+                break;
+            case 'R':
+                if (this.gte('7.1.143 R-1')) {
+                    return './ootr-local-roman-143';
+                } else {
+                    throw(`Unsupported version for local file retrieval (minimum 7.1.143 R-1): ${this.to_string()}`);
+                }
+                break;
+            case 'Rob':
+                if (this.gte('7.1.198 Rob-49')) {
+                    return './ootr-local-realrob-198';
+                } else {
+                    throw(`Unsupported version for local file retrieval (minimum 7.1.198 Rob-49): ${this.to_string()}`);
+                }
+                break;
+            case 'fenhl':
+                if (this.gte('7.1.118 fenhl-19')) {
+                    return './ootr-local-fenhl-118';
+                } else {
+                    throw(`Unsupported version for local file retrieval (minimum 7.1.118 fenhl-19): ${this.to_string()}`);
+                }
+                break;
+            default:
+                throw(`Unsupported branch for local file retrieval (supported: f.LUM, Rob, R, fenhl): ${this.to_string()}`);
+                break;
         }
     }
 
@@ -187,6 +226,22 @@ class OotrVersion implements GameVersion {
                     file_list.push('SettingsListTricks.py');
                 } else {
                     throw('OOTR versions prior to 7.1.143 R-1 not implemented');
+                }
+                file_list.push('SettingsList.py');
+                break;
+            case 'Rob':
+                if (this.gte('7.1.198 Rob-49')) {
+                    file_list.push('SettingsListTricks.py');
+                } else {
+                    throw('OOTR versions prior to 7.1.198 Rob-49 not implemented');
+                }
+                file_list.push('SettingsList.py');
+                break;
+            case 'fenhl':
+                if (this.gte('7.1.118 fenhl-19')) {
+                    file_list.push('SettingsListTricks.py');
+                } else {
+                    throw('OOTR versions prior to 7.1.118 fenhl-19 not implemented');
                 }
                 file_list.push('SettingsList.py');
                 break;

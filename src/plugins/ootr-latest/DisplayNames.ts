@@ -5,7 +5,10 @@ interface DisplayNames {
     region_aliases: {[region_name: string]: string},
     location_aliases: {[location_name: string]: string},
     entrance_aliases: {[entrance_name: string]: string},
-    entrance_groups: {[entrance_group: string]: string[]},
+    entrance_groups: {[entrance_group: string]: {
+        required_size?: number,
+        grouped: string[],
+    }},
 }
 
 export const display_names: DisplayNames = {
@@ -2396,132 +2399,155 @@ export const display_names: DisplayNames = {
         "Ganons Castle Main -> Ganons Tower": "Ganon's Tower"
     },
     "entrance_groups": {
-        "Fairy Fountain": [
-            "Zoras Domain -> ZD Storms Grotto",
-            "Zora River -> ZR Fairy Grotto",
-            "Hyrule Field -> HF Fairy Grotto",
-            "Sacred Forest Meadow -> SFM Fairy Grotto",
-            "GF Entrances Behind Crates -> GF Storms Grotto"
-        ],
-        "Shop": [
-            "Zoras Domain -> ZD Shop",
-            "Goron City -> GC Shop",
-            "Kakariko Village -> Kak Bazaar",
-            "Kokiri Forest -> KF Kokiri Shop",
-            "Market -> Market Potion Shop",
-            "Market Back Alley -> Market Bombchu Shop",
-            "Market -> Market Bazaar"
-        ],
-        "2 Scrub Grotto": [
-            "Zora River -> ZR Storms Grotto",
-            "Desert Colossus -> Colossus Grotto",
-            "GV Fortress Side -> GV Storms Grotto",
-            "Sacred Forest Meadow -> SFM Storms Grotto"
-        ],
-        "Generic Grotto": [
-            "Zora River -> ZR Open Grotto",
-            "DMC Upper Nearby -> DMC Upper Grotto",
-            "Death Mountain -> DMT Storms Grotto",
-            "Hyrule Field -> HF Near Market Grotto",
-            "Hyrule Field -> HF Open Grotto",
-            "Hyrule Field -> HF Southeast Grotto",
-            "Kak Backyard -> Kak Open Grotto",
-            "Kokiri Forest -> KF Storms Grotto",
-            "Lost Woods -> LW Near Shortcuts Grotto"
-        ],
-        "Great Fairy Fountain": [
-            "Zoras Fountain -> ZF Great Fairy Fountain",
-            "DMC Lower Nearby -> DMC Great Fairy Fountain",
-            "Death Mountain Summit -> DMT Great Fairy Fountain",
-            "Desert Colossus -> Colossus Great Fairy Fountain",
-            "Hyrule Castle Grounds -> HC Great Fairy Fountain",
-            "Ganons Castle Grounds -> OGC Great Fairy Fountain"
-        ],
-        "3 Scrub Grotto": [
-            "DMC Lower Nearby -> DMC Hammer Grotto",
-            "GC Grotto Platform -> GC Grotto",
-            "Lake Hylia -> LH Grotto",
-            "Lon Lon Ranch -> LLR Grotto"
-        ],
-        "Octorock Grotto": [
-            "GV Grotto Ledge -> GV Octorok Grotto"
-        ],
-        "House": [
-            "GV Fortress Side -> GV Carpenter Tent",
-            "Graveyard -> Graveyard Dampes House",
-            "Kokiri Forest -> KF Sarias House",
-            "Kokiri Forest -> KF House of Twins",
-            "Kokiri Forest -> KF Know It All House",
-            "Market Back Alley -> Market Man in Green House"
-        ],
-        "Lone Skulltula Grotto": [
+        "Fairy Fountain": {
+            "grouped": [
+                "Zoras Domain -> ZD Storms Grotto",
+                "Zora River -> ZR Fairy Grotto",
+                "Hyrule Field -> HF Fairy Grotto",
+                "Sacred Forest Meadow -> SFM Fairy Grotto",
+                "GF Entrances Behind Crates -> GF Storms Grotto"
+            ]
+        },
+        "Shop": {
+            "grouped": [
+                "Zoras Domain -> ZD Shop",
+                "Goron City -> GC Shop",
+                "Kakariko Village -> Kak Bazaar",
+                "Kokiri Forest -> KF Kokiri Shop",
+                "Market -> Market Potion Shop",
+                "Market Back Alley -> Market Bombchu Shop",
+                "Market -> Market Bazaar"
+            ]
+        },
+        "2 Scrub Grotto": {
+            "grouped": [
+                "Zora River -> ZR Storms Grotto",
+                "Desert Colossus -> Colossus Grotto",
+                "GV Fortress Side -> GV Storms Grotto",
+                "Sacred Forest Meadow -> SFM Storms Grotto"
+            ]
+        },
+        "Generic Grotto": {
+            "grouped": [
+                "Zora River -> ZR Open Grotto",
+                "DMC Upper Nearby -> DMC Upper Grotto",
+                "Death Mountain -> DMT Storms Grotto",
+                "Hyrule Field -> HF Near Market Grotto",
+                "Hyrule Field -> HF Open Grotto",
+                "Hyrule Field -> HF Southeast Grotto",
+                "Kak Backyard -> Kak Open Grotto",
+                "Kokiri Forest -> KF Storms Grotto",
+                "Lost Woods -> LW Near Shortcuts Grotto"
+            ]
+        },
+        "Great Fairy Fountain": {
+            "grouped": [
+                "Zoras Fountain -> ZF Great Fairy Fountain",
+                "DMC Lower Nearby -> DMC Great Fairy Fountain",
+                "Death Mountain Summit -> DMT Great Fairy Fountain",
+                "Desert Colossus -> Colossus Great Fairy Fountain",
+                "Hyrule Castle Grounds -> HC Great Fairy Fountain",
+                "Ganons Castle Grounds -> OGC Great Fairy Fountain"
+            ]
+        },
+        "3 Scrub Grotto": {
+            "grouped": [
+                "DMC Lower Nearby -> DMC Hammer Grotto",
+                "GC Grotto Platform -> GC Grotto",
+                "Lake Hylia -> LH Grotto",
+                "Lon Lon Ranch -> LLR Grotto"
+            ]
+        },
+        "Octorock Grotto": {
+            "grouped": [
+                "GV Grotto Ledge -> GV Octorok Grotto"
+            ]
+        },
+        // The mode approach breaks down for houses as max
+        // shuffle leads to House of Twins and Know It All House
+        // winning the mode with 2 shuffled locations each. Since
+        // houses are supposed to be junk entrances with no locations,
+        // include a "required_size" of 0 to override the mode method
+        // for this alias.
+        "House": {
+            "required_size": 0,
+            "grouped": [
+                "GV Fortress Side -> GV Carpenter Tent",
+                "Graveyard -> Graveyard Dampes House",
+                "Kokiri Forest -> KF Sarias House",
+                "Kokiri Forest -> KF House of Twins",
+                "Kokiri Forest -> KF Know It All House",
+                "Market Back Alley -> Market Man in Green House"
+            ]
+        },
+        "Lone Skulltula Grotto": {"grouped": [
             "Hyrule Field -> HF Near Kak Grotto"
-        ],
-        "Cow and Skulltula Grotto": [
+        ]},
+        "Cow and Skulltula Grotto": {"grouped": [
             "Hyrule Field -> HF Cow Grotto"
-        ],
-        "1 Scrub Grotto": [
+        ]},
+        "1 Scrub Grotto": {"grouped": [
             "Hyrule Field -> HF Inside Fence Grotto"
-        ],
-        "Sleeping Talon House": [
+        ]},
+        "Sleeping Talon House": {"grouped": [
             "Kakariko Village -> Kak Carpenter Boss House"
-        ],
-        "Adult Shooting Gallery": [
+        ]},
+        "Adult Shooting Gallery": {"grouped": [
             "Kakariko Village -> Kak Shooting Gallery"
-        ],
-        "Talon's House": [
+        ]},
+        "Talon's House": {"grouped": [
             "Lon Lon Ranch -> LLR Talons House"
-        ],
-        "Special 2 Scrub Grotto": [
+        ]},
+        "Special 2 Scrub Grotto": {"grouped": [
             "LW Beyond Mido -> LW Scrubs Grotto"
-        ],
-        "Deku Theater": [
+        ]},
+        "Deku Theater": {"grouped": [
             "LW Beyond Mido -> Deku Theater"
-        ],
-        "Mud Wall Grotto": [
+        ]},
+        "Mud Wall Grotto": {"grouped": [
             "Hyrule Castle Grounds -> HC Storms Grotto"
-        ],
-        "Child Shooting Gallery": [
+        ]},
+        "Child Shooting Gallery": {"grouped": [
             "Market -> Market Shooting Gallery"
-        ],
-        "1 Torch Jail Angled": [
+        ]},
+        "1 Torch Jail Angled": {"grouped": [
             "Gerudo Fortress -> Hideout 1 Torch Jail"
-        ],
-        "1 Torch Jail Straight": [
+        ]},
+        "1 Torch Jail Straight": {"grouped": [
             "GF Entrances Behind Crates -> Hideout 1 Torch Jail"
-        ],
-        "4 Torch Jail U Tunnel": [
+        ]},
+        "4 Torch Jail U Tunnel": {"grouped": [
             "Gerudo Fortress -> Hideout 4 Torches Jail"
-        ],
-        "4 Torch Jail L Tunnel": [
+        ]},
+        "4 Torch Jail L Tunnel": {"grouped": [
             "GF Roof Entrance Cluster -> Hideout 4 Torches Jail"
-        ],
-        "Kitchen Hallway Lower": [
+        ]},
+        "Kitchen Hallway Lower": {"grouped": [
             "GF Entrances Behind Crates -> Hideout Kitchen Hallway"
-        ],
-        "Kitchen Hallway Upper": [
+        ]},
+        "Kitchen Hallway Upper": {"grouped": [
             "Gerudo Fortress -> Hideout Kitchen Hallway"
-        ],
-        "Kitchen Upper Left": [
+        ]},
+        "Kitchen Upper Left": {"grouped": [
             "GF Roof Entrance Cluster -> Hideout Kitchen Front"
-        ],
-        "Kitchen Upper Right": [
+        ]},
+        "Kitchen Upper Right": {"grouped": [
             "GF Kitchen Roof Access -> Hideout Kitchen Rear"
-        ],
-        "2 Torch Jail Upper": [
+        ]},
+        "2 Torch Jail Upper": {"grouped": [
             "GF Roof Entrance Cluster -> Hideout 2 Torches Jail"
-        ],
-        "2 Torch Jail Lower": [
+        ]},
+        "2 Torch Jail Lower": {"grouped": [
             "Gerudo Fortress -> Hideout 2 Torches Jail"
-        ],
-        "3 Torch Jail": [
+        ]},
+        "3 Torch Jail": {"grouped": [
             "GF 3 Torches Jail Exterior -> Hideout 3 Torches Jail"
-        ],
-        "Break Room Lower": [
+        ]},
+        "Break Room Lower": {"grouped": [
             "GF Break Room Entrance -> Hideout Break Room"
-        ],
-        "Break Room Upper": [
+        ]},
+        "Break Room Upper": {"grouped": [
             "GF Balcony -> Hideout Hall to Balcony"
-        ]
+        ]}
     }
 }

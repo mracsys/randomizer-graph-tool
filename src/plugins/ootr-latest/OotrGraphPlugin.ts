@@ -13,8 +13,7 @@ import LocationList from './LocationList.js';
 import ItemList from './ItemList.js';
 import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
-import { RegionGroup } from './RegionGroup.js';
-import { Region } from './Region.js';
+import { global_settings_overrides } from './SettingsList.js';
 
 interface OotrPlando {
     ':version': string,
@@ -31,8 +30,11 @@ class OotrGraphPlugin extends GraphPlugin {
         '7.1.117',
         '7.1.143',
         '7.1.154',
+        '7.1.198',
         '7.1.143 R-1',
         '7.1.154 R-1',
+        '7.1.195 R-1',
+        '7.1.198 Rob-49'
     ];
 
     public worlds: World[];
@@ -42,6 +44,7 @@ class OotrGraphPlugin extends GraphPlugin {
     public entrance_list: EntranceList;
     public item_list: ItemList;
     public ItemInfo: ItemInfo;
+    private disabled_settings: GraphSetting[] = [];
 
     constructor(
         public user_overrides: any,
@@ -140,24 +143,28 @@ class OotrGraphPlugin extends GraphPlugin {
 
         for (let world of this.worlds) {
             for (let [setting, def] of Object.entries(graph_settings)) {
-                let randomized_settings: any = {};
-                if (Object.keys(plando).includes('randomized_settings')) {
-                    if (!!(plando.settings.world_count) && plando.settings.world_count > 1) {
-                        randomized_settings = plando.randomized_settings[`World ${world.id+1}`];
-                    } else {
-                        randomized_settings = plando.randomized_settings;
-                    }
-                }
-                if (Object.keys(randomized_settings).includes(setting)) {
-                    this.change_setting(world, def, <GraphSettingType>randomized_settings[setting], false);
-                } else if (Object.keys(plando).includes('settings')) {
-                    if (Object.keys(plando.settings).includes(setting)) {
-                        this.change_setting(world, def, <GraphSettingType>plando.settings[setting], false);
-                    } else {
-                        this.change_setting(world, def, def.default, false);
-                    }
+                if (Object.keys(global_settings_overrides).includes(setting)) {
+                    this.change_setting(world, def, global_settings_overrides[setting], {update_vanilla_items: false});
                 } else {
-                    this.change_setting(world, def, def.default, false);
+                    let randomized_settings: any = {};
+                    if (Object.keys(plando).includes('randomized_settings')) {
+                        if (!!(plando.settings.world_count) && plando.settings.world_count > 1) {
+                            randomized_settings = plando.randomized_settings[`World ${world.id+1}`];
+                        } else {
+                            randomized_settings = plando.randomized_settings;
+                        }
+                    }
+                    if (Object.keys(randomized_settings).includes(setting)) {
+                        this.change_setting(world, def, <GraphSettingType>randomized_settings[setting], {update_vanilla_items: false});
+                    } else if (Object.keys(plando).includes('settings')) {
+                        if (Object.keys(plando.settings).includes(setting)) {
+                            this.change_setting(world, def, <GraphSettingType>plando.settings[setting], {update_vanilla_items: false});
+                        } else {
+                            this.change_setting(world, def, def.default, {update_vanilla_items: false});
+                        }
+                    } else {
+                        this.change_setting(world, def, def.default, {update_vanilla_items: false});
+                    }
                 }
             }
             let mq_dungeons: string[] = [];
@@ -168,7 +175,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, false);
+            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, {update_vanilla_items: false});
             let active_trials: string[] = [];
             if (Object.keys(plando).includes('trials')) {
                 for (let [trial, active] of Object.entries(plando.trials)) {
@@ -177,12 +184,24 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, false);
+            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, {update_vanilla_items: false});
             if (Object.keys(plando).includes('songs')) {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, false);
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, {update_vanilla_items: false});
             } else {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], null, false);
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], null, {update_vanilla_items: false});
             }
+        }
+
+        // second loop to validate disabled settings
+        for (let world of this.worlds) {
+            for (let def of Object.values(graph_settings)) {
+                for (let remote_setting of def.disables) {
+                    if (remote_setting.disabled(world.settings)) {
+                        this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true});
+                    }
+                }
+            }
+            world.update_internal_settings();
         }
 
         this.worlds.forEach((world) => world.state.reset());
@@ -328,9 +347,14 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
-    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, update_vanilla_items: boolean = true) {
-        world.settings[setting.name] = value;
-        this.settings_list.settings[setting.name] = value;
+    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean} = {}) {
+        if (Object.keys(global_settings_overrides).includes(setting.name)) {
+            world.settings[setting.name] = global_settings_overrides[setting.name];
+            this.settings_list.settings[setting.name] = global_settings_overrides[setting.name];
+        } else {
+            world.settings[setting.name] = value;
+            this.settings_list.settings[setting.name] = value;
+        }
         switch(setting.name) {
             case 'allowed_tricks':
                 if (!!(this.settings_list.setting_definitions.allowed_tricks.choices)) {
@@ -413,6 +437,13 @@ class OotrGraphPlugin extends GraphPlugin {
             default:
                 break;
         }
+        for (let remote_setting of setting.disables) {
+            if (!(this.disabled_settings.includes(remote_setting)) && remote_setting.disabled(world.settings)) {
+                this.disabled_settings.push(remote_setting);
+                this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true});
+            }
+        }
+        if (update_setting_only) return;
         world.update_internal_settings();
         // updates unshuffled items
         // can be disabled for bulk setting updates to avoid looping through locations repeatedly,
@@ -428,6 +459,7 @@ class OotrGraphPlugin extends GraphPlugin {
             this.collect_skipped_locations(world);
         }
         this.search = new Search(this.worlds.map((world) => world.state));
+        this.disabled_settings = [];
     }
 
     set_location_item(location: GraphLocation, item: GraphItem): void {
@@ -482,7 +514,6 @@ class OotrGraphPlugin extends GraphPlugin {
 
     get_entrance_pool(world: World, entrance: Entrance): {[category: string]: Entrance[]} {
         let pool: {[category: string]: Entrance[]} = {};
-        let targets = world.get_entrances();
         let valid_target_types: {[entrance_type: string]: string[]} = {
             'Dungeon':          ['Dungeon', 'DungeonSpecial'],
             'DungeonSpecial':   ['Dungeon', 'DungeonSpecial'],
@@ -495,17 +526,17 @@ class OotrGraphPlugin extends GraphPlugin {
             'Grave':            ['Grotto', 'Grave'],
             'Overworld':        ['Overworld'],
         };
-        let mixed_valid_target_types: {[entrance_type: string]: string[]} = {
-            'Dungeon':          ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'DungeonSpecial':   ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'ChildBoss':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'AdultBoss':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'Interior':         ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'SpecialInterior':  ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'Hideout':          ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'Grotto':           ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'Grave':            ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
-            'Overworld':        ['Dungeon', 'DungeonSpecial', 'ChildBoss', 'AdultBoss', 'Interior', 'SpecialInterior', 'Hideout', 'Grotto', 'Grave', 'Overworld'],
+        let target_types_to_mixed_pool_map: {[entrance_type: string]: string} = {
+            'Dungeon':          'Dungeon',
+            'DungeonSpecial':   'Dungeon',
+            'ChildBoss':        'Boss',
+            'AdultBoss':        'Boss',
+            'Interior':         'Interior',
+            'SpecialInterior':  'Interior',
+            'Hideout':          'Interior',
+            'Grotto':           'GrottoGrave',
+            'Grave':            'GrottoGrave',
+            'Overworld':        'Overworld',
         };
         let warp_valid_target_types: {[entrance_type: string]: string[]} = {
             'OverworldOneWay':  ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra'],
@@ -513,7 +544,6 @@ class OotrGraphPlugin extends GraphPlugin {
             'Spawn':            ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
             'WarpSong':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
         };
-
         let simplified_target_types: string[] = [
             'Dungeon',
             'DungeonSpecial',
@@ -525,31 +555,50 @@ class OotrGraphPlugin extends GraphPlugin {
             'Grotto',
             'Grave',
         ];
-        for (let target of targets) {
-            if (!!(target.type) && !!(entrance.type)) {
-                if (entrance.is_warp) {
-                    if (warp_valid_target_types[entrance.type].includes(target.type)) {
-                        pool[target.type_alias].push(target);
+
+        let all_targets = world.get_entrances();
+
+        if (entrance.is_warp) {
+            // Warps are allowed to link to any entrance that has not already been linked to another warp.
+            // This includes normal entrances that have non-warp links and unshuffled normal entrances.
+            let used_warp_targets = all_targets.map(e => !!e.type && Object.keys(warp_valid_target_types).includes(e.type) ? null : e.replaces).filter(e => e !== null);
+            let warp_targets = all_targets.filter(e => !(used_warp_targets.includes(e)) && !!e.type);
+            for (let target of warp_targets) {
+                if (!!(target.type) && !!(entrance.type)) {
+                    if (entrance.is_warp) {
+                        if (warp_valid_target_types[entrance.type].includes(target.type)) {
+                            pool[target.type_alias].push(target);
+                        }
                     }
-                } else {
-                    if ((simplified_target_types.includes(target.type) && target.primary)
-                        || (!(entrance.primary) && !(target.primary))
-                        || !(simplified_target_types.includes(target.type))) {
-                        if (Object.keys(world.settings).includes('mixed_pools') && Array.isArray(world.settings['mixed_pools'])) {
-                            if (world.settings['mixed_pools'].includes(entrance.type) && mixed_valid_target_types[entrance.type].includes(target.type) && target.shuffled) {
+                }
+            }
+        } else {
+            // Normal entrances can only link to exactly one shuffled target.
+            let used_targets = all_targets.map(e => e.replaces).filter(e => e !== null);
+            let targets = all_targets.filter(e => !(used_targets.includes(e)) && !!e.type && e.shuffled);
+            for (let target of targets) {
+                if (!!(target.type) && !!(entrance.type)) {
+                    if ((simplified_target_types.includes(target.type) && target.primary)  // only forwards for indoor regions
+                        || (!(entrance.primary) && !(target.primary))                      // indoors reverse if requested entrance is reverse
+                        || !(simplified_target_types.includes(target.type))) {             // overworld forward/reverse
+                        if (Object.keys(world.settings).includes('mixed_pools') && Array.isArray(world.settings['mixed_pools']) && world.settings['mixed_pools'].length > 1) {
+                            if (world.settings['mixed_pools'].includes(target_types_to_mixed_pool_map[entrance.type])
+                            && world.settings['mixed_pools'].includes(target_types_to_mixed_pool_map[target.type])) {
+                                if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                                 pool[target.type_alias].push(target);
                                 // only need to check decoupled reverse entrances for simplified types
                                 // since both primary/secondary of other types are added by default.
-                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type)) {
+                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type) && targets.includes(target.reverse)) {
+                                    if (!(Object.keys(pool).includes(target.reverse.type_alias))) pool[target.reverse.type_alias] = [];
                                     pool[target.reverse.type_alias].push(target.reverse);
                                 }
-                            } else {
-                                
                             }
                         } else {
-                            if (valid_target_types[entrance.type].includes(target.type) && target.shuffled) {
+                            if (valid_target_types[entrance.type].includes(target.type)) {
+                                if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                                 pool[target.type_alias].push(target);
-                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type)) {
+                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type) && targets.includes(target.reverse)) {
+                                    if (!(Object.keys(pool).includes(target.reverse.type_alias))) pool[target.reverse.type_alias] = [];
                                     pool[target.reverse.type_alias].push(target.reverse);
                                 }
                             }
@@ -623,7 +672,17 @@ class OotrGraphPlugin extends GraphPlugin {
             'BlueWarp': 'Blue Warps',
         };
 
+        // Boss entrances can't be decoupled because most boss rooms do not have accessible exit doors
+        let always_coupled_entrances = [
+            'ChildBoss',
+            'AdultBoss',
+        ]
+
         for (let world of this.worlds) {
+            // Region groups need to be created before entrance metadata to ensure
+            // overworld entrance categories are valid.
+            world.create_region_groups();
+
             // set entrance metadata
             let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
@@ -634,17 +693,17 @@ class OotrGraphPlugin extends GraphPlugin {
                     forward_entrance.alias = display_names.entrance_aliases[forward_entrance.name];
                 }
                 for (let [entrance_group, entrances] of Object.entries(display_names.entrance_groups)) {
-                    if (entrances.includes(forward_entrance.name)) {
+                    if (entrances.grouped.includes(forward_entrance.name)) {
                         forward_entrance.target_alias = entrance_group;
                     }
                 }
                 if (warp_entrance_types.includes(type)) forward_entrance.is_warp = true;
-                forward_entrance.coupled = !decoupled;
+                forward_entrance.coupled = !decoupled || always_coupled_entrances.includes(type);
                 if (Object.keys(grouped_entrance_type_names).includes(type)) {
                     forward_entrance.type_alias = grouped_entrance_type_names[type];
                 } else {
-                    if (!!(forward_entrance.original_connection)) {
-                        forward_entrance.type_alias = forward_entrance.original_connection.name;
+                    if (!!(forward_entrance.original_connection) && !!(forward_entrance.original_connection.parent_group)) {
+                        forward_entrance.type_alias = forward_entrance.original_connection.parent_group.alias;
                     }
                 }
 
@@ -662,10 +721,10 @@ class OotrGraphPlugin extends GraphPlugin {
                     return_entrance.secondary = true;
                     return_entrance.alias = display_names.entrance_aliases[return_entrance.name];
                     if (warp_entrance_types.includes(type)) return_entrance.is_warp = true;
-                    return_entrance.coupled = !decoupled;
+                    return_entrance.coupled = !decoupled || always_coupled_entrances.includes(type);
                     // group interior exits with other overworld entrances for the exit region
-                    if (!!(return_entrance.original_connection)) {
-                        return_entrance.type_alias = return_entrance.original_connection.name;
+                    if (!!(return_entrance.original_connection) && !!(return_entrance.original_connection.parent_group)) {
+                        return_entrance.type_alias = return_entrance.original_connection.parent_group.alias;
                     }
 
                     if (!!(return_entrance.parent_region.dungeon)) {
@@ -678,8 +737,6 @@ class OotrGraphPlugin extends GraphPlugin {
                     forward_entrance.bind_two_way(return_entrance);
                 }
             }
-
-            world.create_region_groups();
         }
     }
 
@@ -747,11 +804,37 @@ class OotrGraphPlugin extends GraphPlugin {
                         (world.settings.tokensanity === 'overworld' && loc.dungeon())) {
                             world.push_vanilla_item(loc);
                     }
+                } else if (['ActorOverride', 'Freestanding', 'RupeeTower'].includes(loc.type)) {
+                    if (world.settings.shuffle_freestanding_items === 'off' ||
+                        (world.settings.shuffle_freestanding_items === 'dungeons' && !(loc.dungeon())) ||
+                        (world.settings.shuffle_freestanding_items === 'overworld' && loc.dungeon())) {
+                            world.push_vanilla_item(loc);
+                    }
+                } else if (['Pot', 'FlyingPot'].includes(loc.type)) {
+                    if (world.settings.shuffle_pots === 'off' ||
+                        (world.settings.shuffle_pots === 'dungeons' && (!(loc.dungeon()) && !(loc.parent_region.is_boss_room))) ||
+                        (world.settings.shuffle_pots === 'overworld' && (loc.dungeon() || loc.parent_region.is_boss_room))) {
+                            world.push_vanilla_item(loc);
+                    }
+                } else if (['Crate', 'SmallCrate'].includes(loc.type)) {
+                    if (world.settings.shuffle_crates === 'off' ||
+                        (world.settings.shuffle_crates === 'dungeons' && !(loc.dungeon())) ||
+                        (world.settings.shuffle_crates === 'overworld' && loc.dungeon())) {
+                            world.push_vanilla_item(loc);
+                    }
+                } else if (loc.type === 'EnemyDrop') {
+                    if (Object.keys(world.settings).includes('shuffle_enemy_drops')) {
+                        if (!(world.settings.shuffle_enemy_drops)) {
+                            world.push_vanilla_item(loc);
+                        }
+                    }
+                } else  if (loc.type === 'Beehive' && !(world.settings.shuffle_beehives)) {
+                    world.push_vanilla_item(loc);
                 } else  if (loc.vanilla_item.name === 'Kokiri Sword' && !(world.settings.shuffle_kokiri_sword)) {
                     world.push_vanilla_item(loc);
                 } else if (loc.vanilla_item.name === 'Ocarina' && !(world.settings.shuffle_ocarinas)) {
                     world.push_vanilla_item(loc);
-                } else if (['Wasteland Bombchu Salesman', 'Kak Granny Buy Blue Potion'].includes(loc.name) && !(world.settings.shuffle_expensive_merchants)) {
+                } else if (['Wasteland Bombchu Salesman', 'Kak Granny Buy Blue Potion', 'GC Medigoron'].includes(loc.name) && !(world.settings.shuffle_expensive_merchants)) {
                     world.push_vanilla_item(loc);
                 } else if (loc.vanilla_item.name === 'Gerudo Membership Card') {
                     // OOTR still fills this location even though the card is manually collected when
@@ -783,6 +866,10 @@ class OotrGraphPlugin extends GraphPlugin {
                             world.push_vanilla_item(loc);
                         }
                     }
+                } else if (loc.vanilla_item.name === 'Milk' && !(world.settings.shuffle_cows)) {
+                    world.push_vanilla_item(loc);
+                } else if (loc.name === 'LH Loach Fishing' && !(world.settings.shuffle_loach_reward)) {
+                    world.push_vanilla_item(loc);
                 } else if (loc.vanilla_item.name === 'Small Key (Thieves Hideout)' && world.settings.shuffle_hideoutkeys === 'vanilla') {
                     if (world.settings.gerudo_fortress !== 'open' &&
                         (loc.name === 'Hideout 1 Torch Jail Gerudo Key' || world.settings.gerudo_fortress !== 'fast')) {
@@ -796,6 +883,8 @@ class OotrGraphPlugin extends GraphPlugin {
                     world.push_vanilla_item(loc);
                 } else if (['Market Bombchu Bowling Bombchus', 'Market Bombchu Bowling Bomb'].includes(loc.name)) {
                     // never shuffled locations relevant to logic
+                    world.push_vanilla_item(loc);
+                } else if (!!loc.parent_region.parent_group && loc.parent_region.parent_group.alias === 'Zora River' && loc.vanilla_item.name === 'Rupees (50)' && !(world.settings.shuffle_frog_song_rupees)) {
                     world.push_vanilla_item(loc);
                 } else if (!!(loc.dungeon())) {
                     let dungeon = loc.dungeon();
@@ -860,21 +949,64 @@ class OotrGraphPlugin extends GraphPlugin {
 
     set_entrances(entrances: PlandoEntranceList | PlandoMWEntranceList | null): void {
         let connected_entrances: PlandoEntranceList;
+        let always_coupled_entrances = [
+            'ChildBoss',
+            'AdultBoss',
+        ]
         for (let world of this.worlds) {
+            let target_alias_sizes: {[alias: string]: {
+                entrances: Entrance[],
+                sizes: number[],
+            }} = {};
+            let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             // disconnect all shuffled entrances
             for (let entrance of world.get_entrances()) {
                 if (!!(entrance.type) && world.shuffled_entrance_types.includes(entrance.type)) {
                     entrance.disconnect();
                     entrance.shuffled = true;
+                    entrance.coupled = !decoupled || (!!entrance.type && always_coupled_entrances.includes(entrance.type));
                 // reset unshuffled entrances to vanilla targets to handle settings changes
                 } else if (!!(entrance.type)) {
                     entrance.disconnect();
                     entrance.shuffled = false;
+                    entrance.coupled = !decoupled || (!!entrance.type && always_coupled_entrances.includes(entrance.type));
                     if (entrance.original_connection === null) throw `Tried to reconnect null vanilla entrance`;
                     entrance.connect(entrance.original_connection);
                     entrance.replaces = null;
                 }
+                // cache location counts for entrances with grouped alias names, such as Shop or House
+                let target_region = entrance.original_connection;
+                if (!!(target_region) && !!(entrance.target_alias)) {
+                    if (!(Object.keys(target_alias_sizes).includes(entrance.target_alias))) {
+                        target_alias_sizes[entrance.target_alias] = {
+                            entrances: [],
+                            sizes: [],
+                        }
+                    }
+                    target_alias_sizes[entrance.target_alias].entrances.push(entrance);
+                    target_alias_sizes[entrance.target_alias].sizes.push(target_region.locations.filter(l => l.shuffled).length);
+                }
             }
+            for (let [alias, meta] of Object.entries(target_alias_sizes)) {
+                let [size_mode, count] = this.mode(meta.sizes);
+                // aliases only apply when more than one aliased region has identical numbers of shuffled locations
+                // or if the alias group has only one member
+                // or if the group has a pre-defined number of locations for which the alias applies
+                if (((count > 1 || meta.sizes.length === 1) && display_names.entrance_groups[alias].required_size === undefined)) {
+                    for (let [idx, size] of meta.sizes.entries()) {
+                        if (size === size_mode) {
+                            meta.entrances[idx].use_target_alias = true;
+                        }
+                    }
+                } else if (!!(display_names.entrance_groups[alias].required_size)) {
+                    for (let [idx, size] of meta.sizes.entries()) {
+                        if (size === display_names.entrance_groups[alias].required_size) {
+                            meta.entrances[idx].use_target_alias = true;
+                        }
+                    }
+                }
+            }
+
             // Special handling for spawns since they have the same type but
             // can be individually shuffled (why...)
             if (!!(world.settings.spawn_positions) && world.settings.spawn_positions.includes('child')) {
@@ -906,7 +1038,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (dest.original_connection === null) throw `Plando tried to connect entrance target without original region connection`;
                     src.connect(dest.original_connection);
                     src.replaces = dest;
-                    if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection)) {
+                    if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection) && src.coupled) {
                         dest.reverse.connect(src.reverse.original_connection);
                         dest.reverse.replaces = src.reverse;
                     }
@@ -916,6 +1048,26 @@ class OotrGraphPlugin extends GraphPlugin {
             // adjust blue warp exits even if dungeon/boss shuffles are off, in case they were previously shuffled.
             this.set_blue_warps(world);
         }
+    }
+
+    mode(a: number[]): [number, number] {
+        const count: {[value: number]: number} = {};
+        for (let e of a) {
+            if (!(e in count)) {
+                count[e] = 0;
+            }
+            count[e]++;
+        }
+        let bestElement;
+        let bestCount = 0;
+        for (let [k, v] of Object.entries(count)) {
+            if (v > bestCount) {
+                bestElement = parseInt(k);
+                bestCount = v;
+            }
+        };
+        if (bestElement === undefined) throw `Mode could not be calculated: No elements to count.`;
+        return [bestElement, bestCount];
     }
 
     finalize_world(initializing: boolean = false): void {
@@ -1121,6 +1273,54 @@ class OotrGraphPlugin extends GraphPlugin {
             world.state.collect(ItemFactory('Ocarina C down Button', world)[0]);
             world.state.collect(ItemFactory('Ocarina C left Button', world)[0]);
             world.state.collect(ItemFactory('Ocarina C right Button', world)[0]);
+        }
+        let enemy_souls_core: string[] = [
+            'Stalfos Soul',
+            'Octorok Soul',
+            'Wallmaster Soul',
+            'Dodongo Soul',
+            'Keese Soul',
+            'Tektite Soul',
+            'Peahat Soul',
+            'Lizalfos and Dinalfos Soul',
+            'Gohma Larvae Soul',
+            'Shabom Soul',
+            'Baby Dodongo Soul',
+            'Biri and Bari Soul',
+            'Tailpasaran Soul',
+            'Skulltula Soul',
+            'Torch Slug Soul',
+            'Moblin Soul',
+            'Armos Soul',
+            'Deku Baba Soul',
+            'Deku Scrub Soul',
+            'Bubble Soul',
+            'Beamos Soul',
+            'Floormaster Soul',
+            'Redead and Gibdo Soul',
+            'Skullwalltula Soul',
+            'Flare Dancer Soul',
+            'Dead hand Soul',
+            'Shell blade Soul',
+            'Like-like Soul',
+            'Spike Enemy Soul',
+            'Anubis Soul',
+            'Iron Knuckle Soul',
+            'Skull Kid Soul',
+            'Flying Pot Soul',
+            'Freezard Soul',
+            'Stinger Soul',
+            'Wolfos Soul',
+            'Guay Soul',
+            'Jabu Jabu Tentacle Soul',
+            'Dark Link Soul',
+        ];
+        if (Object.keys(world.settings).includes('shuffle_enemy_spawns')) {
+            if (world.settings.shuffle_enemy_spawns === 'bosses') {
+                for (let soul of enemy_souls_core) {
+                    world.state.collect(ItemFactory(soul, world)[0]);
+                }
+            }
         }
         // TODO: empty dungeons
     }

@@ -39,9 +39,9 @@ describe('OOTR 7.1.143 compilation', () => {
         'python_spheres_ZZN0FWVENF.json'
     ];
     test.each(python_results)('%s sphere searches match the randomizer', async (result_file) => {
-        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers', result_file), 'utf-8'));
+        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers/main', result_file), 'utf-8'));
         let seed = result_file.split('_')[2];
-        let plando = JSON.parse(readFileSync(resolve('tests/seeds', `python_plando_${seed}`), { encoding: 'utf8'}));
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds/main', `python_plando_${seed}`), { encoding: 'utf8'}));
         let [version, local_files] = get_plando_randomizer_version(plando);
         let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
         let graph = await WorldGraphRemoteFactory('ootr', plando, version, global_cache);
@@ -91,7 +91,7 @@ describe('OOTR 7.1.143 compilation', () => {
 
 
 describe('OOTR 7.1.143 world mutation', () => {
-    let python_results = readdirSync(resolve('tests/spoilers'));
+    let python_results = readdirSync(resolve('tests/spoilers/main'));
 
     let graph: GraphPlugin;
     beforeAll(async () => {
@@ -101,10 +101,10 @@ describe('OOTR 7.1.143 world mutation', () => {
         graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
     });
 
-    test.each(python_results)('%s sphere searches match the randomizer', async (result_file) => {
-        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers', result_file), 'utf-8'));
+    test.each(python_results)('%s sphere searches match the mainline randomizer', async (result_file) => {
+        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers/main', result_file), 'utf-8'));
         let seed = result_file.split('_')[2];
-        let plando = JSON.parse(readFileSync(resolve('tests/seeds', `python_plando_${seed}`), { encoding: 'utf8'}));
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds/main', `python_plando_${seed}`), { encoding: 'utf8'}));
         graph.import(plando);
         graph.collect_spheres();
 
@@ -171,28 +171,3 @@ function get_plando_randomizer_version(plando: {[key: string]: any}): [string, s
     }
     return [version, local_files];
 }
-
-/*
-    let settings = graph.get_settings_options();
-    graph.change_setting(graph.worlds[0], settings['mq_dungeons_specific'], []);
-    graph.change_setting(graph.worlds[0], settings['mq_dungeons_specific'], [
-        'Deku Tree',
-        'Dodongos Cavern',
-        'Jabu Jabus Belly',
-        'Bottom of the Well',
-        'Ice Cavern',
-        'Gerudo Training Ground',
-        'Forest Temple',
-        'Fire Temple',
-        'Water Temple',
-        'Spirit Temple',
-        'Shadow Temple',
-        'Ganons Castle'
-    ]);
-*/
-
-// test total progression locations against spoiler set
-
-// test total visited locations against spoiler set
-
-// test location spheres against spoiler set

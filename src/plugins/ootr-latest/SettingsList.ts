@@ -2,7 +2,7 @@ import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
 import type { GraphSettingType } from "../GraphPlugin.js";
 
-type Setting = {
+export type Setting = {
     name: string,
     default: GraphSettingType,
     type: string,
@@ -15,13 +15,14 @@ type Setting = {
     minimum?: number,
     maximum?: number,
     cosmetic?: boolean,
-    disables?: {
+    disable_map?: {
         [opt: string]: {
             settings?: string[],
             sections?: string[],
             tabs?: string[],
         },
     },
+    disables: Setting[],
     disabled(settings: SettingsDictionary): boolean,
     disabled_default: GraphSettingType,
 };
@@ -49,6 +50,13 @@ export type SettingsDictionary = {
     ocarina_songs?: boolean,
     mq_dungeons_specific?: string[],
 };
+
+// Settings that should never be used as they override
+// the "specific" options for other settings. This library
+// doesn't handle random selection and expects explicit settings.
+export var global_settings_overrides: {[setting_name: string]: GraphSettingType} = {
+    'mq_dungeons_mode': 'specific',
+}
 
 class SettingsList {
     [index: string]: any;
@@ -86,6 +94,8 @@ class SettingsList {
         switch(ootr_version.branch) {
             case '':
             case 'R':
+            case 'Rob':
+            case 'fenhl':
                 if (ootr_version.gte('7.1.143')) {
                     this.readSettingsList_7_1_143(file_cache);
                 } else {
@@ -127,6 +137,7 @@ class SettingsList {
                 'Shadow': 'Shadow Trial',
                 'Light': 'Light Trial',
             },
+            disables: [],
             disabled: (settings) => { return false },
         };
 
@@ -165,6 +176,7 @@ class SettingsList {
             tab: this.setting_definitions['ocarina_songs'].tab,
             section: this.setting_definitions['ocarina_songs'].section,
             cosmetic: false,
+            disables: [],
             disabled: (settings) => { return false },
         };
 
@@ -177,12 +189,14 @@ class SettingsList {
             tab: '',
             section: '',
             cosmetic: false,
+            disables: [],
             disabled: (settings) => { return false },
         };
 
         for (let def of Object.values(this.setting_definitions)) {
-            if (def.disables) {
-                for (let [option, disabling] of Object.entries(def.disables)) {
+            if (def.disable_map) {
+                def.disables = []; // not sure why this is necessary, but otherwise settings inherit the list from past settings
+                for (let [option, disabling] of Object.entries(def.disable_map)) {
                     let negative = false;
                     let remote_option = option;
                     if (option.startsWith('!')) {
@@ -192,7 +206,7 @@ class SettingsList {
                     if (disabling.settings) {
                         for (let affected_setting of disabling.settings) {
                             if (Object.keys(this.setting_definitions).includes(affected_setting)) {
-                                this.create_dependency(this.setting_definitions[affected_setting], def, remote_option, negative);
+                                this.create_dependency(this.setting_definitions[affected_setting], this.setting_definitions[def.name], remote_option, negative);
                             }
                         }
                     }
@@ -202,11 +216,12 @@ class SettingsList {
     }
 
     create_dependency(affected_setting: Setting, remote_setting: Setting, remote_option: GraphSettingType, negative: boolean = false): void {
+        if (!(remote_setting.disables.includes(affected_setting))) remote_setting.disables.push(affected_setting);
         let old_dependency = affected_setting.disabled;
         if (negative) {
-            affected_setting.disabled = (settings) => { return settings[remote_setting.name] !== remote_option || old_dependency(settings) }
+            affected_setting.disabled = (settings) => settings[remote_setting.name] !== remote_option || old_dependency(settings);
         } else {
-            affected_setting.disabled = (settings) => { return settings[remote_setting.name] === remote_option || old_dependency(settings) }
+            affected_setting.disabled = (settings) => settings[remote_setting.name] === remote_option || old_dependency(settings);
         }
     }
 
@@ -288,7 +303,7 @@ class SettingsList {
         let setting = new_setting('bool');
         let parsing: boolean = false;
         let split_char: string = ':';
-        let info: string[], d: string | null = null, c: {[s: string]: string} | null = null, disable: string | null = null;
+        let info: string[], d: string | null = null, dd: string | null = null, c: {[s: string]: string} | null = null, disable: string | null = null;
 
         let trick_list: {[trick: string]: string} = {};
         for (let line of tricklines) {
@@ -311,6 +326,7 @@ class SettingsList {
                         display_name: '',
                         tab: '',
                         section: '',
+                        disables: [],
                         disabled: (settings) => { return false },
                     };
                 }
@@ -376,7 +392,23 @@ class SettingsList {
                         } catch {
                             setting.default = d.replaceAll(/['",]+/g, '');
                         }
+                        if (Object.keys(global_settings_overrides).includes(setting.name)) {
+                            setting.default = global_settings_overrides[setting.name];
+                        }
                         d = null;
+                    }
+                    if (dd) {
+                        dd = dd.replaceAll(/[']+/g, '"');
+                        // lists won't parse if they're wrapped in quotes
+                        if (dd === 'True' || dd === 'False') {
+                            dd = dd.toLowerCase();
+                        }
+                        try {
+                            setting.disabled_default = JSON.parse(dd);
+                        } catch {
+                            setting.disabled_default = dd.replaceAll(/['",]+/g, '');
+                        }
+                        dd = null;
                     }
                     if (disable) {
                         disable = disable.replaceAll(/[']+/g, '"');
@@ -394,7 +426,7 @@ class SettingsList {
                                 }
                             }
                         }
-                        setting.disables = JSON.parse(sanitized_str);
+                        setting.disable_map = JSON.parse(sanitized_str);
                         disable = null;
                     }
                     if (Object.keys(setting_types).some((prefix) => info[1].trim().toLowerCase().startsWith(prefix))) {
@@ -402,7 +434,7 @@ class SettingsList {
                             this.settings[setting.name] = setting.default;
                             this.setting_definitions[setting.name] = Object.assign({}, setting);
                         }
-                        setting = setting_types[`${info[1].trim().toLowerCase().split('(')[0]}(`];
+                        setting = Object.assign({}, setting_types[`${info[1].trim().toLowerCase().split('(')[0]}(`]);
                         setting.name = info[0];
                         setting.display_name = setting.name;
                         setting.cosmetic = false;
@@ -411,6 +443,12 @@ class SettingsList {
                             d = info[1].trim();
                             if (d.endsWith(',')) {
                                 d = d.slice(0, -1);
+                            }
+                        }
+                        if (info[0].toLowerCase() === 'disabled_default') {
+                            dd = info[1].trim();
+                            if (dd.endsWith(',')) {
+                                dd = dd.slice(0, -1);
                             }
                         }
                         // filter dynamic choices, small enough list to hard code for now
@@ -452,13 +490,21 @@ class SettingsList {
                             }
                         }
                     }
-                } else {
+                } else if (line !== '    )') {
                     if (d) {
                         // long defaults can be spread across multiple lines
                         // e.g. adult_trade_start
                         d += ',' + code_line.trim();
                         if (d.endsWith(',')) {
                             d = d.slice(0, -1);
+                        }
+                    }
+                    if (dd) {
+                        // long defaults can be spread across multiple lines
+                        // e.g. adult_trade_start
+                        dd += ',' + code_line.trim();
+                        if (dd.endsWith(',')) {
+                            dd = dd.slice(0, -1);
                         }
                     }
                     if (c !== null && code_line.split(':').length > 1) {
@@ -516,6 +562,7 @@ function new_setting(type: string): Setting {
         display_name: '',
         tab: '',
         section: '',
+        disables: [],
         disabled: (settings) => { return false },
     };
     if (type === 'str') {

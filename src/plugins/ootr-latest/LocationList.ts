@@ -45,6 +45,8 @@ export default class LocationList {
         switch(ootr_version.branch) {
             case '':
             case 'R':
+            case 'Rob':
+            case 'fenhl':
                 if (ootr_version.gte('7.1.117')) {
                     this.readLocationList_7_1_117(file_cache);
                 } else {

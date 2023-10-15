@@ -171,10 +171,15 @@ class WorldState {
             }
         }
         if (item.advancement) {
-            if (!!this.prog_items[item.name]) {
-                this.prog_items[item.name] += 1;
+            // The randomizer uses solver IDs based on escaped item names.
+            // Normally using the item name strings as-is works, but Like-like souls
+            // have the hyphen removed in the upstream logic files, so skipping item name
+            // escaping has no effect.
+            let item_name = item.name === 'Like-like Soul' ? 'Likelike Soul' : item.name;
+            if (!!this.prog_items[item_name]) {
+                this.prog_items[item_name] += 1;
             } else {
-                this.prog_items[item.name] = 1;
+                this.prog_items[item_name] = 1;
             }
         }
     }
@@ -214,6 +219,10 @@ class WorldState {
 
     region_has_shortcuts(region_name: string): boolean {
         return this.world.region_has_shortcuts(region_name);
+    }
+
+    has_soul(enemy: string): boolean {
+        return (!(this.world.shuffle_enemy_spawns) || this.has(`${enemy} Soul`));
     }
 }
 
