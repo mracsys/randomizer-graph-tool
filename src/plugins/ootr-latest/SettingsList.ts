@@ -106,6 +106,9 @@ class SettingsList {
                 throw(`Unknown branch for version ${ootr_version.to_string()}`);
         }
 
+        // skip the rest of initialization if loading an empty graph with no file cache
+        if (Object.keys(this.setting_definitions).length === 0) return;
+
         this.setting_definitions['graphplugin_trials_specific'] = {
             name: 'graphplugin_trials_specific',
             default: [
