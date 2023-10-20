@@ -690,6 +690,8 @@ class OotrGraphPlugin extends GraphPlugin {
                 forward_entrance.primary = true;
                 if (Object.keys(display_names.entrance_aliases).includes(forward_entrance.name)) {
                     forward_entrance.alias = display_names.entrance_aliases[forward_entrance.name];
+                } else if (type === 'Overworld' && !!(forward_entrance.original_connection?.parent_group)) {
+                    forward_entrance.alias = forward_entrance.original_connection.parent_group.alias;
                 }
                 for (let [entrance_group, entrances] of Object.entries(display_names.entrance_groups)) {
                     if (entrances.grouped.includes(forward_entrance.name)) {
@@ -718,7 +720,13 @@ class OotrGraphPlugin extends GraphPlugin {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     return_entrance.type = type;
                     return_entrance.secondary = true;
-                    return_entrance.alias = display_names.entrance_aliases[return_entrance.name];
+                    if (Object.keys(display_names.entrance_aliases).includes(return_entrance.name)) {
+                        return_entrance.alias = display_names.entrance_aliases[return_entrance.name];
+                    // all reverse entrances lead to an overworld region even if they aren't
+                    // overworld-type eentrances
+                    } else if (!!(return_entrance.original_connection?.parent_group)) {
+                        return_entrance.alias = return_entrance.original_connection.parent_group.alias;
+                    }
                     if (warp_entrance_types.includes(type)) return_entrance.is_warp = true;
                     return_entrance.coupled = !decoupled || always_coupled_entrances.includes(type);
                     // group interior exits with other overworld entrances for the exit region
