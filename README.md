@@ -215,6 +215,7 @@ interface GraphEntrance {
     connected_region: GraphRegion | null;
     original_connection: GraphRegion | null;
     reverse: GraphEntrance | null,
+    replaces: GraphEntrance | null,
     world: GraphWorld;
     sphere: number;
     viewable(): boolean;
@@ -309,6 +310,7 @@ npm publish --access=public
     - is_warp property for unidirectional entrances
     - coupled property to implicitly support randomizers that do not have a decoupled entrances setting
     - sphere property for the item collection sphere in which the entrance can be traversed per the chosen randomizer logic settings
+    - replaces property holds the target entrance for a given region exit if the exit is shuffled and connected
 * Added GraphPlugin.export() method to save graph state to a text file that can be fed back into a new graph instance
 * Added GraphPlugin.import() method to reset graph state with a given input file instead of creating a completely new graph
 * GraphPlugin.get_items() return type is now a per-world dictionary of item names to item objects.

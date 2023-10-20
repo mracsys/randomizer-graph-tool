@@ -33,6 +33,7 @@ export interface GraphEntrance {
     connected_region: GraphRegion | null;
     original_connection: GraphRegion | null;
     reverse: GraphEntrance | null,
+    replaces: GraphEntrance | null,
     world: GraphWorld;
     sphere: number;
     viewable(): boolean;
