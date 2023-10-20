@@ -736,6 +736,13 @@ class OotrGraphPlugin extends GraphPlugin {
                     forward_entrance.bind_two_way(return_entrance);
                 }
             }
+
+            // region groups need entrance metadata to include exits
+            // in their lists
+            for (let region_group of world.region_groups){
+                region_group.update_exits();
+                region_group.sort_lists();
+            }
         }
     }
 

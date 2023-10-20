@@ -42,4 +42,14 @@ export class RegionGroup implements GraphRegion {
         this.locations.sort((a, b) => location_order.findIndex(l => l === a.name) - location_order.findIndex(l => l === b.name));
         this.exits.sort((a, b) => entrance_order.findIndex(e => e === a.name) - entrance_order.findIndex(e => e === b.name));
     }
+
+    update_exits(): void {
+        for (let region of this.sub_regions) {
+            for (let exit of region.exits) {
+                if (!!exit.type && exit.type !== 'Extra') {
+                    this.exits.push(exit);
+                }
+            }
+        }
+    }
 }
