@@ -39,6 +39,7 @@ export class Region implements GraphRegion {
         public alias: string = '',
         public parent_group: RegionGroup | null = null,
         public page: string = '',
+        public viewable: boolean = false,
     ) {
         this.alias = this.name;
     }

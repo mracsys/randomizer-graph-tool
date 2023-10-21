@@ -40,6 +40,7 @@ class Entrance implements GraphEntrance {
         public coupled: boolean = true,
         public is_warp: boolean = false,
         public sphere: number = -1,
+        public source_group: RegionGroup | null = null,
         public target_group: RegionGroup | null = null,
     ) {
         this.world = this.parent_region.world;
@@ -128,7 +129,11 @@ class Entrance implements GraphEntrance {
 
     viewable(): boolean {
         // only shufflable entrances are given a type from the entrance table
-        return this.type !== null;
+        if (this.type !== null && this.target_group !== null) {
+            return this.target_group.page !== '' || this.target_group.locations.filter(l => l.shuffled).length > 0;
+        } else {
+            return false;
+        }
     }
 
     is_reverse(): boolean {

@@ -16,6 +16,7 @@ export class RegionGroup implements GraphRegion {
         public locations: Location[] = [],
         public alias: string = '',
         public page: string = 'Overworld',
+        public viewable: boolean = false,
     ) {
         this.alias = this.name;
     }

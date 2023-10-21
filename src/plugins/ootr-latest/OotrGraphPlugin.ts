@@ -711,6 +711,9 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (!!forward_entrance.original_connection?.parent_group) {
                     forward_entrance.target_group = forward_entrance.original_connection.parent_group;
                 }
+                if (!!forward_entrance.parent_region.parent_group) {
+                    forward_entrance.source_group = forward_entrance.parent_region.parent_group;
+                }
 
                 if (!!(forward_entrance.parent_region.dungeon)) {
                     let dungeon_variant_name = forward_entrance.world.dungeon_mq[forward_entrance.parent_region.dungeon] ?
@@ -741,7 +744,10 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (!!return_entrance.original_connection?.parent_group) {
                         return_entrance.target_group = return_entrance.original_connection.parent_group;
                     }
-
+                    if (!!return_entrance.parent_region.parent_group) {
+                        return_entrance.source_group = return_entrance.parent_region.parent_group;
+                    }
+    
                     if (!!(return_entrance.parent_region.dungeon)) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
@@ -779,6 +785,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 region_group.update_exits();
                 region_group.sort_lists();
             }
+            world.set_viewable_region_groups();
         }
     }
 

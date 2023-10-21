@@ -49,6 +49,9 @@ export class Location implements GraphLocation {
             this.internal = true;
             this.shuffled = false;
         }
+        if (this.type.startsWith('Hint')) {
+            this.shuffled = false;
+        }
         if (Object.keys(display_names.location_aliases).includes(this.name)) {
             this.alias = display_names.location_aliases[this.name];
         } else {
