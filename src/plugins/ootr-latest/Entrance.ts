@@ -132,7 +132,7 @@ class Entrance implements GraphEntrance {
     }
 
     is_reverse(): boolean {
-        return this.primary || this.type === 'Overworld';
+        return !(this.primary || this.type === 'Overworld');
     }
 
     copy_metadata(other_entrance: Entrance): void {
