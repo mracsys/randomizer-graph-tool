@@ -38,6 +38,7 @@ export interface GraphEntrance {
     world: GraphWorld;
     sphere: number;
     viewable(): boolean;
+    is_reverse(): boolean;
 }
 
 export interface GraphRegion {
