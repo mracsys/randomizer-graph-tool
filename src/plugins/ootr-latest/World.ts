@@ -374,6 +374,7 @@ class World implements GraphWorld {
                 let savewarp_target = region.savewarp.split(' -> ')[1];
                 let new_exit = new Entrance(`${new_region.name} -> ${savewarp_target}`, new_region, this);
                 new_exit.original_connection_name = savewarp_target;
+                new_exit.is_warp = true;
                 new_region.exits.push(new_exit);
                 new_region.savewarp = new_exit;
                 savewarps_to_connect.push([new_exit, region.savewarp]);
@@ -627,7 +628,7 @@ class World implements GraphWorld {
         let exits = [];
         let regions = [];
         let processed_regions: Region[] = [starting_region];
-        exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null));
+        exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null && !e.is_warp));
         while (exits.length > 0 || regions.length > 0) {
             //console.log(`regions: ${regions.length}, exits: ${exits.length}`);
             if (regions.length <= 0) {
@@ -642,7 +643,7 @@ class World implements GraphWorld {
             for (let region of regions) {
                 //console.log(`region ${region.name}`);
                 region_group.add_region(region);
-                exits.push(...region.exits.filter(e => e.type === null && e.target_group === null));
+                exits.push(...region.exits.filter(e => e.type === null && e.target_group === null && !e.is_warp));
                 processed_regions.push(region);
             }
             regions = [];
