@@ -1004,12 +1004,12 @@ class OotrGraphPlugin extends GraphPlugin {
             // disconnect all shuffled entrances
             for (let entrance of world.get_entrances()) {
                 if (!!(entrance.type) && world.shuffled_entrance_types.includes(entrance.type)) {
-                    entrance.disconnect();
+                    if (!!entrance.connected_region) entrance.disconnect();
                     entrance.shuffled = true;
                     entrance.coupled = !decoupled || (!!entrance.type && always_coupled_entrances.includes(entrance.type));
                 // reset unshuffled entrances to vanilla targets to handle settings changes
                 } else if (!!(entrance.type)) {
-                    entrance.disconnect();
+                    if (!!entrance.connected_region) entrance.disconnect();
                     entrance.shuffled = false;
                     entrance.coupled = !decoupled || (!!entrance.type && always_coupled_entrances.includes(entrance.type));
                     if (entrance.original_connection === null) throw `Tried to reconnect null vanilla entrance`;
@@ -1053,12 +1053,12 @@ class OotrGraphPlugin extends GraphPlugin {
             // can be individually shuffled (why...)
             if (!!(world.settings.spawn_positions) && world.settings.spawn_positions.includes('child')) {
                 let entrance = world.get_entrance('Child Spawn -> KF Links House');
-                entrance.disconnect();
+                if (!!entrance.connected_region) entrance.disconnect();
                 entrance.shuffled = true;
             }
             if (!!(world.settings.spawn_positions) && world.settings.spawn_positions.includes('adult')) {
                 let entrance = world.get_entrance('Adult Spawn -> Temple of Time');
-                entrance.disconnect();
+                if (!!entrance.connected_region) entrance.disconnect();
                 entrance.shuffled = true;
             }
 
