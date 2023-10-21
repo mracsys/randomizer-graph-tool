@@ -5,6 +5,7 @@ import World from './World.js';
 import WorldState from './WorldState.js';
 import Entrance from './Entrance.js';
 import { Item, ItemFactory } from './Item.js';
+import { display_names } from './DisplayNames.js';
 
 type Spot = Entrance | Location;
 type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -48,7 +49,11 @@ export class Location implements GraphLocation {
             this.internal = true;
             this.shuffled = false;
         }
-        this.alias = this.name;
+        if (Object.keys(display_names.location_aliases).includes(this.name)) {
+            this.alias = display_names.location_aliases[this.name];
+        } else {
+            this.alias = this.name;
+        }
     }
 
     add_rule(rule: AccessRule): void {

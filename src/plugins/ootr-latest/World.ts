@@ -473,9 +473,15 @@ class World implements GraphWorld {
         for (let region of other_regions) {
             for (let exit of region.exits) {
                 if (!!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
-                    // no need to update original connection property as these entrances aren't shuffled
                     let alt_region = exit.disconnect();
                     exit.connect(this.get_region(alt_region.name, dungeon_variant_name));
+                }
+                if (!!(exit.original_connection) && alt_dungeon_regions.includes(exit.original_connection)) {
+                    // no need to update original connection property as these entrances aren't shuffled,
+                    // but done anyway just in case since the target region group is important
+                    let new_original_target = this.get_region(exit.original_connection.name, dungeon_variant_name);
+                    exit.original_connection = new_original_target;
+                    exit.target_group = new_original_target.parent_group;
                 }
             }
         }
@@ -609,6 +615,39 @@ class World implements GraphWorld {
             region_group.add_region(region);
             return region_group;
         }
+    }
+
+    // Has to run after overworld region groups are created and entrance metadata is calculated
+    create_target_region_group(starting_entrance: Entrance): RegionGroup {
+        let starting_region = starting_entrance.original_connection;
+        if (starting_region === null) throw `Failed to create target region group: empty original connection for entrance ${starting_entrance.name}`
+        let region_group = this.get_region_group(starting_entrance.name);
+        region_group.page = '';
+        region_group.add_region(starting_region);
+        let exits = [];
+        let regions = [];
+        let processed_regions: Region[] = [starting_region];
+        exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null));
+        while (exits.length > 0 || regions.length > 0) {
+            //console.log(`regions: ${regions.length}, exits: ${exits.length}`);
+            if (regions.length <= 0) {
+                for (let exit of exits) {
+                    //console.log(`exit: ${exit.name}`);
+                    if (!!exit.connected_region && !(processed_regions.includes(exit.connected_region))) {
+                        regions.push(exit.connected_region);
+                    }
+                }
+                exits = [];
+            }
+            for (let region of regions) {
+                //console.log(`region ${region.name}`);
+                region_group.add_region(region);
+                exits.push(...region.exits.filter(e => e.type === null && e.target_group === null));
+                processed_regions.push(region);
+            }
+            regions = [];
+        }
+        return region_group;
     }
 
     get_region_group(region_name: string): RegionGroup {

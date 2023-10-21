@@ -1,9 +1,10 @@
-import { GraphEntrance } from '../GraphPlugin.js';
+import { GraphEntrance, GraphRegion } from '../GraphPlugin.js';
 
 import { Region } from './Region.js';
 import World from './World.js';
 import WorldState from './WorldState.js';
 import { Location } from './Location.js';
+import { RegionGroup } from './RegionGroup.js';
 
 type Spot = Entrance | Location;
 type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -39,6 +40,7 @@ class Entrance implements GraphEntrance {
         public coupled: boolean = true,
         public is_warp: boolean = false,
         public sphere: number = -1,
+        public target_group: RegionGroup | null = null,
     ) {
         this.world = this.parent_region.world;
         this.alias = this.name;
@@ -138,6 +140,8 @@ class Entrance implements GraphEntrance {
         this.is_warp = other_entrance.is_warp;
         this.coupled = other_entrance.coupled;
         this.type_alias = other_entrance.type_alias;
+        // Object reference is updated when swapping dungeons
+        this.target_group = other_entrance.target_group;
     }
 }
 

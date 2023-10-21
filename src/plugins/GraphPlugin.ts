@@ -30,6 +30,7 @@ export interface GraphEntrance {
     coupled: boolean;
     is_warp: boolean;
     parent_region: GraphRegion;
+    target_group: GraphRegion | null;
     connected_region: GraphRegion | null;
     original_connection: GraphRegion | null;
     reverse: GraphEntrance | null,

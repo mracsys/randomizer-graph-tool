@@ -708,6 +708,10 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
 
+                if (!!forward_entrance.original_connection?.parent_group) {
+                    forward_entrance.target_group = forward_entrance.original_connection.parent_group;
+                }
+
                 if (!!(forward_entrance.parent_region.dungeon)) {
                     let dungeon_variant_name = forward_entrance.world.dungeon_mq[forward_entrance.parent_region.dungeon] ?
                         forward_entrance.parent_region.dungeon :
@@ -734,6 +738,10 @@ class OotrGraphPlugin extends GraphPlugin {
                         return_entrance.type_alias = return_entrance.original_connection.parent_group.alias;
                     }
 
+                    if (!!return_entrance.original_connection?.parent_group) {
+                        return_entrance.target_group = return_entrance.original_connection.parent_group;
+                    }
+
                     if (!!(return_entrance.parent_region.dungeon)) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
@@ -742,6 +750,26 @@ class OotrGraphPlugin extends GraphPlugin {
                         alt_return_entrance.copy_metadata(return_entrance);
                     }
                     forward_entrance.bind_two_way(return_entrance);
+                }
+            }
+
+            // second loop for target region groups, which requires all entrance metadata to be set
+            for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
+                let forward_entrance = world.get_entrance(forward_entry[0]);
+                if (forward_entrance.target_group === null)
+                    forward_entrance.target_group = world.create_target_region_group(forward_entrance);
+                if (!!return_entry) {
+                    let return_entrance = world.get_entrance(return_entry[0]);
+                    if (return_entrance.target_group === null) {
+                        return_entrance.target_group = world.create_target_region_group(return_entrance);
+                        if (!!(return_entrance.parent_region.dungeon)) {
+                            let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
+                                return_entrance.parent_region.dungeon :
+                                `${return_entrance.parent_region.dungeon} MQ`;
+                            let alt_return_entrance = return_entrance.world.get_entrance(return_entrance.name, dungeon_variant_name);
+                            alt_return_entrance.target_group = world.create_target_region_group(alt_return_entrance);
+                        }
+                    }
                 }
             }
 
