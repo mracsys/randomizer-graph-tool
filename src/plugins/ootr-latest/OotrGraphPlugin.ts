@@ -367,6 +367,11 @@ class OotrGraphPlugin extends GraphPlugin {
                 // technically not safe to change world_count with update_world_only,
                 // but what if I just don't do that?
                 this.settings_list.settings[setting.name] = new_setting_value;
+                if (Object.keys(this.settings_list).includes('randomized_settings')) {
+                    if (Object.keys(this.settings_list.randomized_settings).includes(setting.name)) {
+                        this.settings_list.randomized_settings[setting.name] = new_setting_value;
+                    }
+                }
             }
         }
         switch(setting.name) {
@@ -1139,7 +1144,8 @@ class OotrGraphPlugin extends GraphPlugin {
         }
         let region_search = Search.max_explore(all_tricks_worlds.map(w => w.state));
         for (let region of region_search.iter_visited_regions()) {
-            if (!!region.parent_group) region.parent_group.viewable = true;
+            // ignore the logical bypass to Hyrule Castle through the skip_child_zelda branch from Root
+            if (!!region.parent_group && region.name !== 'HC Garden Locations') region.parent_group.viewable = true;
         }
     }
 
