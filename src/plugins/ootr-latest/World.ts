@@ -284,6 +284,25 @@ class World implements GraphWorld {
         if (this.settings.warp_songs) this.shuffled_entrance_types.push('WarpSong');
     }
 
+    // not a true copy!!!
+    // world settings are independent
+    // regions/entrances/locations are still shared
+    // primary use case is Search variants with different settings/starting conditions
+    copy(): World {
+        let w = new World(this.id, this.parent_graph.settings_list.copy(), this.version, this.parent_graph);
+        w.regions = this.regions;
+        w.dungeons = this.dungeons;
+        w.region_groups = this.region_groups;
+        w.skipped_locations = this.skipped_locations;
+        w.parser = this.parser;
+        w.event_items = this.event_items;
+        w.skipped_trials = this.skipped_trials;
+        w.dungeon_mq = this.dungeon_mq;
+        w.song_notes = this.song_notes;
+        w.update_internal_settings();
+        return w;
+    }
+
     reset_all_access_rules(): void {
         for (let location of this.get_locations()) {
             location.reset_rules();

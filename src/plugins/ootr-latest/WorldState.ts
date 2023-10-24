@@ -21,6 +21,12 @@ class WorldState {
         this._won = this.world.settings.triforce_hunt ? this.won_triforce_hunt : this.won_normal;
     }
 
+    copy(): WorldState {
+        let new_state = new WorldState(this.world);
+        new_state.prog_items = Object.assign({}, this.prog_items);
+        return new_state;
+    }
+
     reset(): void {
         this.prog_items = {};
     }
@@ -182,6 +188,10 @@ class WorldState {
                 this.prog_items[item_name] = 1;
             }
         }
+    }
+
+    collect_list(items: Item[]) {
+        items.map(i => this.collect(i));
     }
 
     collect_starting_items(): void {

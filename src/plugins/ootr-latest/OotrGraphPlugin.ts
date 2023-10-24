@@ -273,7 +273,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.connected_region) && !!(entrance.replaces.type) && (!(entrance.coupled) || entrance.primary || entrance.type === 'overworld')) {
                     let target: PlandoEntranceTarget | string;
                     if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
-                        target = entrance.name;
+                        target = entrance.connected_region.name;
                     } else {
                         target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
                     }
@@ -346,13 +346,28 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
-    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean} = {}) {
+    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false, update_world_only=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean, update_world_only?: boolean} = {}) {
+        let new_setting_value: GraphSettingType;
         if (Object.keys(global_settings_overrides).includes(setting.name)) {
-            world.settings[setting.name] = global_settings_overrides[setting.name];
-            this.settings_list.settings[setting.name] = global_settings_overrides[setting.name];
+            new_setting_value = global_settings_overrides[setting.name];
         } else {
-            world.settings[setting.name] = value;
-            this.settings_list.settings[setting.name] = value;
+            new_setting_value = value;
+        }
+        world.settings[setting.name] = new_setting_value;
+        if (!update_world_only) {
+            if (setting.name !== 'world_count' && this.settings_list.settings.world_count > 1) {
+                if (!(Object.keys(this.settings_list).includes('randomized_settings'))) {
+                    this.settings_list.randomized_settings = {};
+                }
+                if (!(Object.keys(this.settings_list.randomized_settings).includes(`World ${world.id + 1}`))) {
+                    this.settings_list.randomized_settings[`World ${world.id + 1}`] = {};
+                }
+                this.settings_list.randomized_settings[`World ${world.id + 1}`][setting.name] = new_setting_value;
+            } else {
+                // technically not safe to change world_count with update_world_only,
+                // but what if I just don't do that?
+                this.settings_list.settings[setting.name] = new_setting_value;
+            }
         }
         switch(setting.name) {
             case 'allowed_tricks':
@@ -456,8 +471,9 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_shop_rules(world);
             world.state.collect_starting_items();
             this.collect_skipped_locations(world);
+            if (!update_world_only) this.set_viewable_region_groups();
         }
-        this.search = new Search(this.worlds.map((world) => world.state));
+        if (!update_world_only) this.search = new Search(this.worlds.map((world) => world.state));
         this.disabled_settings = [];
     }
 
@@ -475,6 +491,7 @@ class OotrGraphPlugin extends GraphPlugin {
         } else {
             throw `Attempted to set item for location in non-existent world: ${location.name}`;
         }
+        this.set_viewable_region_groups();
     }
 
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void {
@@ -509,6 +526,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 }
             }
         }
+        this.set_viewable_region_groups();
     }
 
     get_entrance_pool(world: World, entrance: Entrance): {[category: string]: Entrance[]} {
@@ -785,7 +803,6 @@ class OotrGraphPlugin extends GraphPlugin {
                 region_group.update_exits();
                 region_group.sort_lists();
             }
-            world.set_viewable_region_groups();
         }
     }
 
@@ -1099,6 +1116,33 @@ class OotrGraphPlugin extends GraphPlugin {
         }
     }
 
+    set_viewable_region_groups(): void {
+        // Max explore world with pseudo-starting items that
+        // the player may have gotten out of logic and all tricks enabled.
+        // Regions are viewable if they:
+        //   1) Have a shuffled entrance targetting it, in or out of logic
+        //   2) Are logically accessible from an unshuffled but shufflable entrance
+        for (let world of this.worlds) {
+            for (let region of world.region_groups) {
+                region.viewable = false;
+            }
+        }
+        let all_tricks_worlds = this.worlds.map(w => w.copy());
+        let tricks = !!(this.settings_list.setting_definitions.allowed_tricks.choices) ? Object.keys(this.settings_list.setting_definitions.allowed_tricks.choices) : [];
+        for (let world of all_tricks_worlds) {
+            this.change_setting(world, this.settings_list.setting_definitions.allowed_tricks, tricks, {update_world_only: true});
+            // Collect 10 small keys for each dungeon to simulate optimal key usage
+            // Relevant for Spirit Temple exits to the Colossus hands providing Desert Colossus access
+            for (let small_key of Object.values(this.ItemInfo.items).filter(i => i.type === 'SmallKey')) {
+                world.state.collect_list(ItemFactory(Array.from({length: 10}, (v, i) => small_key.name), world));
+            }
+        }
+        let region_search = Search.max_explore(all_tricks_worlds.map(w => w.state));
+        for (let region of region_search.iter_visited_regions()) {
+            if (!!region.parent_group) region.parent_group.viewable = true;
+        }
+    }
+
     mode(a: number[]): [number, number] {
         const count: {[value: number]: number} = {};
         for (let e of a) {
@@ -1130,6 +1174,7 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_shop_rules(world);
             world.state.collect_starting_items();
             this.collect_skipped_locations(world);
+            this.set_viewable_region_groups();
         }
     }
 
@@ -1182,7 +1227,7 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             target = !!(boss_exits[target.name].replaces) ? boss_exits[target.name].replaces : boss_exits[target.name];
         }
-        blue_warp.disconnect();
+        if (!!blue_warp.connected_region) blue_warp.disconnect();
         if (!!target) {
             if (target.name in blue_warp_exits) {
                 target = blue_warp_exits[target.name];

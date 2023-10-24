@@ -30,7 +30,7 @@ class Search {
     public current_sphere: number;
 
     constructor(state_list: WorldState[], initial_cache=null) {
-        this.state_list = state_list;
+        this.state_list = state_list.map(s => s.copy());
         this.current_sphere = 0;
 
         for (let state of this.state_list) {
@@ -76,6 +76,33 @@ class Search {
         }
     }
 
+    static max_explore(state_list: WorldState[], itempool: Item[] = []): Search {
+        let s = new Search(state_list);
+        if (itempool.length > 0) {
+            s.collect_all(itempool);
+        }
+        s.collect_locations();
+        return s;
+    }
+
+    static with_items(state_list: WorldState[], itempool: Item[] = []): Search {
+        let s = new Search(state_list);
+        if (itempool.length > 0) {
+            s.collect_all(itempool);
+        }
+        s.next_sphere();
+        return s;
+    }
+
+    * iter_visited_regions() {
+        for (let region of this._cache.adult_regions) {
+            yield region;
+        }
+        for (let region of this._cache.child_regions) {
+            yield region;
+        }
+    }
+
     collect_all(itempool: Item[]): void {
         for (let item of itempool) {
             if (item.world === null) throw `Failed to collect item ${item.name} for invalid world`;
@@ -89,7 +116,7 @@ class Search {
     }
 
     uncollect(item: Item): void {
-        if (item.world === null) throw `Failed to collect item ${item.name} for invalid world`;
+        if (item.world === null) throw `Failed to uncollect item ${item.name} for invalid world`;
         this.state_list[item.world.id].remove(item);
     }
 
@@ -179,6 +206,12 @@ class Search {
         let unaccessed_entrances: Set<Entrance>;
         let collected;
         this.current_sphere = 0;
+        for (let location of l) {
+            location.sphere = -1;
+        }
+        for (let entrance of remaining_entrances) {
+            entrance.sphere = -1;
+        }
         while (true) {
             collected = Array.from(this.iter_reachable_locations(l));
             if (collected.length === 0) {

@@ -62,8 +62,10 @@ class SettingsList {
     [index: string]: any;
     public settings: SettingsDictionary;
     public setting_definitions: SettingTypeDictionary;
+    public ootr_version: OotrVersion;
 
     constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
+        this.ootr_version = ootr_version;
         this.settings = {
             world_count: 1,
             graphplugin_trials_specific: [
@@ -216,6 +218,57 @@ class SettingsList {
                 }
             }
         }
+    }
+
+    copy(): SettingsList {
+        let s = new SettingsList(this.ootr_version, { files: {} });
+        if (this.settings.world_count > 1) {
+            s.dungeons = {};
+            s.empty_dungeons = {};
+            s.entrances = {};
+            s.locations = {};
+            s.randomized_settings = {};
+            s.songs = {};
+            s.trials = {};
+            s.gossip_stones = {};
+            for (let i = 0; i < this.settings.world_count; i++) {
+                s.dungeons[`World ${i + 1}`] = Object.assign({}, this.dungeons[`World ${i + 1}`]);
+                s.empty_dungeons[`World ${i + 1}`] = Object.assign({}, this.empty_dungeons[`World ${i + 1}`]);
+                s.songs[`World ${i + 1}`] = Object.assign({}, this.songs[`World ${i + 1}`]);
+                s.trials[`World ${i + 1}`] = Object.assign({}, this.trials[`World ${i + 1}`]);
+                s.gossip_stones[`World ${i + 1}`] = Object.assign({}, this.gossip_stones[`World ${i + 1}`]);
+                s.entrances[`World ${i + 1}`] = this.copy_entry(this.entrances[`World ${i + 1}`]);
+                s.locations[`World ${i + 1}`] = this.copy_entry(this.locations[`World ${i + 1}`]);
+            }
+        } else {
+            s.dungeons = Object.assign({}, this.dungeons);
+            s.empty_dungeons = Object.assign({}, this.empty_dungeons);
+            s.randomized_settings = Object.assign({}, this.randomized_settings);
+            s.songs = Object.assign({}, this.songs);
+            s.trials = Object.assign({}, this.trials);
+            s.gossip_stones = Object.assign({}, this.gossip_stones);
+            s.entrances = this.copy_entry(this.entrances);
+            s.locations = this.copy_entry(this.locations);
+        }
+        s.settings = this.copy_entry(this.settings);
+        s.setting_definitions = this.copy_entry(this.setting_definitions);
+        return s;
+    }
+
+    copy_entry(entry_object: any): any {
+        let ret: any = {};
+        if (!!entry_object) {
+            for (let [key, val] of Object.entries(entry_object)) {
+                if (Array.isArray(val)) {
+                    ret[key] = [...val];
+                } else if (typeof(val) === 'object') {
+                    ret[key] = Object.assign({}, val);
+                } else {
+                    ret[key] = val;
+                }
+            }
+        }
+        return ret;
     }
 
     create_dependency(affected_setting: Setting, remote_setting: Setting, remote_option: GraphSettingType, negative: boolean = false): void {
