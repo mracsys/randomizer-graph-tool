@@ -161,7 +161,7 @@ export abstract class GraphPlugin {
     // World building interface
     abstract set_location_item(location: GraphLocation, item: GraphItem): void;
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
-    abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
+    abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
         if (Object.keys(this.entrance_cache).length === 0) {

@@ -499,17 +499,26 @@ class OotrGraphPlugin extends GraphPlugin {
         this.set_viewable_region_groups();
     }
 
-    set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void {
+    set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void {
         let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
-        let t = this.worlds[entrance.world.id].get_entrance(replaced_entrance.name);
-        if (e.original_connection === null || t.original_connection === null) {
-            throw `Attempted to connect entrances with undefined original connections: ${e.name} to ${t.name}`;
-        }
-        e.connect(t.original_connection);
-        e.replaces = t;
-        if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection)) {
-            t.reverse.connect(e.reverse.original_connection);
-            t.reverse.replaces = e.reverse;
+        if (!!replaced_entrance) {
+            let t = this.worlds[entrance.world.id].get_entrance(replaced_entrance.name);
+            if (e.original_connection === null || t.original_connection === null) {
+                throw `Attempted to connect entrances with undefined original connections: ${e.name} to ${t.name}`;
+            }
+            e.connect(t.original_connection);
+            e.replaces = t;
+            if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection)) {
+                t.reverse.connect(e.reverse.original_connection);
+                t.reverse.replaces = e.reverse;
+            }
+        } else if (!!e.connected_region) {
+            if (!!(e.replaces?.reverse)) {
+                e.replaces.reverse.disconnect();
+                e.replaces.reverse.replaces = null;
+            }
+            e.disconnect();
+            e.replaces = null;
         }
         // link blue warp to boss room exit
         if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type)) {
