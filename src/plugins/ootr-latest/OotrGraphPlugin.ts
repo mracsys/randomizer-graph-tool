@@ -1,4 +1,4 @@
-import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType } from '../GraphPlugin.js';
+import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType, GraphEntrancePool } from '../GraphPlugin.js';
 
 import SettingsList from './SettingsList.js';
 import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList, PlandoEntranceTarget, PlandoItem } from "./World.js";
@@ -534,8 +534,8 @@ class OotrGraphPlugin extends GraphPlugin {
         this.set_viewable_region_groups();
     }
 
-    get_entrance_pool(world: World, entrance: Entrance): {[category: string]: Entrance[]} {
-        let pool: {[category: string]: Entrance[]} = {};
+    get_entrance_pool(world: World, entrance: Entrance): GraphEntrancePool {
+        let pool: GraphEntrancePool = {};
         let valid_target_types: {[entrance_type: string]: string[]} = {
             'Dungeon':          ['Dungeon', 'DungeonSpecial'],
             'DungeonSpecial':   ['Dungeon', 'DungeonSpecial'],

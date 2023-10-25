@@ -42,6 +42,10 @@ export interface GraphEntrance {
     is_reverse(): boolean;
 }
 
+export interface GraphEntrancePool {
+    [category: string]: GraphEntrance[],
+}
+
 export interface GraphRegion {
     name: string;
     alias: string;
@@ -156,7 +160,7 @@ export abstract class GraphPlugin {
 
     // World building interface
     abstract set_location_item(location: GraphLocation, item: GraphItem): void;
-    abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): {[category: string]: GraphEntrance[]};
+    abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
