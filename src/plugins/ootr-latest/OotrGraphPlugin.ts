@@ -589,6 +589,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (!!(target.type) && !!(entrance.type)) {
                     if (entrance.one_way) {
                         if (one_way_valid_target_types[entrance.type].includes(target.type)) {
+                            if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                             pool[target.type_alias].push(target);
                         }
                     }
@@ -601,11 +602,12 @@ class OotrGraphPlugin extends GraphPlugin {
             for (let target of targets) {
                 if (!!(target.type) && !!(entrance.type)) {
                     if ((simplified_target_types.includes(target.type) && target.primary)  // only forwards for indoor regions
-                        || (!(entrance.primary) && !(target.primary))                      // indoors reverse if requested entrance is reverse
-                        || !(simplified_target_types.includes(target.type))) {             // overworld forward/reverse
-                        if (Object.keys(world.settings).includes('mixed_pools') && Array.isArray(world.settings['mixed_pools']) && world.settings['mixed_pools'].length > 1) {
-                            if (world.settings['mixed_pools'].includes(target_types_to_mixed_pool_map[entrance.type])
-                            && world.settings['mixed_pools'].includes(target_types_to_mixed_pool_map[target.type])) {
+                        || (((!(entrance.primary) && !(target.primary))                    // indoors reverse if requested entrance is reverse
+                        || !(simplified_target_types.includes(target.type)))               // overworld forward/reverse
+                        && entrance.source_group?.alias !== target.type_alias)) {
+                        if (Object.keys(world.settings).includes('mix_entrance_pools') && Array.isArray(world.settings['mix_entrance_pools']) && world.settings['mix_entrance_pools'].length > 1) {
+                            if (world.settings['mix_entrance_pools'].includes(target_types_to_mixed_pool_map[entrance.type])
+                            && world.settings['mix_entrance_pools'].includes(target_types_to_mixed_pool_map[target.type])) {
                                 if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                                 pool[target.type_alias].push(target);
                                 // only need to check decoupled reverse entrances for simplified types
@@ -1053,6 +1055,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     entrance.connect(entrance.original_connection);
                     entrance.replaces = null;
                 }
+                entrance.use_target_alias = false;
                 // cache location counts for entrances with grouped alias names, such as Shop or House
                 let target_region = entrance.original_connection;
                 if (!!(target_region) && !!(entrance.target_alias)) {

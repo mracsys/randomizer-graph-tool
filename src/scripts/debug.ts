@@ -12,8 +12,8 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_region_viewability();
-//test_entrance_pools();
+//test_region_viewability();
+test_entrance_pools();
 //test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
@@ -34,16 +34,27 @@ async function test_region_viewability() {
 }
 
 async function test_entrance_pools() {
-    let version = '7.1.143 f.LUM';
+    let version = '7.1.143 R-1';
     let local_files = 'tests/ootr-local-143';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
     let settings = graph.get_settings_options();
-    let er = settings['shuffle_grotto_entrances'];
-    let logic_rules = settings['logic_rules'];
-    let triforce_hunt = settings['triforce_hunt'];
-    graph.change_setting(graph.worlds[0], triforce_hunt, true);
-    let pool = graph.get_entrance_pool(graph.worlds[0], graph.worlds[0].regions[20].exits[3]);
+    let er = settings['warp_songs'];
+    //let interior = settings['shuffle_interior_entrances'];
+    //let mixed = settings['mix_entrance_pools'];
+    //let decoupled = settings['decouple_entrances'];
+    graph.change_setting(graph.worlds[0], er, true);
+    //graph.change_setting(graph.worlds[0], interior, 'all');
+    //graph.change_setting(graph.worlds[0], decoupled, true);
+    //graph.change_setting(graph.worlds[0], mixed, [
+    //    'Interior',
+    //    'GrottoGrave',
+    //    'Dungeon',
+    //    'Overworld',
+    //]);
+    let entrance = graph.worlds[0].get_entrance('Prelude of Light Warp -> Temple of Time');
+    let pool = graph.get_entrance_pool(graph.worlds[0], entrance);
+    console.log(Object.keys(pool).length);
 }
 
 async function test_import(debug: boolean = false) {

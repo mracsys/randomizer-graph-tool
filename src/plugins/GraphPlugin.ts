@@ -43,7 +43,7 @@ export interface GraphEntrance {
 }
 
 export interface GraphEntrancePool {
-    [category: string]: GraphEntrance[],
+    [region_category: string]: GraphEntrance[],
 }
 
 export interface GraphRegion {
