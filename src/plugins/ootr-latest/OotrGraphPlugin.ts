@@ -560,7 +560,7 @@ class OotrGraphPlugin extends GraphPlugin {
             'Grave':            'GrottoGrave',
             'Overworld':        'Overworld',
         };
-        let warp_valid_target_types: {[entrance_type: string]: string[]} = {
+        let one_way_valid_target_types: {[entrance_type: string]: string[]} = {
             'OverworldOneWay':  ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra'],
             'OwlDrop':          ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra'],
             'Spawn':            ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
@@ -580,15 +580,15 @@ class OotrGraphPlugin extends GraphPlugin {
 
         let all_targets = world.get_entrances();
 
-        if (entrance.is_warp) {
+        if (entrance.one_way) {
             // Warps are allowed to link to any entrance that has not already been linked to another warp.
             // This includes normal entrances that have non-warp links and unshuffled normal entrances.
-            let used_warp_targets = all_targets.map(e => !!e.type && Object.keys(warp_valid_target_types).includes(e.type) ? null : e.replaces).filter(e => e !== null);
+            let used_warp_targets = all_targets.map(e => !!e.type && Object.keys(one_way_valid_target_types).includes(e.type) ? null : e.replaces).filter(e => e !== null);
             let warp_targets = all_targets.filter(e => !(used_warp_targets.includes(e)) && !!e.type);
             for (let target of warp_targets) {
                 if (!!(target.type) && !!(entrance.type)) {
-                    if (entrance.is_warp) {
-                        if (warp_valid_target_types[entrance.type].includes(target.type)) {
+                    if (entrance.one_way) {
+                        if (one_way_valid_target_types[entrance.type].includes(target.type)) {
                             pool[target.type_alias].push(target);
                         }
                     }
@@ -671,7 +671,7 @@ class OotrGraphPlugin extends GraphPlugin {
             }
         }
 
-        let warp_entrance_types = [
+        let one_way_entrance_types = [
             'OverworldOneWay',
             'Spawn',
             'WarpSong',
@@ -698,7 +698,13 @@ class OotrGraphPlugin extends GraphPlugin {
         let always_coupled_entrances = [
             'ChildBoss',
             'AdultBoss',
-        ]
+        ];
+
+        // mark warps to expose to the API
+        let warp_exit_types: string[] = [
+            'Spawn',
+            'WarpSong',
+        ];
 
         for (let world of this.worlds) {
             // Region groups need to be created before entrance metadata to ensure
@@ -721,7 +727,8 @@ class OotrGraphPlugin extends GraphPlugin {
                         forward_entrance.target_alias = entrance_group;
                     }
                 }
-                if (warp_entrance_types.includes(type)) forward_entrance.is_warp = true;
+                if (one_way_entrance_types.includes(type)) forward_entrance.one_way = true;
+                if (warp_exit_types.includes(type)) forward_entrance.is_warp = true;
                 forward_entrance.coupled = !decoupled || always_coupled_entrances.includes(type);
                 if (Object.keys(grouped_entrance_type_names).includes(type)) {
                     forward_entrance.type_alias = grouped_entrance_type_names[type];
@@ -757,7 +764,8 @@ class OotrGraphPlugin extends GraphPlugin {
                     } else if (!!(return_entrance.original_connection?.parent_group)) {
                         return_entrance.alias = return_entrance.original_connection.parent_group.alias;
                     }
-                    if (warp_entrance_types.includes(type)) return_entrance.is_warp = true;
+                    if (one_way_entrance_types.includes(type)) return_entrance.one_way = true;
+                    if (warp_exit_types.includes(type)) return_entrance.is_warp = true;
                     return_entrance.coupled = !decoupled || always_coupled_entrances.includes(type);
                     // group interior exits with other overworld entrances for the exit region
                     if (!!(return_entrance.original_connection) && !!(return_entrance.original_connection.parent_group)) {
