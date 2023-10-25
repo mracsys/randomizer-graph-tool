@@ -79,6 +79,7 @@ class Entrance implements GraphEntrance {
     connect(region: Region): void {
         this.connected_region = region;
         region.entrances.push(this);
+        if (!!(region.parent_group)) region.parent_group.entrances.push(this);
     }
 
     disconnect(): Region {
@@ -88,6 +89,14 @@ class Entrance implements GraphEntrance {
                 this.connected_region.entrances.splice(i, 1);
             } else {
                 throw(`Failed to disconnect entrance ${this.name} from ${this.connected_region.name}`)
+            }
+            if (!!(this.connected_region.parent_group)) {
+                i = this.connected_region.parent_group.entrances.indexOf(this);
+                if (i > -1) {
+                    this.connected_region.parent_group.entrances.splice(i, 1);
+                } else {
+                    throw(`Failed to disconnect entrance ${this.name} from ${this.connected_region.parent_group.name}`)
+                }
             }
             let previously_connected = this.connected_region;
             this.connected_region = null;
@@ -130,8 +139,11 @@ class Entrance implements GraphEntrance {
 
     viewable(): boolean {
         // only shufflable entrances are given a type from the entrance table
-        if (this.type !== null && this.target_group !== null) {
-            return this.target_group.page !== '' || this.target_group.locations.filter(l => l.shuffled).length > 0;
+        let target = !!(this.replaces) ? this.replaces : this;
+        if (this.type !== null && target.target_group !== null) {
+            return target.target_group.page !== '' || target.target_group.locations.filter(l => l.shuffled).length > 0;
+        } else if (this.type !== null && this.connected_region === null) {
+            return true;
         } else {
             return false;
         }

@@ -30,6 +30,11 @@ export class RegionGroup implements GraphRegion {
                 this.exits.push(exit);
             }
         }
+        for (let entrance of region.entrances) {
+            if (!!entrance.type) {
+                this.entrances.push(entrance);
+            }
+        }
         for (let location of region.locations) {
             if (location.type !== 'Event' && location.type !== 'Drop') {
                 this.locations.push(location);
@@ -49,6 +54,11 @@ export class RegionGroup implements GraphRegion {
             for (let exit of region.exits) {
                 if (!!exit.type && exit.type !== 'Extra') {
                     this.exits.push(exit);
+                }
+            }
+            for (let entrance of region.entrances) {
+                if (!!entrance.type) {
+                    this.entrances.push(entrance);
                 }
             }
         }
