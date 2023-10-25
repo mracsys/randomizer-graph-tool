@@ -508,12 +508,12 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             e.connect(t.original_connection);
             e.replaces = t;
-            if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection)) {
+            if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.connect(e.reverse.original_connection);
                 t.reverse.replaces = e.reverse;
             }
         } else if (!!e.connected_region) {
-            if (!!(e.replaces?.reverse)) {
+            if (!!(e.replaces?.reverse) && e.coupled) {
                 e.replaces.reverse.disconnect();
                 e.replaces.reverse.replaces = null;
             }
