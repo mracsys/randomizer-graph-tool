@@ -18,6 +18,7 @@ export interface GraphLocation {
 export interface GraphItem {
     name: string;
     player?: number;
+    price: number | null;
 }
 
 export interface GraphEntrance {
