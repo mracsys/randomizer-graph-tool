@@ -12,14 +12,31 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
+test_entrance_linking();
 //test_region_viewability();
-test_entrance_pools();
+//test_entrance_pools();
 //test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
 //test_random_settings(4, true);
 //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
 //add_entrance_spheres_to_tests();
+
+async function test_entrance_linking() {
+    let result_file = 'python_plando_0BB3R39F94_settings_only.json';
+
+    let plando = JSON.parse(readFileSync(resolve('tests/seeds/manual', result_file), { encoding: 'utf8'}));
+    let [version, local_files] = get_plando_randomizer_version(plando);
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+
+    graph.import(plando);
+
+    let sourceEntrance = graph.worlds[0].get_entrance('ToT Entrance -> Market');
+    let targetEntrance = graph.worlds[0].get_entrance('Hyrule Field -> Gerudo Valley');
+    graph.set_entrance(sourceEntrance, targetEntrance);
+    graph.collect_spheres();
+}
 
 async function test_region_viewability() {
     let result_file = 'python_plando_0BB3R39F94_partial.json';

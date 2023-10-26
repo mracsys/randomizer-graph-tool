@@ -43,6 +43,7 @@ export class Location implements GraphLocation {
         public sphere: number = -1,
         public alias: string = '',
         public shuffled: boolean = true,
+        public is_hint: boolean = false,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
         if (this.type === "Event" || this.name === "Gift from Sages") {
@@ -56,6 +57,9 @@ export class Location implements GraphLocation {
             this.alias = display_names.location_aliases[this.name];
         } else {
             this.alias = this.name;
+        }
+        if (this.type.startsWith('Hint')) {
+            this.is_hint = true;
         }
     }
 

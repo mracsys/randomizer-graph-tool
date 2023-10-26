@@ -270,7 +270,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 'Grave'
             ];
             for (let entrance of entrances) {
-                if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.connected_region) && !!(entrance.replaces.type) && (!(entrance.coupled) || entrance.primary || entrance.type === 'overworld')) {
+                if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.connected_region) && !!(entrance.replaces.type) && (!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
                     let target: PlandoEntranceTarget | string;
                     if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
                         target = entrance.connected_region.name;
@@ -513,7 +513,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 t.reverse.replaces = e.reverse;
             }
         } else if (!!e.connected_region) {
-            if (!!(e.replaces?.reverse) && e.coupled) {
+            if (!!(e.replaces?.reverse) && e.coupled && !!(e.replaces.reverse.connected_region)) {
                 e.replaces.reverse.disconnect();
                 e.replaces.reverse.replaces = null;
             }

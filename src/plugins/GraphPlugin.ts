@@ -11,6 +11,7 @@ export interface GraphLocation {
     parent_region: GraphRegion | null;
     world: GraphWorld | null;
     sphere: number;
+    is_hint: boolean;
     viewable(): boolean;
 }
 
