@@ -160,7 +160,7 @@ export abstract class GraphPlugin {
     abstract get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
 
     // World building interface
-    abstract set_location_item(location: GraphLocation, item: GraphItem): void;
+    abstract set_location_item(location: GraphLocation, item: GraphItem | null): void;
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
 

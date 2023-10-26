@@ -482,15 +482,20 @@ class OotrGraphPlugin extends GraphPlugin {
         this.disabled_settings = [];
     }
 
-    set_location_item(location: GraphLocation, item: GraphItem): void {
+    set_location_item(location: GraphLocation, item: GraphItem | null): void {
         if (location.world !== null) {
             let l: Location = this.worlds[location.world.id].get_location(location.name);
-            let i: Item = ItemFactory(item.name, l.world)[0];
-            l.item = i;
-            i.location = l;
-            if (!!location.price) {
-                l.price = location.price;
-                i.price = location.price;
+            if (!!item) {
+                let i: Item = ItemFactory(item.name, l.world)[0];
+                l.item = i;
+                i.location = l;
+                if (!!location.price) {
+                    l.price = location.price;
+                    i.price = location.price;
+                }
+            } else {
+                l.item = null;
+                l.price = null;
             }
             this.set_shop_rule(l);
         } else {
