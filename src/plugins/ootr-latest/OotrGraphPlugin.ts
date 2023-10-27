@@ -880,11 +880,17 @@ class OotrGraphPlugin extends GraphPlugin {
 
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
-                } else if (loc.name === 'Gift from Sages' && !!(world.settings.shuffle_ganon_bosskey)
+                } else if (loc.name === 'Gift from Sages') {
+                    if (!!(world.settings.shuffle_ganon_bosskey)
                             && ['stones', 'medallions', 'dungeons', 'tokens', 'hearts', 'triforce'].includes(world.settings.shuffle_ganon_bosskey)) {
-                    world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
-                    loc.shuffled = false;
-                    continue;
+                        world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
+                        loc.shuffled = false;
+                        continue;
+                    } else {
+                        // Gift from Sages location isn't obtainable unless Ganon's Boss Key is placed there, so hide it
+                        loc.internal = true;
+                        continue;
+                    }
                 } else {
                     continue;
                 }
