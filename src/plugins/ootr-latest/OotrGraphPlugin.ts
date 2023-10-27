@@ -508,6 +508,13 @@ class OotrGraphPlugin extends GraphPlugin {
         let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
         if (!!replaced_entrance) {
             let t = this.worlds[entrance.world.id].get_entrance(replaced_entrance.name);
+            // If both the entrance and target use the same grouped alias name,
+            // force the entrance to link to the vanilla target. This ensures
+            // that tracked child locations stay in the same world location if
+            // the entrance rando setting is turned off (such as with mystery settings)
+            if (e.use_target_alias && t.use_target_alias && e.target_alias === t.target_alias) {
+                t = e;
+            }
             if (e.original_connection === null || t.original_connection === null) {
                 throw `Attempted to connect entrances with undefined original connections: ${e.name} to ${t.name}`;
             }
@@ -1104,6 +1111,9 @@ class OotrGraphPlugin extends GraphPlugin {
                 }
             }
             for (let [alias, meta] of Object.entries(target_alias_sizes)) {
+                // shops need to be distinguishable if sold items are unshuffled but entrances are
+                if (alias === 'Shop' && world.settings.shopsanity === 'off') continue;
+
                 let [size_mode, count] = this.mode(meta.sizes);
                 // aliases only apply when more than one aliased region has identical numbers of shuffled locations
                 // or if the alias group has only one member
@@ -1114,7 +1124,7 @@ class OotrGraphPlugin extends GraphPlugin {
                             meta.entrances[idx].use_target_alias = true;
                         }
                     }
-                } else if (!!(display_names.entrance_groups[alias].required_size)) {
+                } else if (display_names.entrance_groups[alias].required_size !== undefined && display_names.entrance_groups[alias].required_size !== null) {
                     for (let [idx, size] of meta.sizes.entries()) {
                         if (size === display_names.entrance_groups[alias].required_size) {
                             meta.entrances[idx].use_target_alias = true;

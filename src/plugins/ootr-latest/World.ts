@@ -1,6 +1,6 @@
 import { GraphWorld } from "../GraphPlugin.js";
 
-import { Item, MakeEventItem } from "./Item.js";
+import { Item, ItemFactory, MakeEventItem } from "./Item.js";
 import { Location, LocationFactory } from "./Location.js";
 import Entrance from './Entrance.js';
 import { TimeOfDay } from "./Region.js";
@@ -644,8 +644,8 @@ class World implements GraphWorld {
         let region_group = this.get_region_group(starting_entrance.name);
         region_group.page = '';
         region_group.add_region(starting_region);
-        let exits = [];
-        let regions = [];
+        let exits: Entrance[] = [];
+        let regions: Region[] = [];
         let processed_regions: Region[] = [starting_region];
         exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null && !e.one_way));
         while (exits.length > 0 || regions.length > 0) {
@@ -804,6 +804,13 @@ class World implements GraphWorld {
         location.item = null;
         location.price = null;
         location.shuffled = true;
+    }
+
+    get_item(item: Item | string): Item {
+        if (item instanceof Item) {
+            return item;
+        }
+        return ItemFactory(item, this)[0];
     }
 
     skip_location(location: Location | string) {

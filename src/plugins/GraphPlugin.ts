@@ -70,6 +70,7 @@ export interface GraphWorld {
     get_location(location: GraphLocation | string): GraphLocation,
     get_entrances(): GraphEntrance[],
     get_locations(): GraphLocation[],
+    get_item(item: GraphItem | string): GraphItem,
 }
 
 export type GraphGameVersions = {
