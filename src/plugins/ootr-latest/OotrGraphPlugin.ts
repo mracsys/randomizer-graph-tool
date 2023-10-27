@@ -986,6 +986,9 @@ class OotrGraphPlugin extends GraphPlugin {
                     } else if (loc.vanilla_item.name === 'Weird Egg' && !!(world.settings.shuffle_child_trade) && !(world.settings.shuffle_child_trade.includes('Weird Egg')) && !(world.settings.shuffle_child_trade.includes('Chicken'))) {
                         if (!(world.skip_child_zelda)) {
                             world.push_vanilla_item(loc);
+                        } else {
+                            // hack to match rando, can't have the item filled but we don't want to see the location as shuffled since it's skipped logically
+                            loc.shuffled = false;
                         }
                     }
                 } else if (loc.vanilla_item.name === 'Milk' && !(world.settings.shuffle_cows)) {
