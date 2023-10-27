@@ -44,6 +44,8 @@ export class Location implements GraphLocation {
         public alias: string = '',
         public shuffled: boolean = true,
         public is_hint: boolean = false,
+        public is_shop: boolean = false,
+        public holds_shop_refill: boolean = false,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
         if (this.type === "Event" || this.name === "Gift from Sages") {
@@ -60,6 +62,9 @@ export class Location implements GraphLocation {
         }
         if (this.type.startsWith('Hint')) {
             this.is_hint = true;
+        }
+        if (this.type === 'Shop') {
+            this.is_shop = true;
         }
     }
 

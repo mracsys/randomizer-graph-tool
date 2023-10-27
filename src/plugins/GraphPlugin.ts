@@ -12,6 +12,8 @@ export interface GraphLocation {
     world: GraphWorld | null;
     sphere: number;
     is_hint: boolean;
+    is_shop: boolean;
+    holds_shop_refill: boolean;
     viewable(): boolean;
 }
 
