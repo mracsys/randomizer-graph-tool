@@ -1021,7 +1021,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 } else if (loc.vanilla_item.name === 'Milk' && !(world.settings.shuffle_cows)) {
                     world.push_vanilla_item(loc);
-                } else if (loc.name === 'LH Loach Fishing' && !(world.settings.shuffle_loach_reward)) {
+                } else if (loc.name === 'LH Loach Fishing' && world.settings.shuffle_loach_reward === 'off') {
                     world.push_vanilla_item(loc);
                 } else if (loc.vanilla_item.name === 'Small Key (Thieves Hideout)' && world.settings.shuffle_hideoutkeys === 'vanilla') {
                     if (world.settings.gerudo_fortress !== 'open' &&
