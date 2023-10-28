@@ -861,6 +861,11 @@ class OotrGraphPlugin extends GraphPlugin {
                 region_group.update_exits();
                 region_group.sort_lists();
             }
+            for (let [dungeon_name, is_mq] of Object.entries(world.dungeon_mq)) {
+                let variant_name = is_mq ? dungeon_name : `${dungeon_name} MQ`;
+                world.dungeons[variant_name][0].parent_group?.update_exits();
+                world.dungeons[variant_name][0].parent_group?.sort_lists();
+            }
         }
     }
 
