@@ -2395,8 +2395,8 @@ export const display_names: DisplayNames = {
         "Water Temple Before Boss -> Morpha Boss Room": "Morpha",
         "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo",
         "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova",
-        "Ganons Castle Lobby -> Ganons Tower": "Ganon's Tower",
-        "Ganons Castle Main -> Ganons Tower": "Ganon's Tower"
+        "Ganons Castle Lobby -> Ganons Castle Tower": "Ganon's Tower",
+        "Ganons Castle Main -> Ganons Castle Tower": "Ganon's Tower"
     },
     "entrance_groups": {
         "Fairy Fountain": {
