@@ -1039,6 +1039,9 @@ class OotrGraphPlugin extends GraphPlugin {
                 } else if (loc.vanilla_item.name === 'Small Key (Treasure Chest Game)' && world.settings.shuffle_tcgkeys === 'vanilla') {
                     // small key rings not implemented for vanilla keys (would otherwise skip lens of truth requirement)
                     world.push_vanilla_item(loc);
+                } else if (loc.name.includes('Market Treasure Chest Game Room') && world.settings.shuffle_tcgkeys === 'vanilla') {
+                    // handles rupees in the bottom chests without affecting other locations using TCG rupees (MQ GTG)
+                    world.push_vanilla_item(loc);
                 } else if (['Event', 'Drop'].includes(loc.type) && !!(loc.vanilla_item)) {
                     // hard-coded events from the location list that don't auto-generate items of the same name
                     world.push_vanilla_item(loc);
