@@ -90,7 +90,7 @@ class Entrance implements GraphEntrance {
             } else {
                 throw(`Failed to disconnect entrance ${this.name} from ${this.connected_region.name}`)
             }
-            if (!!(this.connected_region.parent_group)) {
+            if (!!(this.connected_region.parent_group) && !!(this.type)) {
                 i = this.connected_region.parent_group.entrances.indexOf(this);
                 if (i > -1) {
                     this.connected_region.parent_group.entrances.splice(i, 1);

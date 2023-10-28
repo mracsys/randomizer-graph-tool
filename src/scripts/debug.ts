@@ -1,7 +1,7 @@
 import { spawnSync, SpawnSyncReturns } from 'node:child_process';
 import { readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { WorldGraphRemoteFactory, WorldGraphFactory, ExternalFileCacheFactory } from '..//WorldGraph.js';
+import { WorldGraphRemoteFactory, WorldGraphFactory, ExternalFileCacheFactory, ExternalFileCache } from '..//WorldGraph.js';
 import OotrFileCache from '../plugins/ootr-latest/OotrFileCache.js';
 import { GraphEntrance, GraphLocation, GraphPlugin } from '../plugins/GraphPlugin.js';
 import { Location } from '../plugins/ootr-latest/Location.js';
@@ -12,10 +12,10 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_entrance_linking();
+//test_entrance_linking();
 //test_region_viewability();
 //test_entrance_pools();
-//test_import(true);
+test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
 //test_random_settings(4, true);
@@ -75,30 +75,37 @@ async function test_entrance_pools() {
 }
 
 async function test_import(debug: boolean = false) {
-    let result_file = 'python_spheres_3MSNERF82K.json';
+    let result_files = [
+        'python_plando_01T414Y62E.json',
+        
+    ];
+    let variant = 'main'
+    let initialized = false;
 
-    let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers/roman', result_file), 'utf-8'));
-    let seed = result_file.split('_')[2];
-    let plando = JSON.parse(readFileSync(resolve('tests/seeds/roman', `python_plando_${seed}`), { encoding: 'utf8'}));
-    let [version, local_files] = get_plando_randomizer_version(plando);
-    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
-    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '7.1.143', {files: {}});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files:string;
+    for (let result_file of result_files) {
+        let seed = result_file.split('_')[2];
+        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers', variant, `python_spheres_${seed}`), 'utf-8'));
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds', variant, `python_plando_${seed}`), { encoding: 'utf8'}));
+        
+        if (!initialized) {
+            [version, local_files] = get_plando_randomizer_version(plando);
+            global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+            graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+            initialized = true;
+        }
 
-    graph.import(plando);
-    graph.collect_spheres();
+        graph.import(plando);
+        graph.collect_spheres();
 
-    compare_js_to_python(graph, data);
+        console.log(`\nTesting seed ${seed}\n`);
 
-    result_file = 'python_spheres_YC80AE001N.json';
-    data = JSON.parse(readFileSync(resolve('tests/spoilers/roman', result_file), 'utf-8'));
-    seed = result_file.split('_')[2];
-    plando = JSON.parse(readFileSync(resolve('tests/seeds/roman', `python_plando_${seed}`), { encoding: 'utf8'}));
-    graph.import(plando);
-    graph.collect_spheres();
-    compare_js_to_python(graph, data);
-
-
-    if (debug) save_python_output_as_unit_test(plando, graph, data, false);
+        compare_js_to_python(graph, data);
+        if (debug) save_python_output_as_unit_test(plando, graph, data, false);
+    }
 }
 
 async function test_remote_files() {
@@ -112,7 +119,7 @@ async function test_spoiler(convert: boolean = false, debug: boolean = false) {
     // python_plando_U3CJUBQAKH
     // python_plando_VNTW9E7QFO
     // python_plando_YQQVR7YQ0G
-    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds', 'python_plando_YQQVR7YQ0G.json'), {sphere_dir: './tests/spoilers'});
+    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds/roman', 'python_plando_GFIAE99KK9.json'), {sphere_dir: './tests/spoilers/roman'});
     if (convert) save_python_output_as_unit_test(plando, graph, data, success);
     if (debug) save_python_output_as_unit_test(plando, graph, data, false);
 }
@@ -258,6 +265,7 @@ function get_plando_randomizer_version(plando: {[key: string]: any}): [string, s
             case '7.1.143 f.LUM':
                 local_files = 'tests/ootr-local-143';
                 break;
+            case '7.1.198 R-1':
             case '7.1.195 R-1':
                 local_files = 'tests/ootr-local-roman-195';
                 break;
@@ -454,8 +462,12 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
 
     if (Object.keys(data).includes('entrance_spheres')) {
         let pyents = Object.keys(data.entrance_spheres).flatMap((sphere) => Object.keys(data.entrance_spheres[sphere]));
+        let custom_entrances = [
+            'Ganons Castle Tower -> Ganons Castle Main',
+            'Ganons Castle Tower -> Ganons Castle Lobby',
+        ];
         for (const ent of ents) {
-            if (!(pyents.includes(ent.name)) && ent.sphere >= 0) {
+            if (!(pyents.includes(ent.name)) && ent.sphere >= 0 && !(custom_entrances.includes(ent.name))) {
                 console.log(`Extra entrance: ${ent.name}`);
                 success = false;
             }

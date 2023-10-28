@@ -506,12 +506,28 @@ class World implements GraphWorld {
             for (let exit of region.exits) {
                 if (!!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
                     let alt_region = exit.disconnect();
-                    exit.connect(this.get_region(alt_region.name, dungeon_variant_name));
+                    let alt_connection_name: string;
+                    if (dungeon_variant_name === 'Ganons Castle' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                        alt_connection_name = 'Ganons Castle Lobby';
+                    } else if (dungeon_variant_name === 'Ganons Castle MQ' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                        alt_connection_name = 'Ganons Castle Main';
+                    } else {
+                        alt_connection_name = alt_region.name;
+                    }
+                    exit.connect(this.get_region(alt_connection_name, dungeon_variant_name));
                 }
                 if (!!(exit.original_connection) && alt_dungeon_regions.includes(exit.original_connection)) {
                     // no need to update original connection property as these entrances aren't shuffled,
                     // but done anyway just in case since the target region group is important
-                    let new_original_target = this.get_region(exit.original_connection.name, dungeon_variant_name);
+                    let original_connection_name: string;
+                    if (dungeon_variant_name === 'Ganons Castle' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                        original_connection_name = 'Ganons Castle Lobby';
+                    } else if (dungeon_variant_name === 'Ganons Castle MQ' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                        original_connection_name = 'Ganons Castle Main';
+                    } else {
+                        original_connection_name = exit.original_connection.name;
+                    }
+                    let new_original_target = this.get_region(original_connection_name, dungeon_variant_name);
                     exit.original_connection = new_original_target;
                     exit.target_group = new_original_target.parent_group;
                 }
@@ -654,7 +670,6 @@ class World implements GraphWorld {
         let starting_region = starting_entrance.original_connection;
         if (starting_region === null) throw `Failed to create target region group: empty original connection for entrance ${starting_entrance.name}`
         let region_group = this.get_region_group(starting_entrance.name);
-        region_group.page = '';
         region_group.add_region(starting_region);
         let exits: Entrance[] = [];
         let regions: Region[] = [];
@@ -679,6 +694,8 @@ class World implements GraphWorld {
             }
             regions = [];
         }
+        // Clean up any stray target regions erroneously marked as top-level Dungeon regions
+        region_group.page = '';
         return region_group;
     }
 

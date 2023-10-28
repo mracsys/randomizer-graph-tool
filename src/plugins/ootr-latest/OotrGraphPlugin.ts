@@ -779,10 +779,12 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (forward_entrance.parent_region.dungeon !== 'Ganons Castle') {
                         entrance_variant_name = forward_entrance.name;
                     } else {
-                        if (world.dungeon_mq['Ganons Castle']) {
+                        if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
                             entrance_variant_name = 'Ganons Castle Lobby -> Ganons Castle Tower';
-                        } else {
+                        } else if (!world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
                             entrance_variant_name = 'Ganons Castle Main -> Ganons Castle Tower';
+                        } else {
+                            entrance_variant_name = forward_entrance.name;
                         }
                     }
                     let dungeon_variant_name = forward_entrance.world.dungeon_mq[forward_entrance.parent_region.dungeon] ?
@@ -819,7 +821,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
     
                     // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
-                    if (!!(return_entrance.parent_region.dungeon) && return_entrance.parent_region.dungeon !== 'Ganons Castle') {
+                    if (!!(return_entrance.parent_region.dungeon) && !(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name))) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -842,7 +844,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
-                        if (!!(return_entrance.parent_region.dungeon) && return_entrance.parent_region.dungeon !== 'Ganons Castle') {
+                        if (!!(return_entrance.parent_region.dungeon) && !(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name))) {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;
@@ -1419,7 +1421,7 @@ class OotrGraphPlugin extends GraphPlugin {
         }
         if (world.skip_child_zelda) {
             world.state.collect(ItemFactory('Weird Egg', world)[0]);
-            if (!(world.get_location('HC Malon Egg').shuffled)) world.skip_location('HC Malon Egg');
+            //if (!(world.get_location('HC Malon Egg').shuffled)) world.skip_location('HC Malon Egg');
             for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
                 world.skip_location(loc_name);
             }
