@@ -916,6 +916,11 @@ class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     continue;
                 }
+                if (Array.isArray(world.settings.disabled_locations) && world.settings.disabled_locations.includes(loc.name)) {
+                    // Disabled locations are filled with random junk but otherwise ignored by the graph.
+                    // Since these locations are known to the user ahead of time, hide them without filling an item.
+                    loc.shuffled = false;
+                }
                 if (loc.name === 'ToT Light Arrows Cutscene' && world.settings.shuffle_ganon_bosskey === 'on_lacs') {
                     world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
                     loc.shuffled = false;
@@ -1027,6 +1032,9 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (world.settings.gerudo_fortress !== 'open' &&
                         (loc.name === 'Hideout 1 Torch Jail Gerudo Key' || world.settings.gerudo_fortress !== 'fast')) {
                             world.push_vanilla_item(loc);
+                    } else if (world.settings.gerudo_fortress !== 'open') {
+                        // hack to hide the other 3 unshuffled keys without placing the items
+                        loc.shuffled = false;
                     }
                 } else if (loc.vanilla_item.name === 'Small Key (Treasure Chest Game)' && world.settings.shuffle_tcgkeys === 'vanilla') {
                     // small key rings not implemented for vanilla keys (would otherwise skip lens of truth requirement)

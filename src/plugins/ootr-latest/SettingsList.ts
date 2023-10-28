@@ -49,6 +49,7 @@ export type SettingsDictionary = {
     graphplugin_trials_specific: string[],
     ocarina_songs?: boolean,
     mq_dungeons_specific?: string[],
+    disabled_locations?: string[],
 };
 
 // Settings that should never be used as they override
@@ -424,6 +425,7 @@ class SettingsList {
             'sfx_link_child',
             'sfx_link_adult',
             'allowed_tricks',
+            'disabled_locations',
         ];
 
         split_char = '=';
