@@ -218,7 +218,7 @@ class OotrGraphPlugin extends GraphPlugin {
         this.search = new Search(this.worlds.map((world) => world.state));
     }
 
-    export(): any {
+    export(with_user_overrides: boolean = false): any {
         let plando: OotrPlando = {
             ':version': this.ootr_version.to_string(),
             settings: this.worlds[0].settings,
@@ -251,14 +251,24 @@ class OotrGraphPlugin extends GraphPlugin {
 
             let locations = this.worlds[0].get_locations();
             for (let location of locations) {
-                if (location.shuffled && location.type !== 'Event' && !!(location.item)) {
-                    let location_item: PlandoItem | string;
-                    if (!!(location.item.price)) {
-                        location_item = { item: location.item.name, price: location.item.price };
-                    } else {
-                        location_item = location.item.name;
+                if (location.type !== 'Event' && !!(location.item)) {
+                    if (location.shuffled) {
+                        let location_item: PlandoItem | string;
+                        if (!!(location.item.price)) {
+                            location_item = { item: location.item.name, price: location.item.price };
+                        } else {
+                            location_item = location.item.name;
+                        }
+                        plando.locations[location.name] = location_item;
+                    } else if (with_user_overrides && !!location.user_item) {
+                        let location_item: PlandoItem | string;
+                        if (!!(location.user_item.price)) {
+                            location_item = { item: location.user_item.name, price: location.user_item.price };
+                        } else {
+                            location_item = location.user_item.name;
+                        }
+                        plando.locations[location.name] = location_item;
                     }
-                    plando.locations[location.name] = location_item;
                 }
             }
 
@@ -270,14 +280,25 @@ class OotrGraphPlugin extends GraphPlugin {
                 'Grave'
             ];
             for (let entrance of entrances) {
-                if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.connected_region) && !!(entrance.replaces.type) && (!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
-                    let target: PlandoEntranceTarget | string;
-                    if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
-                        target = entrance.connected_region.name;
-                    } else {
-                        target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
+                if ((!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
+                    if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.replaces.type) && !!(entrance.connected_region)) {
+                        let target: PlandoEntranceTarget | string;
+                        if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
+                            target = entrance.connected_region.name;
+                        } else {
+                            target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
+                        }
+                        plando.entrances[entrance.name] = target;
+                    // preserve user connections if they are overridden by an unshuffled entrance setting
+                    } else if (with_user_overrides && !!entrance.user_connection && !!entrance.user_connection.type && !!entrance.user_connection.original_connection) {
+                        let target: PlandoEntranceTarget | string;
+                        if (simplified_target_types.includes(entrance.user_connection.type) && entrance.user_connection.primary) {
+                            target = entrance.user_connection.original_connection.name;
+                        } else {
+                            target = { 'region': entrance.user_connection.original_connection.name, 'from': entrance.user_connection.parent_region.name };
+                        }
+                        plando.entrances[entrance.name] = target;
                     }
-                    plando.entrances[entrance.name] = target;
                 }
             }
         } else {
@@ -469,7 +490,7 @@ class OotrGraphPlugin extends GraphPlugin {
         // but this requires running set_items manually
         world.state.reset();
         if (update_vanilla_items) {
-            let world_fill = this.export();
+            let world_fill = this.export(true);
             this.set_items(world_fill.locations);
             this.set_entrances(world_fill.entrances);
             this.set_blue_warps(world);
@@ -493,9 +514,11 @@ class OotrGraphPlugin extends GraphPlugin {
                     l.price = location.price;
                     i.price = location.price;
                 }
+                l.user_item = i;
             } else {
                 l.item = null;
                 l.price = null;
+                l.user_item = null;
             }
             this.set_shop_rule(l);
         } else {
@@ -520,6 +543,7 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             e.connect(t.original_connection);
             e.replaces = t;
+            e.user_connection = t;
             if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.connect(e.reverse.original_connection);
                 t.reverse.replaces = e.reverse;
@@ -531,6 +555,7 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             e.disconnect();
             e.replaces = null;
+            e.user_connection = null;
         }
         // link blue warp to boss room exit
         if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type)) {
@@ -1092,14 +1117,11 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             for (let [location, item] of Object.entries(filled_locations)) {
                 let world_location = world.get_location(location);
-                // override vanilla items where specified
-                // and set other shuffled location items
+                let world_item: Item;
                 if (typeof(item) === 'string') {
-                    let world_item = ItemFactory(item, world)[0];
-                    world_location.item = world_item;
+                    world_item = ItemFactory(item, world)[0];
                 } else {
                     // dict-style for ice traps and shop items
-                    let world_item: Item;
                     if (!!item.player) {
                         world_item = ItemFactory(item.item, this.worlds[item.player-1])[0];
                     } else {
@@ -1108,8 +1130,15 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (!!item.price) {
                         world_item.price = item.price;
                     }
+                }
+                // don't override vanilla items
+                if (world_location.item === null) {
                     world_location.item = world_item;
-                    world_location.price = world_item.price;
+                    if (typeof(item) !== 'string' && !!item.price) {
+                        world_location.price = world_item.price;
+                    }
+                } else {
+                    world_location.user_item = world_item;
                 }
             }
         }
@@ -1144,6 +1173,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     entrance.replaces = null;
                 }
                 entrance.use_target_alias = false;
+                entrance.user_connection = null;
                 // cache location counts for entrances with grouped alias names, such as Shop or House
                 let target_region = entrance.original_connection;
                 if (!!(target_region) && !!(entrance.target_alias)) {
@@ -1205,16 +1235,19 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             for (let [entrance, target] of Object.entries(connected_entrances)) {
                 let src = world.get_entrance(entrance);
+                let dest = world.get_entrance_from_target(target);
+                if (dest.original_connection === null) throw `Plando tried to connect entrance target without original region connection`;
                 // don't override unshuffled entrances if they are defined in the plando
                 if (src.connected_region === null) {
-                    let dest = world.get_entrance_from_target(target);
-                    if (dest.original_connection === null) throw `Plando tried to connect entrance target without original region connection`;
                     src.connect(dest.original_connection);
                     src.replaces = dest;
                     if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection) && src.coupled) {
                         dest.reverse.connect(src.reverse.original_connection);
                         dest.reverse.replaces = src.reverse;
                     }
+                } else {
+                    // but still store user-specified connections in case shuffle settings are changed
+                    src.user_connection = dest;
                 }
             }
 

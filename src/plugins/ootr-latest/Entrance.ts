@@ -43,6 +43,7 @@ class Entrance implements GraphEntrance {
         public sphere: number = -1,
         public source_group: RegionGroup | null = null,
         public target_group: RegionGroup | null = null,
+        public user_connection: Entrance | null = null,
     ) {
         this.world = this.parent_region.world;
         this.alias = this.name;

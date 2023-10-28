@@ -46,6 +46,8 @@ export class Location implements GraphLocation {
         public is_hint: boolean = false,
         public is_shop: boolean = false,
         public holds_shop_refill: boolean = false,
+        public is_restricted: boolean = false,
+        public user_item: Item | null = null,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
         if (this.type === "Event" || this.name === "Gift from Sages") {

@@ -14,6 +14,7 @@ export interface GraphLocation {
     is_hint: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
+    is_restricted: boolean;
     viewable(): boolean;
 }
 
