@@ -1092,25 +1092,24 @@ class OotrGraphPlugin extends GraphPlugin {
             }
             for (let [location, item] of Object.entries(filled_locations)) {
                 let world_location = world.get_location(location);
-                // don't override vanilla items
-                if (world_location.item === null) {
-                    if (typeof(item) === 'string') {
-                        let world_item = ItemFactory(item, world)[0];
-                        world_location.item = world_item;
+                // override vanilla items where specified
+                // and set other shuffled location items
+                if (typeof(item) === 'string') {
+                    let world_item = ItemFactory(item, world)[0];
+                    world_location.item = world_item;
+                } else {
+                    // dict-style for ice traps and shop items
+                    let world_item: Item;
+                    if (!!item.player) {
+                        world_item = ItemFactory(item.item, this.worlds[item.player-1])[0];
                     } else {
-                        // dict-style for ice traps and shop items
-                        let world_item: Item;
-                        if (!!item.player) {
-                            world_item = ItemFactory(item.item, this.worlds[item.player-1])[0];
-                        } else {
-                            world_item = ItemFactory(item.item, world)[0];
-                        }
-                        if (!!item.price) {
-                            world_item.price = item.price;
-                        }
-                        world_location.item = world_item;
-                        world_location.price = world_item.price;
+                        world_item = ItemFactory(item.item, world)[0];
                     }
+                    if (!!item.price) {
+                        world_item.price = item.price;
+                    }
+                    world_location.item = world_item;
+                    world_location.price = world_item.price;
                 }
             }
         }
