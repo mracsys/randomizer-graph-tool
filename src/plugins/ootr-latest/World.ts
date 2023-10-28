@@ -492,6 +492,10 @@ class World implements GraphWorld {
                             exit.reverse.connect(region);
                         }*/
                     }
+                    if (!!(exit.alternate.target_group)) {
+                        exit.target_group = exit.alternate.target_group;
+                        exit.alternate.target_group = null;
+                    }
                 }
             }
         }

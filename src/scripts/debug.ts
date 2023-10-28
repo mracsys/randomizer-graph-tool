@@ -33,7 +33,7 @@ async function test_dungeon_region_group_swap() {
 
     let settings = graph.get_settings_options();
     graph.import(plando);
-    graph.change_setting(graph.worlds[0], settings['mq_dungeons_specific'], ['Bottom of the Well']);
+    graph.change_setting(graph.worlds[0], settings['mq_dungeons_specific'], ['Ganons Castle']);
     graph.collect_spheres();
 }
 
