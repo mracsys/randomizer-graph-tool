@@ -721,6 +721,7 @@ class OotrGraphPlugin extends GraphPlugin {
         let always_coupled_entrances = [
             'ChildBoss',
             'AdultBoss',
+            'GraphGanonsTower',
         ];
 
         // mark warps to expose to the API
@@ -737,6 +738,11 @@ class OotrGraphPlugin extends GraphPlugin {
             // set entrance metadata
             let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
+                // Handle different entrances for Ganons Castle to Ganons Tower depending on MQ variant.
+                // Skip the alternate as it is copied from the currently linked variant.
+                let source_region_name = forward_entry[0].split(' -> ')[0];
+                if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
+                if (!(world.dungeon_mq['Ganons Castle']) && source_region_name === 'Ganons Castle Main') continue;
                 let forward_entrance = world.get_entrance(forward_entry[0]);
                 forward_entrance.type = type;
                 forward_entrance.primary = true;
@@ -769,10 +775,20 @@ class OotrGraphPlugin extends GraphPlugin {
                 }
 
                 if (!!(forward_entrance.parent_region.dungeon)) {
+                    let entrance_variant_name: string;
+                    if (forward_entrance.parent_region.dungeon !== 'Ganons Castle') {
+                        entrance_variant_name = forward_entrance.name;
+                    } else {
+                        if (world.dungeon_mq['Ganons Castle']) {
+                            entrance_variant_name = 'Ganons Castle Lobby -> Ganons Castle Tower';
+                        } else {
+                            entrance_variant_name = 'Ganons Castle Main -> Ganons Castle Tower';
+                        }
+                    }
                     let dungeon_variant_name = forward_entrance.world.dungeon_mq[forward_entrance.parent_region.dungeon] ?
                         forward_entrance.parent_region.dungeon :
                         `${forward_entrance.parent_region.dungeon} MQ`;
-                    let alt_forward_entrance = forward_entrance.world.get_entrance(forward_entrance.name, dungeon_variant_name);
+                    let alt_forward_entrance = forward_entrance.world.get_entrance(entrance_variant_name, dungeon_variant_name);
                     alt_forward_entrance.copy_metadata(forward_entrance);
                 }
 
@@ -802,7 +818,8 @@ class OotrGraphPlugin extends GraphPlugin {
                         return_entrance.source_group = return_entrance.parent_region.parent_group;
                     }
     
-                    if (!!(return_entrance.parent_region.dungeon)) {
+                    // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
+                    if (!!(return_entrance.parent_region.dungeon) && return_entrance.parent_region.dungeon !== 'Ganons Castle') {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -815,6 +832,9 @@ class OotrGraphPlugin extends GraphPlugin {
 
             // second loop for target region groups, which requires all entrance metadata to be set
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
+                let source_region_name = forward_entry[0].split(' -> ')[0];
+                if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
+                if (!(world.dungeon_mq['Ganons Castle']) && source_region_name === 'Ganons Castle Main') continue;
                 let forward_entrance = world.get_entrance(forward_entry[0]);
                 if (forward_entrance.target_group === null)
                     forward_entrance.target_group = world.create_target_region_group(forward_entrance);
@@ -822,7 +842,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
-                        if (!!(return_entrance.parent_region.dungeon)) {
+                        if (!!(return_entrance.parent_region.dungeon) && return_entrance.parent_region.dungeon !== 'Ganons Castle') {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;
@@ -1083,6 +1103,7 @@ class OotrGraphPlugin extends GraphPlugin {
         let always_coupled_entrances = [
             'ChildBoss',
             'AdultBoss',
+            'GraphGanonsTower',
         ]
         for (let world of this.worlds) {
             let target_alias_sizes: {[alias: string]: {

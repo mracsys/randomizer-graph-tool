@@ -24,6 +24,14 @@ export default class EntranceList {
             default:
                 throw(`Unknown branch for version ${ootr_version.to_string()}`);
         }
+        // Since we have to add the reverse entrance ourselves, always name it after the MQ
+        // scheme since it makes the most sense in an upstream rando change.
+        let forward_ganons_tower: EntranceConnectionData = ['Ganons Castle Lobby -> Ganons Castle Tower', {}];
+        //let reverse_ganons_tower: EntranceConnectionData = ['Ganons Castle Tower -> Ganons Castle Lobby', {}];
+        let forward_ganons_tower_mq: EntranceConnectionData = ['Ganons Castle Main -> Ganons Castle Tower', {}];
+        let reverse_ganons_tower_mq: EntranceConnectionData = ['Ganons Castle Tower -> Ganons Castle Main', {}];
+        this.entrances.push(['GraphGanonsTower', forward_ganons_tower, reverse_ganons_tower_mq]);
+        this.entrances.push(['GraphGanonsTower', forward_ganons_tower_mq, reverse_ganons_tower_mq]);
     }
 
     readEntranceList_7_1_117(file_cache: ExternalFileCache): void {

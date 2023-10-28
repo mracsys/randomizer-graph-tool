@@ -388,6 +388,18 @@ class World implements GraphWorld {
                     }
                     new_region.exits.push(new_exit);
                 }
+                if (new_region.name === 'Ganons Castle Tower' && this.settings.logic_rules !== 'glitched'
+                    && !(Object.keys(region.exits).includes('Ganons Castle Main'))
+                    && !(Object.keys(region.exits).includes('Ganons Castle Lobby'))) {
+                    let new_exit = new Entrance(`${new_region.name} -> Ganons Castle Main`, new_region, this);
+                    new_exit.original_connection_name = this.dungeon_mq['Ganons Castle'] ? 'Ganons Castle Main' : 'Ganons Castle Lobby';
+                    new_exit.rule_string = replace_python_booleans('true');
+                    if (this.settings.logic_rules !== 'none') {
+                        if (this.parent_graph.debug) console.log(`parsing ${new_exit.name}`);
+                        this.parser.parse_spot_rule(new_exit);
+                    }
+                    new_region.exits.push(new_exit);
+                }
             }
             if (!!region.savewarp) {
                 let savewarp_target = region.savewarp.split(' -> ')[1];
