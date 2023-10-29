@@ -11,6 +11,7 @@ export interface GraphLocation {
     parent_region: GraphRegion | null;
     world: GraphWorld | null;
     sphere: number;
+    visited: boolean;
     is_hint: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
@@ -43,6 +44,7 @@ export interface GraphEntrance {
     replaces: GraphEntrance | null,
     world: GraphWorld;
     sphere: number;
+    visited: boolean;
     viewable(): boolean;
     is_reverse(): boolean;
 }

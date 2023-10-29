@@ -41,6 +41,7 @@ class Entrance implements GraphEntrance {
         public is_warp: boolean = false,
         public one_way: boolean = false,
         public sphere: number = -1,
+        public visited: boolean = false,
         public source_group: RegionGroup | null = null,
         public target_group: RegionGroup | null = null,
         public user_connection: Entrance | null = null,

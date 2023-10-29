@@ -28,23 +28,46 @@ class Search {
     public _cache: SearchCache;
     cached_spheres: SearchCache[];
     public current_sphere: number;
+    initial_cache: SearchCache | null;
 
     constructor(state_list: WorldState[], initial_cache=null) {
         this.state_list = state_list.map(s => s.copy());
         this.current_sphere = 0;
-
+        this.initial_cache = initial_cache;
         for (let state of this.state_list) {
             state.search = this;
+        }
+        // make typescript happy
+        this._cache = {
+            child_queue: [],
+            adult_queue: [],
+            visited_locations: new Set<Location>(),
+            visited_entrances: new Set<Entrance>(),
+            spheres: {},
+            child_regions: [],
+            adult_regions: [],
+            child_tod: {},
+            adult_tod: {},
+        }
+        this.cached_spheres = [this._cache];
+        // and do what typescript should have picked up on
+        this.reset_cache();
+    }
+
+    reset_cache() {
+        this.current_sphere = 0;
+        for (let state of this.state_list) {
             for (let entrance of state.world.get_entrances()) {
                 entrance.sphere = -1;
+                entrance.visited = false;
             }
             for (let location of state.world.get_locations()) {
                 location.sphere = -1;
+                location.visited = false;
             }
         }
-
-        if (initial_cache) {
-            this._cache = initial_cache;
+        if (this.initial_cache) {
+            this._cache = this.initial_cache;
             this.cached_spheres = [this._cache];
         } else {
             let root_regions = this.state_list.map((state) => state.world.get_region('Root'));
@@ -59,7 +82,6 @@ class Search {
                 if (!(region.world.id in ctod)) ctod[region.world.id] = {};
                 ctod[region.world.id][region.name] = TimeOfDay.NONE;
             }
-
             this._cache = {
                 child_queue: root_regions.flatMap((region) => region.exits),
                 adult_queue: root_regions.flatMap((region) => region.exits),
@@ -131,6 +153,7 @@ class Search {
                         tods[exit.world.id][exit.world.get_region('Root').name] |= exit.connected_region.provides_time;
                     }
                     this._cache.visited_entrances.add(exit);
+                    exit.visited = true;
                     regions.push(exit.connected_region);
                     tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
                     exit_queue.push(...exit.connected_region.exits);
@@ -139,6 +162,7 @@ class Search {
                 }
             } else if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
                 this._cache.visited_entrances.add(exit);
+                exit.visited = true;
             }
         }
         return failed;
@@ -179,10 +203,12 @@ class Search {
                     if (adult_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'adult'})) {
                         had_reachable_locations = true;
                         visited_locations.add(l);
+                        l.visited = true;
                         yield l;
                     } else if (child_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'child'})) {
                         had_reachable_locations = true;
                         visited_locations.add(l);
+                        l.visited = true;
                         yield l;
                     }
                 }
@@ -190,7 +216,7 @@ class Search {
         }
     }
 
-    collect_locations(locations=null) {
+    collect_locations(locations: Location[] | null = null) {
         let l = !!locations ? locations : this.progression_locations();
         for (let location of this.iter_reachable_locations(l)) {
             if (!!(location.item)) {
@@ -199,19 +225,15 @@ class Search {
         }
     }
 
-    collect_spheres(locations=null) {
+    // changes to the world may have changed earlier spheres,
+    // so this method has to run from sphere 0 every time
+    collect_spheres(locations: Location[] | null = null) {
+        this.reset_cache();
         this.collect_pseudo_starting_items();
         let l = !!locations ? locations : this.progression_locations();
         let remaining_entrances = new Set(this.state_list.flatMap((state) => state.world.get_entrances()));
         let unaccessed_entrances: Set<Entrance>;
         let collected;
-        this.current_sphere = 0;
-        for (let location of l) {
-            location.sphere = -1;
-        }
-        for (let entrance of remaining_entrances) {
-            entrance.sphere = -1;
-        }
         while (true) {
             collected = Array.from(this.iter_reachable_locations(l));
             if (collected.length === 0) {

@@ -325,7 +325,8 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     collect_locations(): void {
-        this.search.collect_locations();
+        let all_locations = this.worlds.flatMap((world) => world.get_locations().filter((location) => { return !!location.item || location.shuffled }));
+        this.search.collect_locations(all_locations);
     }
 
     collect_spheres(): void {
