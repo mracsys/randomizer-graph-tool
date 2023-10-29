@@ -103,7 +103,8 @@ class Search {
         if (itempool.length > 0) {
             s.collect_all(itempool);
         }
-        s.collect_locations();
+        let max_locations = s.state_list.flatMap((state) => state.world.get_locations().filter((location) => { return !!location.item || location.shuffled }));
+        s.collect_locations(max_locations);
         return s;
     }
 
