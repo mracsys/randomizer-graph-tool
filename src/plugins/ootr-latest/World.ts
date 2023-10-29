@@ -837,6 +837,7 @@ class World implements GraphWorld {
         location.item = null;
         location.price = null;
         location.shuffled = true;
+        location.is_restricted = false;
     }
 
     get_item(item: Item | string): Item {

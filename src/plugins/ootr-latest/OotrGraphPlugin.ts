@@ -923,6 +923,17 @@ class OotrGraphPlugin extends GraphPlugin {
             "Gerudo Mask",
             "Mask of Truth",
         ];
+        let dungeon_rewards = [
+            'Kokiri Emerald',
+            'Goron Ruby',
+            'Zora Sapphire',
+            'Forest Medallion',
+            'Fire Medallion',
+            'Water Medallion',
+            'Spirit Medallion',
+            'Shadow Medallion',
+            'Light Medallion',
+        ];
         for (let world of this.worlds) {
             // vanilla item fill based on settings
             for (let loc of world.get_locations()) {
@@ -955,6 +966,8 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (loc.name === 'ToT Light Arrows Cutscene' && world.settings.shuffle_ganon_bosskey === 'on_lacs') {
                     world.push_item(loc, ItemFactory('Boss Key (Ganons Castle)', world)[0]);
                     loc.shuffled = false;
+                } else if (!!loc.vanilla_item && dungeon_rewards.includes(loc.vanilla_item.name)) {
+                    loc.is_restricted = true;
                 } else if (loc.type === 'Shop') {
                     let shopSlot = parseInt(loc.name.charAt(loc.name.length - 1));
                     loc.holds_shop_refill = false;
