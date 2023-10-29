@@ -42,6 +42,7 @@ export class Location implements GraphLocation {
         public never: boolean = false,
         public sphere: number = -1,
         public visited: boolean = false,
+        public visited_with_other_tricks: boolean = false,
         public alias: string = '',
         public shuffled: boolean = true,
         public is_hint: boolean = false,
@@ -105,6 +106,14 @@ export class Location implements GraphLocation {
 
     viewable(): boolean {
         return !(this.internal);
+    }
+
+    set_visited(with_tricks: boolean = false) {
+        if (with_tricks) {
+            this.visited_with_other_tricks = true;
+        } else {
+            this.visited = true;
+        }
     }
 }
 

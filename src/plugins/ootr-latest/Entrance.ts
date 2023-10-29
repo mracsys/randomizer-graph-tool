@@ -42,6 +42,7 @@ class Entrance implements GraphEntrance {
         public one_way: boolean = false,
         public sphere: number = -1,
         public visited: boolean = false,
+        public visited_with_other_tricks: boolean = false,
         public source_group: RegionGroup | null = null,
         public target_group: RegionGroup | null = null,
         public user_connection: Entrance | null = null,
@@ -148,6 +149,14 @@ class Entrance implements GraphEntrance {
             return true;
         } else {
             return false;
+        }
+    }
+
+    set_visited(with_tricks: boolean = false) {
+        if (with_tricks) {
+            this.visited_with_other_tricks = true;
+        } else {
+            this.visited = true;
         }
     }
 

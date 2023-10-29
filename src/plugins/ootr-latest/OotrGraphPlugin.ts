@@ -38,6 +38,10 @@ class OotrGraphPlugin extends GraphPlugin {
 
     public worlds: World[];
     public search: Search;
+    public all_tricks_worlds: World[];
+    public all_tricks_search: Search;
+    public all_tricks_and_keys_worlds: World[];
+    public all_tricks_and_keys_search: Search;
     public settings_list: SettingsList;
     public location_list: LocationList;
     public entrance_list: EntranceList;
@@ -54,6 +58,11 @@ class OotrGraphPlugin extends GraphPlugin {
     ) {
         super();
         this.worlds = [];
+        this.all_tricks_worlds = [];
+        this.all_tricks_and_keys_worlds = [];
+        this.search = new Search([]);
+        this.all_tricks_search = new Search([]);
+        this.all_tricks_and_keys_search = new Search([]);
         this.settings_list = new SettingsList(ootr_version, file_cache);
         this.location_list = new LocationList(ootr_version, file_cache);
         this.entrance_list = new EntranceList(ootr_version, file_cache);
@@ -103,7 +112,6 @@ class OotrGraphPlugin extends GraphPlugin {
         // as this takes more than a few ms.
         if (test_only || !valid_cache) {
             // won't function correctly as the world logic isn't loaded
-            this.search = new Search(this.worlds.map((world) => world.state));
             return;
         }
         this.build_world_graphs(this.settings_list, ootr_version);
@@ -114,7 +122,10 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_entrances(this.settings_list.entrances);
         }
         this.finalize_world(true);
-        this.search = new Search(this.worlds.map((world) => world.state));
+        this.all_tricks_worlds = this.create_tricked_worlds();
+        this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
+        this.create_searches();
+        this.set_viewable_region_groups();
         this.initialized = true;
     }
 
@@ -132,6 +143,18 @@ class OotrGraphPlugin extends GraphPlugin {
     static create_graph(user_overrides: any = null, version: string = '7.1.143', global_cache: OotrFileCache, debug: boolean = false, test_only: boolean = false) {
         let ootr_version = new OotrVersion(version);
         return new OotrGraphPlugin(user_overrides, ootr_version, global_cache, debug, test_only);
+    }
+
+    create_searches() {
+        this.search = new Search(this.worlds.map((world) => world.state));
+        this.all_tricks_search = new Search(this.all_tricks_worlds.map((world) => world.state), {with_tricks: true});
+        this.all_tricks_and_keys_search = new Search(this.all_tricks_worlds.map((world) => world.state), {with_tricks: true});
+    }
+
+    reset_searches() {
+        this.worlds.forEach(w => w.state.reset());
+        this.all_tricks_worlds.forEach(w => w.state.reset());
+        this.all_tricks_and_keys_worlds.forEach(w => w.state.reset());
     }
 
     import(plando: any): void {
@@ -215,7 +238,10 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_entrances(null);
         }
         this.finalize_world();
-        this.search = new Search(this.worlds.map((world) => world.state));
+        this.all_tricks_worlds = this.create_tricked_worlds();
+        this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
+        this.create_searches();
+        this.set_viewable_region_groups();
     }
 
     export(with_user_overrides: boolean = false): any {
@@ -327,6 +353,7 @@ class OotrGraphPlugin extends GraphPlugin {
     collect_locations(): void {
         let all_locations = this.worlds.flatMap((world) => world.get_locations().filter((location) => { return !!location.item || location.shuffled }));
         this.search.collect_locations(all_locations);
+        this.all_tricks_search.collect_locations(all_locations);
     }
 
     collect_spheres(): void {
@@ -498,9 +525,13 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_shop_rules(world);
             world.state.collect_starting_items();
             this.collect_skipped_locations(world);
-            if (!update_world_only) this.set_viewable_region_groups();
+            if (!update_world_only) {
+                this.all_tricks_worlds = this.create_tricked_worlds();
+                this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
+                this.set_viewable_region_groups();
+            }
         }
-        if (!update_world_only) this.search = new Search(this.worlds.map((world) => world.state));
+        if (!update_world_only) this.create_searches();
         this.disabled_settings = [];
     }
 
@@ -520,6 +551,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 l.item = null;
                 l.price = null;
                 l.user_item = null;
+                this.reset_searches();
             }
             this.set_shop_rule(l);
         } else {
@@ -557,6 +589,7 @@ class OotrGraphPlugin extends GraphPlugin {
             e.disconnect();
             e.replaces = null;
             e.user_connection = null;
+            this.reset_searches();
         }
         // link blue warp to boss room exit
         if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type)) {
@@ -1281,21 +1314,27 @@ class OotrGraphPlugin extends GraphPlugin {
                 region.viewable = false;
             }
         }
+        this.all_tricks_and_keys_search.collect_locations();
+        for (let region of this.all_tricks_and_keys_search.iter_visited_regions()) {
+            // ignore the logical bypass to Hyrule Castle through the skip_child_zelda branch from Root
+            if (!!region.parent_group && region.name !== 'HC Garden Locations') region.parent_group.viewable = true;
+        }
+    }
+
+    create_tricked_worlds(keysy: boolean = false): World[] {
         let all_tricks_worlds = this.worlds.map(w => w.copy());
         let tricks = !!(this.settings_list.setting_definitions.allowed_tricks.choices) ? Object.keys(this.settings_list.setting_definitions.allowed_tricks.choices) : [];
         for (let world of all_tricks_worlds) {
             this.change_setting(world, this.settings_list.setting_definitions.allowed_tricks, tricks, {update_world_only: true});
-            // Collect 10 small keys for each dungeon to simulate optimal key usage
-            // Relevant for Spirit Temple exits to the Colossus hands providing Desert Colossus access
-            for (let small_key of Object.values(this.ItemInfo.items).filter(i => i.type === 'SmallKey')) {
-                world.state.collect_list(ItemFactory(Array.from({length: 10}, (v, i) => small_key.name), world));
+            if (keysy) {
+                // Collect 10 small keys for each dungeon to simulate optimal key usage
+                // Relevant for Spirit Temple exits to the Colossus hands providing Desert Colossus access
+                for (let small_key of Object.values(this.ItemInfo.items).filter(i => i.type === 'SmallKey')) {
+                    world.state.collect_list(ItemFactory(Array.from({length: 10}, (v, i) => small_key.name), world));
+                }
             }
         }
-        let region_search = Search.max_explore(all_tricks_worlds.map(w => w.state));
-        for (let region of region_search.iter_visited_regions()) {
-            // ignore the logical bypass to Hyrule Castle through the skip_child_zelda branch from Root
-            if (!!region.parent_group && region.name !== 'HC Garden Locations') region.parent_group.viewable = true;
-        }
+        return all_tricks_worlds;
     }
 
     mode(a: number[]): [number, number] {
@@ -1329,7 +1368,6 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_shop_rules(world);
             world.state.collect_starting_items();
             this.collect_skipped_locations(world);
-            this.set_viewable_region_groups();
         }
     }
 

@@ -29,11 +29,13 @@ class Search {
     cached_spheres: SearchCache[];
     public current_sphere: number;
     initial_cache: SearchCache | null;
+    with_tricks: boolean;
 
-    constructor(state_list: WorldState[], initial_cache=null) {
-        this.state_list = state_list.map(s => s.copy());
+    constructor(state_list: WorldState[], {initial_cache = null, with_tricks = false}: {initial_cache?: SearchCache | null, with_tricks?: boolean} = {}) {
+        this.state_list = state_list;
         this.current_sphere = 0;
         this.initial_cache = initial_cache;
+        this.with_tricks = with_tricks;
         for (let state of this.state_list) {
             state.search = this;
         }
@@ -56,16 +58,7 @@ class Search {
 
     reset_cache() {
         this.current_sphere = 0;
-        for (let state of this.state_list) {
-            for (let entrance of state.world.get_entrances()) {
-                entrance.sphere = -1;
-                entrance.visited = false;
-            }
-            for (let location of state.world.get_locations()) {
-                location.sphere = -1;
-                location.visited = false;
-            }
-        }
+        this.reset_visits();
         if (this.initial_cache) {
             this._cache = this.initial_cache;
             this.cached_spheres = [this._cache];
@@ -98,8 +91,51 @@ class Search {
         }
     }
 
-    static max_explore(state_list: WorldState[], itempool: Item[] = []): Search {
+    reset_visits() {
+        if (this.with_tricks) {
+            this.reset_tricked_visits();
+        } else {
+            this.reset_logical_visits();
+        }
+    }
+
+    reset_logical_visits() {
+        for (let state of this.state_list) {
+            for (let entrance of state.world.get_entrances()) {
+                entrance.visited = false;
+            }
+            for (let location of state.world.get_locations()) {
+                location.visited = false;
+            }
+        }
+    }
+
+    reset_tricked_visits() {
+        for (let state of this.state_list) {
+            for (let entrance of state.world.get_entrances()) {
+                entrance.visited_with_other_tricks = false;
+            }
+            for (let location of state.world.get_locations()) {
+                location.visited_with_other_tricks = false;
+            }
+        }
+    }
+
+    reset_spheres() {
+        for (let state of this.state_list) {
+            for (let entrance of state.world.get_entrances()) {
+                entrance.sphere = -1;
+            }
+            for (let location of state.world.get_locations()) {
+                location.sphere = -1;
+            }
+        }
+    }
+
+    static max_explore(state_list: WorldState[], {itempool = [], with_tricks = false}: {itempool?: Item[], with_tricks?: boolean} = {}): Search {
         let s = new Search(state_list);
+        s.with_tricks = with_tricks;
+        s.reset_visits();
         if (itempool.length > 0) {
             s.collect_all(itempool);
         }
@@ -154,7 +190,7 @@ class Search {
                         tods[exit.world.id][exit.world.get_region('Root').name] |= exit.connected_region.provides_time;
                     }
                     this._cache.visited_entrances.add(exit);
-                    exit.visited = true;
+                    exit.set_visited(this.with_tricks);
                     regions.push(exit.connected_region);
                     tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
                     exit_queue.push(...exit.connected_region.exits);
@@ -163,7 +199,7 @@ class Search {
                 }
             } else if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
                 this._cache.visited_entrances.add(exit);
-                exit.visited = true;
+                exit.set_visited(this.with_tricks);
             }
         }
         return failed;
@@ -204,12 +240,12 @@ class Search {
                     if (adult_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'adult'})) {
                         had_reachable_locations = true;
                         visited_locations.add(l);
-                        l.visited = true;
+                        l.set_visited(this.with_tricks);
                         yield l;
                     } else if (child_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'child'})) {
                         had_reachable_locations = true;
                         visited_locations.add(l);
-                        l.visited = true;
+                        l.set_visited(this.with_tricks);
                         yield l;
                     }
                 }

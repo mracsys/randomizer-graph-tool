@@ -12,6 +12,7 @@ export interface GraphLocation {
     world: GraphWorld | null;
     sphere: number;
     visited: boolean;
+    visited_with_other_tricks: boolean;
     is_hint: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
@@ -45,6 +46,7 @@ export interface GraphEntrance {
     world: GraphWorld;
     sphere: number;
     visited: boolean;
+    visited_with_other_tricks: boolean;
     viewable(): boolean;
     is_reverse(): boolean;
 }

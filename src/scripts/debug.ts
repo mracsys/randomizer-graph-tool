@@ -12,7 +12,8 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_dungeon_region_group_swap();
+test_search_invalidation();
+//test_dungeon_region_group_swap();
 //test_entrance_linking();
 //test_region_viewability();
 //test_entrance_pools();
@@ -22,6 +23,35 @@ test_dungeon_region_group_swap();
 //test_random_settings(4, true);
 //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
 //add_entrance_spheres_to_tests();
+
+async function test_search_invalidation() {
+    let result_file = 'seed143.json';
+
+    let plando = JSON.parse(readFileSync(resolve('tests/seeds/manual', result_file), { encoding: 'utf8'}));
+    let [version, local_files] = get_plando_randomizer_version(plando);
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+
+    graph.import(plando);
+
+    let locations_to_clear = [
+        'DMC Wall Freestanding PoH',
+        'ZR Frogs Ocarina Game',
+        'Song from Saria'
+    ];
+    graph.collect_locations();
+    //console.log(graph.worlds[0].get_entrance('Graveyard Warp Pad Region -> Shadow Temple Entryway').visited);
+    console.log(graph.worlds[0].get_location('Sheik in Forest').visited);
+    console.log(graph.worlds[0].get_location('Sheik in Forest').visited_with_other_tricks);
+    for (let location of locations_to_clear) {
+        let sourceLocation = graph.worlds[0].get_location(location);
+        graph.set_location_item(sourceLocation, null);
+    }
+    graph.collect_locations();
+    //console.log(graph.worlds[0].get_entrance('Graveyard Warp Pad Region -> Shadow Temple Entryway').visited);
+    console.log(graph.worlds[0].get_location('Sheik in Forest').visited);
+    console.log(graph.worlds[0].get_location('Sheik in Forest').visited_with_other_tricks);
+}
 
 async function test_dungeon_region_group_swap() {
     let result_file = 'seed143.json';

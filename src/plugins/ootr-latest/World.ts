@@ -299,6 +299,8 @@ class World implements GraphWorld {
         w.skipped_trials = this.skipped_trials;
         w.dungeon_mq = this.dungeon_mq;
         w.song_notes = this.song_notes;
+        w.state = this.state.copy();
+        w.state.world = w;
         w.update_internal_settings();
         return w;
     }

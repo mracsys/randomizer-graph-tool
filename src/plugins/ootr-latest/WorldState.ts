@@ -29,6 +29,7 @@ class WorldState {
 
     reset(): void {
         this.prog_items = {};
+        this.search?.reset_cache();
     }
 
     won(): boolean {
