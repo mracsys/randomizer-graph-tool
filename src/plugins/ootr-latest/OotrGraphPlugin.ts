@@ -1076,7 +1076,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     if (world.settings.gerudo_fortress !== 'open' &&
                         (loc.name === 'Hideout 1 Torch Jail Gerudo Key' || world.settings.gerudo_fortress !== 'fast')) {
                             world.push_vanilla_item(loc);
-                    } else if (world.settings.gerudo_fortress !== 'open') {
+                    } else {
                         // hack to hide the other 3 unshuffled keys without placing the items
                         loc.shuffled = false;
                     }
