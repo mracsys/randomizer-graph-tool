@@ -1,4 +1,4 @@
-import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType, GraphEntrancePool } from '../GraphPlugin.js';
+import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType, GraphEntrancePool, GraphSettingsOptions, GraphSettingsLayout } from '../GraphPlugin.js';
 
 import SettingsList from './SettingsList.js';
 import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList, PlandoEntranceTarget, PlandoItem, PlandoCheckedLocationList, PlandoMWCheckedLocationList } from "./World.js";
@@ -396,8 +396,12 @@ class OotrGraphPlugin extends GraphPlugin {
         return ootr;
     }
 
-    get_settings_options(): { [setting_name: string]: GraphSetting; } {
+    get_settings_options(): GraphSettingsOptions {
         return this.settings_list.setting_definitions;
+    }
+
+    get_settings_layout(): GraphSettingsLayout {
+        return this.settings_list.settings_layout;
     }
 
     check_location(location: GraphLocation): void {

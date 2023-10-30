@@ -1,6 +1,6 @@
 import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
-import type { GraphSettingType } from "../GraphPlugin.js";
+import type { GraphSettingType, GraphSettingsLayout } from "../GraphPlugin.js";
 
 export type Setting = {
     name: string,
@@ -9,6 +9,7 @@ export type Setting = {
     display_name: string,
     tab: string,
     section: string,
+    order: number,
     choices?: {
         [internal_name: string]: string
     },
@@ -52,6 +53,15 @@ export type SettingsDictionary = {
     disabled_locations?: string[],
 };
 
+type SettingLayout = {
+    [tab: string]: {
+        settings: Setting[],
+        sections: {
+            [section: string]: Setting[],
+        }
+    }
+};
+
 // Settings that should never be used as they override
 // the "specific" options for other settings. This library
 // doesn't handle random selection and expects explicit settings.
@@ -63,6 +73,7 @@ class SettingsList {
     [index: string]: any;
     public settings: SettingsDictionary;
     public setting_definitions: SettingTypeDictionary;
+    public settings_layout: SettingLayout;
     public ootr_version: OotrVersion;
 
     constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
@@ -93,6 +104,7 @@ class SettingsList {
             }
         };
         this.setting_definitions = {};
+        this.settings_layout = {};
 
         switch(ootr_version.branch) {
             case '':
@@ -134,6 +146,7 @@ class SettingsList {
             display_name: 'Enabled Trials',
             tab: this.setting_definitions['trials_random'].tab,
             section: this.setting_definitions['trials_random'].section,
+            order: 10000,
             cosmetic: false,
             choices: {
                 'Forest': 'Forest Trial',
@@ -181,6 +194,7 @@ class SettingsList {
             display_name: 'Known Ocarina Melodies',
             tab: this.setting_definitions['ocarina_songs'].tab,
             section: this.setting_definitions['ocarina_songs'].section,
+            order: 10000,
             cosmetic: false,
             disables: [],
             disabled: (settings) => { return false },
@@ -194,6 +208,7 @@ class SettingsList {
             display_name: 'Debug Rule Parser',
             tab: '',
             section: '',
+            order: 0,
             cosmetic: false,
             disables: [],
             disabled: (settings) => { return false },
@@ -216,6 +231,32 @@ class SettingsList {
                             }
                         }
                     }
+                }
+            }
+            if (def.tab) {
+                if (!(Object.keys(this.settings_layout).includes(def.tab))) {
+                    this.settings_layout[def.tab] = {
+                        settings: [],
+                        sections: {},
+                    };
+                }
+                if (def.section) {
+                    if (!(Object.keys(this.settings_layout[def.tab].sections).includes(def.section))) {
+                        this.settings_layout[def.tab].sections[def.section] = [];
+                    }
+                    this.settings_layout[def.tab].sections[def.section].push(def);
+                } else {
+                    this.settings_layout[def.tab].settings.push(def);
+                }
+            }
+        }
+        for (let [tab_name, tab] of Object.entries(this.settings_layout)) {
+            if (tab.settings.length > 0) {
+                this.settings_layout[tab_name].settings = tab.settings.sort((a, b) => a.order - b.order);
+            }
+            for (let [section_name, section] of Object.entries(tab.sections)) {
+                if (section.length > 0) {
+                    this.settings_layout[tab_name].sections[section_name] = section.sort((a, b) => a.order - b.order);
                 }
             }
         }
@@ -385,6 +426,7 @@ class SettingsList {
                         display_name: '',
                         tab: '',
                         section: '',
+                        order: 0,
                         disables: [],
                         disabled: (settings) => { return false },
                     };
@@ -596,12 +638,15 @@ class SettingsList {
         }
 
         for (let [s, data] of Object.entries(this.setting_definitions)) {
+            let order = 0;
             for (let tab of settings_categories.Tabs) {
                 for (let section of tab.sections) {
                     for (let entry of section.settings) {
+                        order++;
                         if (s === entry) {
                             data.tab = tab.text;
                             data.section = section.text;
+                            data.order = order;
                             break;
                         }
                     }
@@ -622,6 +667,7 @@ function new_setting(type: string): Setting {
         display_name: '',
         tab: '',
         section: '',
+        order: 0,
         disables: [],
         disabled: (settings) => { return false },
     };

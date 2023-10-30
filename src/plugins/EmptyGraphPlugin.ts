@@ -1,6 +1,6 @@
 import ExternalFileCache from "./ExternalFileCache.js";
 import { GraphPlugin } from "./GraphPlugin.js";
-import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphWorld, GraphItem, GraphSettingType, GraphSettingsOptions } from "./GraphPlugin.js";
+import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphWorld, GraphItem, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout } from "./GraphPlugin.js";
 
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
@@ -19,6 +19,7 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     get_game_versions(): GraphGameVersions { return { game: 'empty', versions: [] }; };
 
     get_settings_options(): GraphSettingsOptions { return {} };
+    get_settings_layout(): GraphSettingsLayout { return {} };
     change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void { return };
 
     // Search interface

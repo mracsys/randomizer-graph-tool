@@ -121,6 +121,15 @@ export type GraphSettingsOptions = {
 
 export type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
 
+export type GraphSettingsLayout = {
+    [tab: string]: {
+        settings: GraphSetting[],
+        sections: {
+            [section: string]: GraphSetting[],
+        }
+    }
+}
+
 export type GraphItemDictionary = {
     [world_id: number]: {
         [item_name: string]: GraphItem,
@@ -157,6 +166,7 @@ export abstract class GraphPlugin {
     abstract get_game_versions(): GraphGameVersions;
 
     abstract get_settings_options(): GraphSettingsOptions;
+    abstract get_settings_layout(): GraphSettingsLayout;
     abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
     // Search interface
