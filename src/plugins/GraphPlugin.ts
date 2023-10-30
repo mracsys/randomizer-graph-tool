@@ -115,6 +115,10 @@ export type GraphSetting = {
     maximum?: number,
 };
 
+export type GraphSettingsOptions = {
+    [setting_name: string]: GraphSetting
+}
+
 export type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
 
 export type GraphItemDictionary = {
@@ -152,7 +156,7 @@ export abstract class GraphPlugin {
     // Version/branch list for selection, static class method
     abstract get_game_versions(): GraphGameVersions;
 
-    abstract get_settings_options(): {[setting_name: string]: GraphSetting};
+    abstract get_settings_options(): GraphSettingsOptions;
     abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
     // Search interface
