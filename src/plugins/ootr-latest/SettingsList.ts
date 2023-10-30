@@ -294,9 +294,11 @@ class SettingsList {
                 if (typeof(v) === 'object') {
                     if (Array.isArray(v)) {
                         merged_settings[k] = override[k];
-                    } else {
+                    } else if (!!v) {
                         merged_object = this.override_settings(override[k], v);
                         merged_settings[k] = merged_object;
+                    } else {
+                        merged_settings[k] = override[k];
                     }
                 } else {
                     merged_settings[k] = override[k];

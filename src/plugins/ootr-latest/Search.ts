@@ -20,8 +20,14 @@ type TimeOfDayMap = {
     [world_id: number]: {
         [region_name: string]: number,
     }
+};
+type SearchOptionalParams = {
+    initial_cache?: SearchCache | null,
+    with_tricks?: boolean,
+    regions_only?: boolean,
+    collect_checked_only?: boolean,
+    collect_as_starting_items?: boolean,
 }
-
 
 class Search {
     public state_list: WorldState[];
@@ -30,12 +36,25 @@ class Search {
     public current_sphere: number;
     initial_cache: SearchCache | null;
     with_tricks: boolean;
+    regions_only: boolean;
+    public collect_checked_only: boolean;
+    public collect_as_starting_items: boolean;
 
-    constructor(state_list: WorldState[], {initial_cache = null, with_tricks = false}: {initial_cache?: SearchCache | null, with_tricks?: boolean} = {}) {
+    constructor(state_list: WorldState[], 
+    {
+        initial_cache = null,
+        with_tricks = false,
+        regions_only = false,
+        collect_checked_only = false,
+        collect_as_starting_items = false,
+    }: SearchOptionalParams = {}) {
         this.state_list = state_list;
         this.current_sphere = 0;
         this.initial_cache = initial_cache;
-        this.with_tricks = with_tricks;
+        this.with_tricks = with_tricks || regions_only;
+        this.regions_only = regions_only;
+        this.collect_checked_only = collect_checked_only;
+        this.collect_as_starting_items = collect_as_starting_items;
         for (let state of this.state_list) {
             state.search = this;
         }
@@ -132,6 +151,15 @@ class Search {
         }
     }
 
+    reset_states() {
+        for (let state of this.state_list) {
+            state.reset();
+            state.collect_starting_items();
+            state.world.collect_skipped_locations();
+        }
+        this.collect_pseudo_starting_items();
+    }
+
     static max_explore(state_list: WorldState[], {itempool = [], with_tricks = false}: {itempool?: Item[], with_tricks?: boolean} = {}): Search {
         let s = new Search(state_list);
         s.with_tricks = with_tricks;
@@ -190,7 +218,7 @@ class Search {
                         tods[exit.world.id][exit.world.get_region('Root').name] |= exit.connected_region.provides_time;
                     }
                     this._cache.visited_entrances.add(exit);
-                    exit.set_visited(this.with_tricks);
+                    if (!this.regions_only) exit.set_visited(this.with_tricks);
                     regions.push(exit.connected_region);
                     tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
                     exit_queue.push(...exit.connected_region.exits);
@@ -198,8 +226,11 @@ class Search {
                     failed.push(exit);
                 }
             } else if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
+                if (exit.connected_region === null) {
+                    failed.push(exit);
+                }
                 this._cache.visited_entrances.add(exit);
-                exit.set_visited(this.with_tricks);
+                if (!this.regions_only) exit.set_visited(this.with_tricks);
             }
         }
         return failed;
@@ -238,14 +269,18 @@ class Search {
             for (let l of item_locations) {
                 if (!(visited_locations.has(l)) && !!l.parent_region && !!l.world) {
                     if (adult_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'adult'})) {
-                        had_reachable_locations = true;
-                        visited_locations.add(l);
-                        l.set_visited(this.with_tricks);
+                        if (!!l.item && (l.checked || !this.collect_checked_only || !(l.viewable()))) {
+                            had_reachable_locations = true;
+                            visited_locations.add(l);
+                        }
+                        if (!this.regions_only) l.set_visited(this.with_tricks);
                         yield l;
                     } else if (child_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'child'})) {
-                        had_reachable_locations = true;
-                        visited_locations.add(l);
-                        l.set_visited(this.with_tricks);
+                        if (!!l.item && (l.checked || !this.collect_checked_only || !(l.viewable()))) {
+                            had_reachable_locations = true;
+                            visited_locations.add(l);
+                        }
+                        if (!this.regions_only) l.set_visited(this.with_tricks);
                         yield l;
                     }
                 }
@@ -255,8 +290,16 @@ class Search {
 
     collect_locations(locations: Location[] | null = null) {
         let l = !!locations ? locations : this.progression_locations();
+        // collect checked locations regardless of logic if desired by the user ("race mode")
+        if (this.collect_as_starting_items) {
+            this.reset_states();
+            for (let location of l) {
+                if (location.checked && !!location.item) this.collect(location.item);
+            }
+        }
+        // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
-            if (!!(location.item)) {
+            if (!!location.item && ((location.checked && !this.collect_as_starting_items) || !this.collect_checked_only || !(location.viewable()))) {
                 this.collect(location.item);
             }
         }
@@ -315,7 +358,7 @@ class Search {
         }
     }
 
-    visit_locations(locations=null) {
+    visit_locations(locations: Location[] | null = null) {
         let l = !!locations ? locations : this.progression_locations();
         for (let location of this.iter_reachable_locations(l)) {
             // pass

@@ -13,6 +13,7 @@ export interface GraphLocation {
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
+    checked: boolean;
     is_hint: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
@@ -146,7 +147,7 @@ export abstract class GraphPlugin {
 
     // plando file processing
     abstract import(save_file: any): void;
-    abstract export(pretty: boolean): string;
+    abstract export(with_user_overrides?: boolean): any;
 
     // Version/branch list for selection, static class method
     abstract get_game_versions(): GraphGameVersions;
@@ -155,6 +156,11 @@ export abstract class GraphPlugin {
     abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
     // Search interface
+    abstract get_search_modes(): string[];
+    abstract set_search_mode(mode: string): void;
+
+    abstract check_location(location: GraphLocation): void;
+    abstract uncheck_location(location: GraphLocation): void;
     abstract collect_locations(): void;
     abstract collect_spheres(): void;
     abstract get_accessible_entrances(): GraphEntrance[];

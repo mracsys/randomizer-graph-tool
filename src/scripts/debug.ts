@@ -12,7 +12,10 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_search_invalidation();
+test_collecting_checked_locations();
+//test_reimport_export();
+//test_search_empty_world();
+//test_search_invalidation();
 //test_dungeon_region_group_swap();
 //test_entrance_linking();
 //test_region_viewability();
@@ -23,6 +26,75 @@ test_search_invalidation();
 //test_random_settings(4, true);
 //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
 //add_entrance_spheres_to_tests();
+
+async function test_collecting_checked_locations() {
+    let version = '7.1.143 f.LUM';
+    let local_files = 'tests/ootr-local-143';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+
+    let locations_to_check: {[location: string]: string} = {
+        'KF Midos Top Left Chest': 'Kokiri Sword',
+    };
+    
+    let deku = graph.worlds[0].get_entrance('Kokiri Forest -> KF Outside Deku Tree');
+    let graph_items = graph.get_items();
+    graph.collect_locations();
+    console.log(deku.visited);
+    console.log(deku.visited_with_other_tricks);
+    for (let [location, item_name] of Object.entries(locations_to_check)) {
+        let sourceLocation = graph.worlds[0].get_location(location);
+        let item = graph_items[0][item_name];
+        graph.set_location_item(sourceLocation, item);
+    }
+    graph.collect_locations();
+    console.log(deku.visited);
+    console.log(deku.visited_with_other_tricks);
+    for (let location of Object.keys(locations_to_check)) {
+        let sourceLocation = graph.worlds[0].get_location(location);
+        graph.check_location(sourceLocation);
+    }
+    graph.collect_locations();
+    console.log(deku.visited);
+    console.log(deku.visited_with_other_tricks);
+}
+
+async function test_reimport_export() {
+    let version = '7.1.143 f.LUM';
+    let local_files = 'tests/ootr-local-143';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    let plando = JSON.parse(readFileSync(resolve('tests/seeds/manual', 'export.json'), { encoding: 'utf8'}));
+
+    graph.import({});
+    graph.collect_locations();
+}
+
+async function test_search_empty_world() {
+    let version = '7.1.143 f.LUM';
+    let local_files = 'tests/ootr-local-143';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+
+    let locations_to_check: {[location: string]: string} = {
+        'Song from Impa': 'Song of Storms',
+    };
+    
+    let deku = graph.worlds[0].get_entrance('Hyrule Castle Grounds -> HC Storms Grotto');
+    let graph_items = graph.get_items();
+    graph.collect_locations();
+    console.log(deku.visited);
+    console.log(deku.visited_with_other_tricks);
+    for (let [location, item_name] of Object.entries(locations_to_check)) {
+        let sourceLocation = graph.worlds[0].get_location(location);
+        let item = graph_items[0][item_name];
+        graph.set_location_item(sourceLocation, item);
+    }
+    graph.collect_locations();
+    console.log(deku.visited);
+    console.log(deku.visited_with_other_tricks);
+}
 
 async function test_search_invalidation() {
     let result_file = 'seed143.json';

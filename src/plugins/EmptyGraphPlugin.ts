@@ -22,6 +22,11 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void { return };
 
     // Search interface
+    get_search_modes(): string[] { return [] };
+    set_search_mode(mode: string): void { return };
+
+    check_location(location: GraphLocation): void { return };
+    uncheck_location(location: GraphLocation): void { return };
     collect_locations(): void { return };
     collect_spheres(): void { return };
     get_accessible_entrances(): GraphEntrance[] { return [] };

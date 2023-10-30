@@ -33,11 +33,13 @@ export type PlandoEntranceTarget = {
 export type PlandoMWEntranceList = {
     [world_key: string]: PlandoEntranceList,
 };
-
-
 export type PlandoLocationList = {
     [location_name: string]: PlandoItem | string,
 };
+export type PlandoMWCheckedLocationList = {
+    [world_key: string]: PlandoCheckedLocationList,
+};
+export type PlandoCheckedLocationList = string[];
 export type PlandoItem = {
     item: string,
     price?: number,
@@ -90,6 +92,8 @@ class World implements GraphWorld {
     public triforce_goal: number = 0;
 
     public shuffled_entrance_types: string[] = [];
+
+    public skipped_items: Item[] = [];
 
     public state: WorldState;
 
@@ -906,6 +910,109 @@ class World implements GraphWorld {
         let dungeon_name = dungeon_hintarea.dungeon_name;
         if (dungeon_name === null) throw `Could not find associated dungeon name for ${region_name}`;
         return this.settings.dungeon_shortcuts.includes(dungeon_name);
+    }
+
+    collect_skipped_locations(): void {
+        this.clear_skipped_locations();
+        for (let item of this.skipped_items) {
+            this.state.collect(item);
+        }
+        this.skipped_locations.push(this.get_location('Links Pocket'));
+        if (!(this.settings.shuffle_gerudo_card) && this.settings.gerudo_fortress === 'open') {
+            this.state.collect(ItemFactory('Gerudo Membership Card', this)[0]);
+            this.skip_location('Hideout Gerudo Membership Card');
+        }
+        if (this.skip_child_zelda) {
+            this.state.collect(ItemFactory('Weird Egg', this)[0]);
+            //if (!(this.get_location('HC Malon Egg').shuffled)) this.skip_location('HC Malon Egg');
+            for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
+                this.skip_location(loc_name);
+            }
+        }
+        if (this.settings.free_scarecrow) {
+            this.state.collect(ItemFactory('Scarecrow Song', this)[0]);
+        }
+        if (this.settings.no_epona_race) {
+            this.state.collect(ItemFactory('Epona', this, true)[0]);
+        }
+        if (this.settings.shuffle_smallkeys === 'vanilla') {
+            if (this.dungeon_mq['Spirit Temple']) {
+                this.state.collect(ItemFactory('Small Key (Spirit Temple)', this)[0]);
+                this.state.collect(ItemFactory('Small Key (Spirit Temple)', this)[0]);
+                this.state.collect(ItemFactory('Small Key (Spirit Temple)', this)[0]);
+            }
+            if (!!(this.settings.dungeon_shortcuts) && this.settings.dungeon_shortcuts.includes('Shadow Temple')) {
+                this.state.collect(ItemFactory('Small Key (Shadow Temple)', this)[0]);
+                this.state.collect(ItemFactory('Small Key (Shadow Temple)', this)[0]);
+            }
+        }
+        if (!(this.keysanity) && !(this.dungeon_mq['Fire Temple'])) {
+            this.state.collect(ItemFactory('Small Key (Fire Temple)', this)[0]);
+        }
+        if (this.settings.shuffle_tcgkeys === 'remove') {
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+            this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
+        }
+        if (!(this.settings.shuffle_individual_ocarina_notes) && this.parent_graph.ootr_version.gte('7.1.138')) {
+            this.state.collect(ItemFactory('Ocarina A Button', this)[0]);
+            this.state.collect(ItemFactory('Ocarina C up Button', this)[0]);
+            this.state.collect(ItemFactory('Ocarina C down Button', this)[0]);
+            this.state.collect(ItemFactory('Ocarina C left Button', this)[0]);
+            this.state.collect(ItemFactory('Ocarina C right Button', this)[0]);
+        }
+        let enemy_souls_core: string[] = [
+            'Stalfos Soul',
+            'Octorok Soul',
+            'Wallmaster Soul',
+            'Dodongo Soul',
+            'Keese Soul',
+            'Tektite Soul',
+            'Peahat Soul',
+            'Lizalfos and Dinalfos Soul',
+            'Gohma Larvae Soul',
+            'Shabom Soul',
+            'Baby Dodongo Soul',
+            'Biri and Bari Soul',
+            'Tailpasaran Soul',
+            'Skulltula Soul',
+            'Torch Slug Soul',
+            'Moblin Soul',
+            'Armos Soul',
+            'Deku Baba Soul',
+            'Deku Scrub Soul',
+            'Bubble Soul',
+            'Beamos Soul',
+            'Floormaster Soul',
+            'Redead and Gibdo Soul',
+            'Skullwalltula Soul',
+            'Flare Dancer Soul',
+            'Dead hand Soul',
+            'Shell blade Soul',
+            'Like-like Soul',
+            'Spike Enemy Soul',
+            'Anubis Soul',
+            'Iron Knuckle Soul',
+            'Skull Kid Soul',
+            'Flying Pot Soul',
+            'Freezard Soul',
+            'Stinger Soul',
+            'Wolfos Soul',
+            'Guay Soul',
+            'Jabu Jabu Tentacle Soul',
+            'Dark Link Soul',
+        ];
+        if (Object.keys(this.settings).includes('shuffle_enemy_spawns')) {
+            if (this.settings.shuffle_enemy_spawns === 'bosses') {
+                for (let soul of enemy_souls_core) {
+                    this.state.collect(ItemFactory(soul, this)[0]);
+                }
+            }
+        }
+        // TODO: empty dungeons
     }
 }
 
