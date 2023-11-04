@@ -214,6 +214,27 @@ class SettingsList {
             disabled: (settings) => { return false },
         };
 
+        // Consolidate some settings to custom section
+        if (Object.keys(this.setting_definitions).includes('logic_rules')) {
+            this.setting_definitions.logic_rules.section = 'Logic';
+            this.setting_definitions.logic_rules.order = 0;
+        }
+        if (Object.keys(this.setting_definitions).includes('allowed_tricks')) {
+            this.setting_definitions.allowed_tricks.tab = 'Main Rules';
+            this.setting_definitions.allowed_tricks.section = 'Logic';
+            this.setting_definitions.allowed_tricks.order = 1;
+        }
+        if (Object.keys(this.setting_definitions).includes('logic_no_night_tokens_without_suns_song')) {
+            this.setting_definitions.logic_no_night_tokens_without_suns_song.tab = 'Main Rules';
+            this.setting_definitions.logic_no_night_tokens_without_suns_song.section = 'Logic';
+            this.setting_definitions.logic_no_night_tokens_without_suns_song.order = 2;
+        }
+        if (Object.keys(this.setting_definitions).includes('disabled_locations')) {
+            this.setting_definitions.disabled_locations.tab = 'Main Rules';
+            this.setting_definitions.disabled_locations.section = 'Logic';
+            this.setting_definitions.disabled_locations.order = 3;
+        }
+
         for (let def of Object.values(this.setting_definitions)) {
             if (def.disable_map) {
                 def.disables = []; // not sure why this is necessary, but otherwise settings inherit the list from past settings

@@ -255,9 +255,6 @@ class OotrGraphPlugin extends GraphPlugin {
         } else {
             this.set_entrances(null);
         }
-        if (Object.keys(plando).includes(':collected')) {
-
-        }
         this.finalize_world();
         this.all_tricks_worlds = this.create_tricked_worlds();
         this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
@@ -381,6 +378,7 @@ class OotrGraphPlugin extends GraphPlugin {
                 break;
         }
         this.reset_searches();
+        this.set_viewable_region_groups();
     }
 
     get_game_versions(): GraphGameVersions {
