@@ -282,6 +282,16 @@ class Search {
                         }
                         if (!this.regions_only) l.set_visited(this.with_tricks);
                         yield l;
+                    // Collect completely out of logic checks if the player obtains them, such as
+                    // using glitches to bypass glitchless logic. Only apply to tricked searches
+                    // to preserve logical state in the main world.
+                    } else if (l.checked && this.with_tricks) {
+                        if (!!l.item) {
+                            had_reachable_locations = true;
+                            visited_locations.add(l);
+                        }
+                        if (!this.regions_only) l.set_visited(this.with_tricks);
+                        yield l;
                     }
                 }
             }
