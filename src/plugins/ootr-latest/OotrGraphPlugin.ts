@@ -129,6 +129,7 @@ class OotrGraphPlugin extends GraphPlugin {
             this.set_entrances(this.settings_list.entrances);
         }
         this.finalize_world(true);
+        this.reset_disabled_location_choices();
         this.all_tricks_worlds = this.create_tricked_worlds();
         this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
         this.create_searches();
@@ -169,6 +170,19 @@ class OotrGraphPlugin extends GraphPlugin {
         search.collect_checked_only = this.collect_checked_only;
         search.collect_as_starting_items = this.collect_as_starting_items;
         search.reset_states();
+    }
+
+    reset_disabled_location_choices() {
+        if (Object.keys(this.settings_list.setting_definitions).includes('disabled_locations')) {
+            this.settings_list.setting_definitions.disabled_locations.choices = {};
+            // only add disabled locations once since the list is common between worlds,
+            // even if selected disabled locations are different
+            for (let loc of this.worlds[0].get_locations(true)) {
+                if (loc.type !== 'Event') {
+                    this.settings_list.setting_definitions.disabled_locations.choices[loc.name] = loc.name;
+                }
+            }
+        }
     }
 
     import(plando: any): void {
