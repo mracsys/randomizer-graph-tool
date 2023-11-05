@@ -158,6 +158,7 @@ class OotrVersion implements GameVersion {
             'EntranceShuffle.py',
             'ItemList.py',
             'data/settings_mapping.json',
+            'data/presets_default.json',
             'data/LogicHelpers.json',
             'data/World/Bosses.json',
             'data/World/Overworld.json',
@@ -238,10 +239,10 @@ class OotrVersion implements GameVersion {
                 file_list.push('SettingsList.py');
                 break;
             case 'fenhl':
-                if (this.gte('7.1.118 fenhl-19')) {
+                if (this.gte('7.1.199 fenhl-1')) {
                     file_list.push('SettingsListTricks.py');
                 } else {
-                    throw('OOTR versions prior to 7.1.118 fenhl-19 not implemented');
+                    throw('OOTR versions prior to 7.1.199 fenhl-1 not implemented');
                 }
                 file_list.push('SettingsList.py');
                 break;

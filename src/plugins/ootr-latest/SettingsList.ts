@@ -53,6 +53,12 @@ export type SettingsDictionary = {
     disabled_locations?: string[],
 };
 
+export type SettingsPresets = {
+    [preset_name: string]: {
+        [setting_name: string]: GraphSettingType,
+    },
+}
+
 type SettingLayout = {
     [tab: string]: {
         settings: Setting[],
@@ -74,6 +80,7 @@ class SettingsList {
     public settings: SettingsDictionary;
     public setting_definitions: SettingTypeDictionary;
     public settings_layout: SettingLayout;
+    public settings_presets: SettingsPresets;
     public ootr_version: OotrVersion;
 
     constructor(ootr_version: OotrVersion, file_cache: ExternalFileCache) {
@@ -105,6 +112,7 @@ class SettingsList {
         };
         this.setting_definitions = {};
         this.settings_layout = {};
+        this.settings_presets = {};
 
         switch(ootr_version.branch) {
             case '':
@@ -124,6 +132,14 @@ class SettingsList {
         // skip the rest of initialization if loading an empty graph with no file cache
         if (Object.keys(this.setting_definitions).length === 0) return;
 
+        this.create_extra_settings();
+        this.override_setting_definitions();
+        this.create_setting_dependencies();
+        this.sort_settings_layout();
+        this.load_settings_presets(file_cache);
+    }
+
+    create_extra_settings(): void {
         this.setting_definitions['graphplugin_trials_specific'] = {
             name: 'graphplugin_trials_specific',
             default: [
@@ -159,7 +175,6 @@ class SettingsList {
             disables: [],
             disabled: (settings) => { return false },
         };
-
         this.setting_definitions['graphplugin_song_melodies'] = {
             name: 'graphplugin_song_melodies',
             default: {
@@ -199,7 +214,6 @@ class SettingsList {
             disables: [],
             disabled: (settings) => { return false },
         };
-
         this.setting_definitions['debug_parser'] = {
             name: 'debug_parser',
             default: false,
@@ -213,7 +227,9 @@ class SettingsList {
             disables: [],
             disabled: (settings) => { return false },
         };
+    }
 
+    override_setting_definitions(): void {
         // Consolidate some settings to custom section
         if (Object.keys(this.setting_definitions).includes('logic_rules')) {
             this.setting_definitions.logic_rules.section = 'Logic';
@@ -234,7 +250,9 @@ class SettingsList {
             this.setting_definitions.disabled_locations.section = 'Logic';
             this.setting_definitions.disabled_locations.order = 3;
         }
+    }
 
+    create_setting_dependencies(): void {
         for (let def of Object.values(this.setting_definitions)) {
             if (def.disable_map) {
                 def.disables = []; // not sure why this is necessary, but otherwise settings inherit the list from past settings
@@ -271,6 +289,9 @@ class SettingsList {
                 }
             }
         }
+    }
+
+    sort_settings_layout(): void {
         for (let [tab_name, tab] of Object.entries(this.settings_layout)) {
             if (tab.settings.length > 0) {
                 this.settings_layout[tab_name].settings = tab.settings.sort((a, b) => a.order - b.order);
@@ -403,6 +424,15 @@ class SettingsList {
             } else {
                 this.settings[setting] = this.setting_definitions[setting].default;
             }
+        }
+    }
+
+    load_settings_presets(file_cache: ExternalFileCache): void {
+        if (file_cache.files['data/presets_default.json'] === undefined) return;
+        try {
+            this.settings_presets = JSON.parse(file_cache.files['data/presets_default.json']);
+        } catch {
+            console.log(`Could not parse presets_default.json: ${file_cache.files['data/presets_default.json']}`);
         }
     }
 

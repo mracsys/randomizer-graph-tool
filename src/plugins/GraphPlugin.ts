@@ -162,6 +162,9 @@ export abstract class GraphPlugin {
     abstract import(save_file: any): void;
     abstract export(with_user_overrides?: boolean): any;
 
+    abstract get_settings_presets(): string[];
+    abstract load_settings_preset(preset_name: string): void;
+
     // Version/branch list for selection, static class method
     abstract get_game_versions(): GraphGameVersions;
 

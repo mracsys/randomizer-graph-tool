@@ -185,6 +185,20 @@ class OotrGraphPlugin extends GraphPlugin {
         }
     }
 
+    load_settings_preset(preset_name: string): void {
+        if (Object.keys(this.settings_list.settings_presets).includes(preset_name)) {
+            let plando = {
+                settings: this.settings_list.settings_presets[preset_name],
+                locations: {},
+                entrances: {},
+                ':checked': [],
+            };
+            this.import(plando);
+        } else {
+            throw `Attempted to load unknown preset ${preset_name}`;
+        }
+    }
+
     import(plando: any): void {
         // modify the existing GraphPlugin object to avoid running the rule parser
         this.settings_list.set_to_defaults();
@@ -406,6 +420,10 @@ class OotrGraphPlugin extends GraphPlugin {
         }
 
         return ootr;
+    }
+
+    get_settings_presets(): string[] {
+        return Object.keys(this.settings_list.settings_presets);
     }
 
     get_settings_options(): GraphSettingsOptions {
@@ -1071,6 +1089,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     filled_locations = <PlandoCheckedLocationList>checked_locations;
                 }
                 loc.checked = filled_locations.includes(loc.name);
+                loc.user_item = null;
 
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
