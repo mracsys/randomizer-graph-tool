@@ -163,6 +163,7 @@ export abstract class GraphPlugin {
     abstract export(with_user_overrides?: boolean): any;
 
     abstract get_settings_presets(): string[];
+    abstract get_settings_preset(preset_name: string): any;
     abstract load_settings_preset(preset_name: string): void;
 
     // Version/branch list for selection, static class method

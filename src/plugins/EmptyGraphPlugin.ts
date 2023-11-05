@@ -16,6 +16,7 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     export(pretty: boolean): string { return '' };
 
     get_settings_presets(): string[] { return [] };
+    get_settings_preset(preset_name: string): any { return };
     load_settings_preset(preset_name: string): void { return };
 
     // Version/branch list for selection, static class method

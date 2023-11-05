@@ -186,13 +186,8 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     load_settings_preset(preset_name: string): void {
-        if (Object.keys(this.settings_list.settings_presets).includes(preset_name)) {
-            let plando = {
-                settings: this.settings_list.settings_presets[preset_name],
-                locations: {},
-                entrances: {},
-                ':checked': [],
-            };
+        let plando = this.get_settings_preset(preset_name);
+        if (!!plando) {
             this.import(plando);
         } else {
             throw `Attempted to load unknown preset ${preset_name}`;
@@ -424,6 +419,20 @@ class OotrGraphPlugin extends GraphPlugin {
 
     get_settings_presets(): string[] {
         return Object.keys(this.settings_list.settings_presets);
+    }
+    
+    get_settings_preset(preset_name: string): any {
+        if (Object.keys(this.settings_list.settings_presets).includes(preset_name)) {
+            let plando = {
+                settings: this.settings_list.settings_presets[preset_name],
+                locations: {},
+                entrances: {},
+                ':checked': [],
+            };
+            return plando;
+        } else {
+            return null;
+        }
     }
 
     get_settings_options(): GraphSettingsOptions {
