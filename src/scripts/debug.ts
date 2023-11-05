@@ -12,7 +12,8 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_collecting_checked_locations();
+test_preset();
+//test_collecting_checked_locations();
 //test_reimport_export();
 //test_search_empty_world();
 //test_search_invalidation();
@@ -26,6 +27,16 @@ test_collecting_checked_locations();
 //test_random_settings(4, true);
 //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
 //add_entrance_spheres_to_tests();
+
+async function test_preset() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+    graph.load_settings_preset('S7 Tournament');
+    graph.collect_locations();
+}
 
 async function test_collecting_checked_locations() {
     let version = '7.1.143 f.LUM';
