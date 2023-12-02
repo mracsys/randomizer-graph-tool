@@ -503,6 +503,46 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
+    add_starting_item(world: World, item: GraphItem, count: number = 1): void {
+        let current_starting_items = world.settings.starting_items ? Object.assign({}, world.settings.starting_items) : {};
+        if (Object.keys(current_starting_items).includes(item.name)) {
+            current_starting_items[item.name] += count;
+        } else {
+            current_starting_items[item.name] = count;
+        }
+        this.change_setting(world, this.settings_list.setting_definitions['starting_items'], current_starting_items);
+    }
+
+    remove_starting_item(world: World, item: GraphItem, count: number = 1): void {
+        let current_starting_items = world.settings.starting_items ? Object.assign({}, world.settings.starting_items) : {};
+        if (Object.keys(current_starting_items).includes(item.name)) {
+            if (current_starting_items[item.name] >= count) {
+                current_starting_items[item.name] -= count;
+            } else {
+                delete current_starting_items[item.name];
+            }
+            this.change_setting(world, this.settings_list.setting_definitions['starting_items'], current_starting_items);
+        }
+    }
+
+    // one-for-one replacements only, mainly for changing bottle contents
+    replace_starting_item(world: World, add_item: GraphItem, remove_item: GraphItem): void {
+        let current_starting_items = world.settings.starting_items ? Object.assign({}, world.settings.starting_items) : {};
+        if (Object.keys(current_starting_items).includes(remove_item.name)) {
+            if (current_starting_items[remove_item.name] > 1) {
+                current_starting_items[remove_item.name] -= 1;
+            } else {
+                delete current_starting_items[remove_item.name];
+            }
+        }
+        if (Object.keys(current_starting_items).includes(add_item.name)) {
+            current_starting_items[add_item.name] += 1;
+        } else {
+            current_starting_items[add_item.name] = 1;
+        }
+        this.change_setting(world, this.settings_list.setting_definitions['starting_items'], current_starting_items);
+    }
+
     change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false, update_world_only=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean, update_world_only?: boolean} = {}) {
         let new_setting_value: GraphSettingType;
         if (Object.keys(global_settings_overrides).includes(setting.name)) {

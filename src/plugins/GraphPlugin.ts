@@ -173,6 +173,11 @@ export abstract class GraphPlugin {
     abstract get_settings_layout(): GraphSettingsLayout;
     abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
 
+    // Convenience settings for changing the starting items setting(s)
+    abstract add_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
+    abstract remove_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
+    abstract replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void;
+
     // Search interface
     abstract get_search_modes(): string[];
     abstract set_search_mode(mode: string): void;

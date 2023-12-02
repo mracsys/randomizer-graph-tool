@@ -26,6 +26,10 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     get_settings_layout(): GraphSettingsLayout { return {} };
     change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void { return };
 
+    add_starting_item(world: GraphWorld, item: GraphItem): void { return };
+    remove_starting_item(world: GraphWorld, item: GraphItem): void { return };
+    replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void { return };
+
     // Search interface
     get_search_modes(): string[] { return [] };
     set_search_mode(mode: string): void { return };
