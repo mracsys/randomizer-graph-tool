@@ -503,6 +503,10 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
+    get_item(world: World, item_name: string): GraphItem {
+        return ItemFactory(item_name, world)[0];
+    }
+
     add_starting_item(world: World, item: GraphItem, count: number = 1): void {
         let current_starting_items = world.settings.starting_items ? Object.assign({}, world.settings.starting_items) : {};
         if (Object.keys(current_starting_items).includes(item.name)) {

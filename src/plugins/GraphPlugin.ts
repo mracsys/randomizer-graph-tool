@@ -202,6 +202,9 @@ export abstract class GraphPlugin {
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
 
+    // Item factory can create items that are not shuffled in the world, use with caution!
+    abstract get_item(world: GraphWorld, item_name: string): GraphItem;
+
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
         if (Object.keys(this.entrance_cache).length === 0) {
             for (let w of this.worlds) {
