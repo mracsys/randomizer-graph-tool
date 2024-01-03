@@ -15,6 +15,7 @@ export interface GraphLocation {
     visited_with_other_tricks: boolean;
     checked: boolean;
     is_hint: boolean;
+    hint: GraphHint | null;
     is_shop: boolean;
     holds_shop_refill: boolean;
     is_restricted: boolean;
@@ -64,7 +65,26 @@ export interface GraphRegion {
     entrances: GraphEntrance[];
     locations: GraphLocation[];
     world: GraphWorld;
+    is_required: boolean;
+    required_for: GraphHintGoal | null;
+    is_not_required: boolean;
+    hinted_items: GraphItem[];
     viewable: boolean;
+}
+
+export interface GraphHint {
+    type: string;
+    area: GraphRegion | null;
+    location: GraphLocation | null;
+    entrance: GraphEntrance | null;
+    goal: GraphHintGoal | null;
+    item: GraphItem | null;
+}
+
+export interface GraphHintGoal {
+    location: GraphLocation | null;
+    item: GraphItem | null;
+    item_count: number;
 }
 
 export interface GraphWorld {
@@ -72,6 +92,7 @@ export interface GraphWorld {
     regions: GraphRegion[];
     region_groups: GraphRegion[];
     readonly settings: GraphSettingsConfiguration,
+    fixed_item_area_hints: {[item_name: string]: string},
     get_entrance(entrance: GraphEntrance | string): GraphEntrance,
     get_location(location: GraphLocation | string): GraphLocation,
     get_entrances(): GraphEntrance[],
@@ -176,6 +197,8 @@ export abstract class GraphPlugin {
     // Convenience settings for changing the starting items setting(s)
     abstract add_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
     abstract remove_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
+    abstract add_starting_items(world: GraphWorld, item: GraphItem[]): void;
+    abstract remove_starting_items(world: GraphWorld, item: GraphItem[]): void;
     abstract replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void;
 
     // Search interface
@@ -204,6 +227,16 @@ export abstract class GraphPlugin {
 
     // Item factory can create items that are not shuffled in the world, use with caution!
     abstract get_item(world: GraphWorld, item_name: string): GraphItem;
+
+    // Hint interface
+    abstract hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void;
+    abstract hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
+    abstract hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
+    abstract hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void;
+    abstract hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
+    abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void;
+    abstract unhint(hint_location: GraphLocation): void;
+    abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string;
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
         if (Object.keys(this.entrance_cache).length === 0) {

@@ -12,7 +12,7 @@ import World from '../plugins/ootr-latest/World.js';
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-test_preset();
+//test_preset();
 //test_collecting_checked_locations();
 //test_reimport_export();
 //test_search_empty_world();
@@ -21,7 +21,7 @@ test_preset();
 //test_entrance_linking();
 //test_region_viewability();
 //test_entrance_pools();
-//test_import(true);
+test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
 //test_random_settings(4, true);

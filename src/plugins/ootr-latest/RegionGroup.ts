@@ -5,6 +5,8 @@ import { Location } from "./Location.js";
 import World from './World.js';
 import { Region } from "./Region.js";
 import { display_names } from './DisplayNames.js';
+import { HintGoal } from "./Hints.js";
+import { Item } from "./Item.js";
 
 export class RegionGroup implements GraphRegion {
     constructor(
@@ -17,6 +19,10 @@ export class RegionGroup implements GraphRegion {
         public alias: string = '',
         public page: string = 'Overworld',
         public viewable: boolean = false,
+        public is_required: boolean = false,
+        public required_for: HintGoal | null = null,
+        public is_not_required: boolean = false,
+        public hinted_items: Item[] = [],
     ) {
         this.alias = this.name;
     }

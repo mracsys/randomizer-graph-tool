@@ -1,10 +1,11 @@
 import { GraphRegion } from "../GraphPlugin.js";
 
-import { HintAreas } from "./Hints.js";
+import { HintAreas, HintGoal } from "./Hints.js";
 import Entrance from './Entrance.js';
 import { Location } from "./Location.js";
 import World from './World.js';
 import { RegionGroup } from "./RegionGroup.js";
+import { Item } from "./Item.js";
 
 export const TimeOfDay = {
     NONE: 0,
@@ -40,6 +41,10 @@ export class Region implements GraphRegion {
         public parent_group: RegionGroup | null = null,
         public page: string = '',
         public viewable: boolean = false,
+        public is_required: boolean = false,
+        public required_for: HintGoal | null = null,
+        public is_not_required: boolean = false,
+        public hinted_items: Item[] = [],
     ) {
         this.alias = this.name;
     }

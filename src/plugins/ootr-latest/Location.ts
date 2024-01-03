@@ -6,6 +6,7 @@ import WorldState from './WorldState.js';
 import Entrance from './Entrance.js';
 import { Item, ItemFactory } from './Item.js';
 import { display_names } from './DisplayNames.js';
+import { Hint } from "./Hints.js";
 
 type Spot = Entrance | Location;
 type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -51,6 +52,7 @@ export class Location implements GraphLocation {
         public holds_shop_refill: boolean = false,
         public is_restricted: boolean = false,
         public user_item: Item | null = null,
+        public hint: Hint | null = null,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
         if (this.type === "Event" || this.name === "Gift from Sages") {

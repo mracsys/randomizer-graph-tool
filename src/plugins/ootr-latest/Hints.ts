@@ -1,3 +1,5 @@
+import { GraphHint, GraphRegion, GraphLocation, GraphEntrance, GraphItem, GraphHintGoal } from "../GraphPlugin.js";
+
 type _HintArea = {
     vague_preposition: string | null,
     clear_preposition: string | null,
@@ -51,3 +53,39 @@ export const HintAreas: HintAreaDict = {
     DESERT_COLOSSUS        : {vague_preposition: 'at',     clear_preposition: 'at',     str: 'the Desert Colossus',        short_name: "Desert Colossus",        color: 'Yellow',     dungeon_name: null},
     SPIRIT_TEMPLE          : {vague_preposition: 'inside', clear_preposition: 'in',     str: 'the Spirit Temple',          short_name: "Spirit Temple",          color: 'Yellow',     dungeon_name: 'Spirit Temple'},
 };
+
+export class Hint implements GraphHint {
+    public type: string;
+    public area: GraphRegion | null = null;
+    public location: GraphLocation | null = null;
+    public entrance: GraphEntrance | null = null;
+    public goal: HintGoal | null = null;
+    public item: GraphItem | null = null;
+
+    constructor(hint_type: string) {
+        this.type = hint_type;
+    }
+
+    equals(other_hint: GraphHint) {
+        return (
+            this.type === other_hint.type
+            && this.area === other_hint.area
+            && this.location === other_hint.location
+            && this.entrance === other_hint.entrance
+            && this.item?.name === other_hint.item?.name
+            && this.item?.player === other_hint.item?.player
+            && this.item?.price === other_hint.item?.price
+            && this.goal?.location === other_hint.goal?.location
+            && this.goal?.item_count === other_hint.goal?.item_count
+            && this.goal?.item?.name === other_hint.goal?.item?.name
+            && this.goal?.item?.player === other_hint.goal?.item?.player
+            && this.goal?.item?.price === other_hint.goal?.item?.price
+        );
+    }
+}
+
+export class HintGoal implements GraphHintGoal {
+    public location: GraphLocation | null = null;
+    public item: GraphItem | null = null;
+    public item_count: number = 0;
+}

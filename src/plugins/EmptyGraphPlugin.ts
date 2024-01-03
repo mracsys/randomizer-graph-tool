@@ -1,6 +1,6 @@
 import ExternalFileCache from "./ExternalFileCache.js";
 import { GraphPlugin } from "./GraphPlugin.js";
-import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphWorld, GraphItem, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout } from "./GraphPlugin.js";
+import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout } from "./GraphPlugin.js";
 
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
@@ -28,6 +28,8 @@ export default class EmptyGraphPlugin extends GraphPlugin {
 
     add_starting_item(world: GraphWorld, item: GraphItem): void { return };
     remove_starting_item(world: GraphWorld, item: GraphItem): void { return };
+    add_starting_items(world: GraphWorld, item: GraphItem[]): void { return };
+    remove_starting_items(world: GraphWorld, item: GraphItem[]): void { return };
     replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void { return };
 
     // Search interface
@@ -54,4 +56,14 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     set_location_item(location: GraphLocation, item: GraphItem): void { return };
     get_entrance_pool(world: GraphWorld, entrance: GraphEntrance) { return {} };
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
+
+    // Hint interface
+    hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void { return };
+    hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
+    hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void { return };
+    hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void { return };
+    hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void { return };
+    hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void { return };
+    unhint(hint_location: GraphLocation): void { return };
+    cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string { return '' };
 }

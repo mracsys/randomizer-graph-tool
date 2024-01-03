@@ -51,6 +51,8 @@ export type SettingsDictionary = {
     ocarina_songs?: boolean,
     mq_dungeons_specific?: string[],
     disabled_locations?: string[],
+    shuffle_dungeon_rewards?: string,
+    mix_entrance_pools?: string[],
 };
 
 export type SettingsPresets = {

@@ -49,6 +49,36 @@ export type PlandoItem = {
 export type PlandoMWLocationList = {
     [world_key: string]: PlandoLocationList,
 }
+export type PlandoHintList = {
+    [hint_location_name: string]: PlandoHint,
+}
+export type PlandoMWHintList = {
+    [world_key: string]: PlandoHintList,
+}
+export type PlandoHint = {
+    type: string,
+    location?: string,
+    entrance?: {
+        source: {
+            region: string,
+            from: string,
+        },
+        target: {
+            region: string,
+            from: string,
+        }
+    },
+    area?: string,
+    item?: PlandoItem | string,
+    goal?: {
+        location?: string,
+        item?: PlandoItem | string,
+        item_count: number,
+    },
+    fixed_areas?: {
+        [item_name: string]: string,
+    },
+}
 
 class World implements GraphWorld {
 
@@ -96,6 +126,8 @@ class World implements GraphWorld {
     public skipped_items: Item[] = [];
 
     public state: WorldState;
+
+    public fixed_item_area_hints: {[item_name: string]: string} = {}
 
     constructor(id: number, settings: SettingsList, ootr_version: OotrVersion, parent_graph: OotrGraphPlugin) {
         if (Object.keys(settings).includes('randomized_settings')) {
@@ -230,6 +262,7 @@ class World implements GraphWorld {
         }
 
         this.update_internal_settings();
+        this.initialize_fixed_item_area_hints();
 
         this.state = new WorldState(this);
     }
@@ -252,7 +285,11 @@ class World implements GraphWorld {
         this.entrance_shuffle = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_grotto_entrances || this.shuffle_dungeon_entrances
             || <boolean>this.settings.shuffle_overworld_entrances || <boolean>this.settings.shuffle_gerudo_valley_river_exit || <boolean>this.settings.owl_drops
             || <boolean>this.settings.warp_songs || this.spawn_shuffle || (this.settings.shuffle_bosses !== 'off');
-        this.mixed_pools_bosses = false;
+        if (Object.keys(this.settings).includes('mix_entrance_pools') && Array.isArray(this.settings['mix_entrance_pools'])) {
+            this.mixed_pools_bosses = this.settings.mix_entrance_pools.includes('Boss');
+        } else {
+            this.mixed_pools_bosses = false;
+        }
         this.ensure_tod_access = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_overworld_entrances || this.spawn_shuffle;
         this.disable_trade_revert = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_overworld_entrances || <boolean>this.settings.adult_trade_shuffle;
         this.skip_child_zelda = false;
@@ -286,6 +323,48 @@ class World implements GraphWorld {
         if (this.settings.shuffle_gerudo_valley_river_exit) this.shuffled_entrance_types.push('OverworldOneWay');
         if (this.settings.owl_drops) this.shuffled_entrance_types.push('OwlDrop');
         if (this.settings.warp_songs) this.shuffled_entrance_types.push('WarpSong');
+    }
+
+    initialize_fixed_item_area_hints(): void {
+        if (!!this.settings.shuffle_dungeon_rewards && this.settings.shuffle_dungeon_rewards === 'vanilla') {
+            if (!!this.settings.mix_entrance_pools && this.settings.mix_entrance_pools?.includes('Boss')) {
+                this.fixed_item_area_hints = {
+                    'Kokiri Emerald': 'GOMA',
+                    'Goron Ruby': 'KING',
+                    'Zora Sapphire': 'BARI',
+                    'Forest Medallion': 'PHGA',
+                    'Fire Medallion': 'VOLV',
+                    'Water Medallion': 'MOR',
+                    'Spirit Medallion': 'TWIN',
+                    'Shadow Medallion': 'BNGO',
+                    'Light Medallion': 'FREE',
+                }
+            } else {
+                this.fixed_item_area_hints = {
+                    'Kokiri Emerald': 'DEKU',
+                    'Goron Ruby': 'DCVN',
+                    'Zora Sapphire': 'JABU',
+                    'Forest Medallion': 'FRST',
+                    'Fire Medallion': 'FIRE',
+                    'Water Medallion': 'WATR',
+                    'Spirit Medallion': 'SPRT',
+                    'Shadow Medallion': 'SHDW',
+                    'Light Medallion': 'FREE',
+                }
+            }
+        } else {
+            this.fixed_item_area_hints = {
+                'Kokiri Emerald': '????',
+                'Goron Ruby': '????',
+                'Zora Sapphire': '????',
+                'Forest Medallion': '????',
+                'Fire Medallion': '????',
+                'Water Medallion': '????',
+                'Spirit Medallion': '????',
+                'Shadow Medallion': '????',
+                'Light Medallion': '????',
+            }
+        }
     }
 
     // not a true copy!!!
