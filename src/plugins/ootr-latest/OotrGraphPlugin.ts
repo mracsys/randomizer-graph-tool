@@ -284,74 +284,75 @@ class OotrGraphPlugin extends GraphPlugin {
         if (Object.keys(plando).includes(':tracked_hints')) {
             let hints = plando[':tracked_hints'] as PlandoHintList;
             for (let [hint_location_name, hint_data] of Object.entries(hints)) {
-                let hint_location = this.worlds[0].get_location(hint_location_name);
-                let item: Item;
-                let area: Region;
-                switch(hint_data.type) {
-                    case 'location':
-                        if (hint_data.location === undefined) throw `Can't import location hint with undefined location: ${hint_location_name}`;
-                        if (hint_data.item === undefined) throw `Can't import location hint with undefined item: ${hint_location_name}`;
-                        let location = this.worlds[0].get_location(hint_data.location);
-                        if (typeof hint_data.item === 'string') {
-                            item = this.worlds[0].get_item(hint_data.item)
-                        } else {
-                            item = this.worlds[0].get_item(hint_data.item.item)
-                            if (!!hint_data.item.price) item.price = hint_data.item.price;
-                        }
-                        this.hint_location(hint_location, location, item);
-                        break;
-                    case 'entrance':
-                        if (hint_data.entrance === undefined) throw `Can't import entrance hint with undefined entrance: ${hint_location_name}`;
-                        let source = this.worlds[0].get_entrance(`${hint_data.entrance.source.from} -> ${hint_data.entrance.source.region}`);
-                        let target = this.worlds[0].get_entrance(`${hint_data.entrance.target.from} -> ${hint_data.entrance.target.region}`);
-                        this.hint_entrance(hint_location, source, target);
-                        break;
-                    case 'woth':
-                        if (hint_data.area === undefined) throw `Can't import woth hint with undefined region: ${hint_location_name}`;
-                        area = this.worlds[0].get_region(hint_data.area);
-                        this.hint_required_area(hint_location, area);
-                        break;
-                    case 'goal':
-                        if (hint_data.area === undefined) throw `Can't import goal hint with undefined region: ${hint_location_name}`;
-                        if (hint_data.goal === undefined) throw `Can't import goal hint with undefined goal: ${hint_location_name}`;
-                        area = this.worlds[0].get_region(hint_data.area);
-                        let goal = new HintGoal();
-                        if (!!hint_data.goal.item) {
-                            if (typeof hint_data.goal.item === 'string') {
-                                item = this.worlds[0].get_item(hint_data.goal.item)
+                if (hint_location_name === 'temple_of_time_altar') {
+                    if (hint_data.fixed_areas === undefined) throw `Can't import fixed hints with undefined data`;
+                    this.worlds[0].fixed_item_area_hints = Object.assign({}, hint_data.fixed_areas);
+                } else {
+                    let hint_location = this.worlds[0].get_location(hint_location_name);
+                    let item: Item;
+                    let area: Region;
+                    switch(hint_data.type) {
+                        case 'location':
+                            if (hint_data.location === undefined) throw `Can't import location hint with undefined location: ${hint_location_name}`;
+                            if (hint_data.item === undefined) throw `Can't import location hint with undefined item: ${hint_location_name}`;
+                            let location = this.worlds[0].get_location(hint_data.location);
+                            if (typeof hint_data.item === 'string') {
+                                item = this.worlds[0].get_item(hint_data.item)
                             } else {
-                                item = this.worlds[0].get_item(hint_data.goal.item.item)
-                                if (!!hint_data.goal.item.price) item.price = hint_data.goal.item.price;
+                                item = this.worlds[0].get_item(hint_data.item.item)
+                                if (!!hint_data.item.price) item.price = hint_data.item.price;
                             }
-                            goal.item = item;
-                        }
-                        if (!!hint_data.goal.location) goal.location = this.worlds[0].get_location(hint_data.goal.location);
-                        goal.item_count = hint_data.goal.item_count;
-                        this.hint_area_required_for_goal(hint_location, area, goal);
-                        break;
-                    case 'foolish':
-                        if (hint_data.area === undefined) throw `Can't import foolish hint with undefined region: ${hint_location_name}`;
-                        area = this.worlds[0].get_region(hint_data.area);
-                        this.hint_unrequired_area(hint_location, area);
-                        break;
-                    case 'misc':
-                        if (hint_data.area === undefined) throw `Can't import misc hint with undefined region: ${hint_location_name}`;
-                        if (hint_data.item === undefined) throw `Can't import misc hint with undefined item: ${hint_location_name}`;
-                        area = this.worlds[0].get_region(hint_data.area);
-                        if (typeof hint_data.item === 'string') {
-                            item = this.worlds[0].get_item(hint_data.item)
-                        } else {
-                            item = this.worlds[0].get_item(hint_data.item.item)
-                            if (!!hint_data.item.price) item.price = hint_data.item.price;
-                        }
-                        this.hint_item_in_area(hint_location, area, item);
-                        break;
-                    case 'fixed':
-                        if (hint_data.fixed_areas === undefined) throw `Can't import fixed hints with undefined data`;
-                        this.worlds[0].fixed_item_area_hints = Object.assign({}, hint_data.fixed_areas);
-                        break;
-                    default:
-                        throw `Unknown hint type in import data: ${hint_data.type}`;
+                            this.hint_location(hint_location, location, item);
+                            break;
+                        case 'entrance':
+                            if (hint_data.entrance === undefined) throw `Can't import entrance hint with undefined entrance: ${hint_location_name}`;
+                            let source = this.worlds[0].get_entrance(`${hint_data.entrance.source.from} -> ${hint_data.entrance.source.region}`);
+                            let target = this.worlds[0].get_entrance(`${hint_data.entrance.target.from} -> ${hint_data.entrance.target.region}`);
+                            this.hint_entrance(hint_location, source, target);
+                            break;
+                        case 'woth':
+                            if (hint_data.area === undefined) throw `Can't import woth hint with undefined region: ${hint_location_name}`;
+                            area = this.worlds[0].get_region(hint_data.area);
+                            this.hint_required_area(hint_location, area);
+                            break;
+                        case 'goal':
+                            if (hint_data.area === undefined) throw `Can't import goal hint with undefined region: ${hint_location_name}`;
+                            if (hint_data.goal === undefined) throw `Can't import goal hint with undefined goal: ${hint_location_name}`;
+                            area = this.worlds[0].get_region(hint_data.area);
+                            let goal = new HintGoal();
+                            if (!!hint_data.goal.item) {
+                                if (typeof hint_data.goal.item === 'string') {
+                                    item = this.worlds[0].get_item(hint_data.goal.item)
+                                } else {
+                                    item = this.worlds[0].get_item(hint_data.goal.item.item)
+                                    if (!!hint_data.goal.item.price) item.price = hint_data.goal.item.price;
+                                }
+                                goal.item = item;
+                            }
+                            if (!!hint_data.goal.location) goal.location = this.worlds[0].get_location(hint_data.goal.location);
+                            goal.item_count = hint_data.goal.item_count;
+                            this.hint_area_required_for_goal(hint_location, area, goal);
+                            break;
+                        case 'foolish':
+                            if (hint_data.area === undefined) throw `Can't import foolish hint with undefined region: ${hint_location_name}`;
+                            area = this.worlds[0].get_region(hint_data.area);
+                            this.hint_unrequired_area(hint_location, area);
+                            break;
+                        case 'misc':
+                            if (hint_data.area === undefined) throw `Can't import misc hint with undefined region: ${hint_location_name}`;
+                            if (hint_data.item === undefined) throw `Can't import misc hint with undefined item: ${hint_location_name}`;
+                            area = this.worlds[0].get_region(hint_data.area);
+                            if (typeof hint_data.item === 'string') {
+                                item = this.worlds[0].get_item(hint_data.item)
+                            } else {
+                                item = this.worlds[0].get_item(hint_data.item.item)
+                                if (!!hint_data.item.price) item.price = hint_data.item.price;
+                            }
+                            this.hint_item_in_area(hint_location, area, item);
+                            break;
+                        default:
+                            throw `Unknown hint type in import data: ${hint_data.type}`;
+                    }
                 }
             }
         }
