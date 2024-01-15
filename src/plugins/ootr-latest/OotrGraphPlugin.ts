@@ -778,7 +778,7 @@ class OotrGraphPlugin extends GraphPlugin {
                         if (value.includes(dungeon) && !is_mq) {
                             world.dungeon_mq[dungeon] = true;
                             world.swap_dungeon(`${dungeon} MQ`, dungeon);
-                        } else if (is_mq) {
+                        } else if (!(value.includes(dungeon)) && is_mq) {
                             world.dungeon_mq[dungeon] = false;
                             world.swap_dungeon(dungeon, `${dungeon} MQ`);
                         }
@@ -1029,13 +1029,13 @@ class OotrGraphPlugin extends GraphPlugin {
     unhint(hint_location: GraphLocation) {
         if (hint_location.world === null) throw `Can't unset hint location with unknown world: ${hint_location.name}`;
         let world = this.worlds[hint_location.world.id];
-        let hint_copy_exists = false;
+        let hint_copies = 0;
         for (let location of world.get_locations()) {
             if (location.is_hint && !!location.hint && !!hint_location.hint && location.hint.equals(hint_location.hint)) {
-                hint_copy_exists = true;
+                hint_copies++; // includes the hint we are unhinting!
             }
         }
-        if (!hint_copy_exists) {
+        if (hint_copies <= 1) {
             if (hint_location.hint?.type === 'location' && !!hint_location.hint.location) {
                 this.set_location_item(hint_location.hint.location, null);
             } else if (hint_location.hint?.type === 'entrance' && !!hint_location.hint.entrance) {
