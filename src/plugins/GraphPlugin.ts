@@ -19,6 +19,7 @@ export interface GraphLocation {
     is_shop: boolean;
     holds_shop_refill: boolean;
     is_restricted: boolean;
+    internal: boolean;
     viewable(): boolean;
 }
 
@@ -26,6 +27,7 @@ export interface GraphItem {
     name: string;
     player?: number;
     price: number | null;
+    advancement: boolean;
 }
 
 export interface GraphEntrance {
@@ -260,7 +262,7 @@ export abstract class GraphPlugin {
                 this.location_cache[w.id] = [];
                 for (let region of w.regions) {
                     for (let location of region.locations) {
-                        if (location.viewable()) {
+                        if (!location.internal && (location.shuffled || location.vanilla_item?.advancement) && !location.holds_shop_refill) {
                             this.location_cache[w.id].push(location);
                         }
                     }

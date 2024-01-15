@@ -362,6 +362,7 @@ class OotrGraphPlugin extends GraphPlugin {
         this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
         this.create_searches();
         this.set_viewable_region_groups();
+        this.reset_cache();
     }
 
     export(with_user_overrides: boolean = false): any {
@@ -877,6 +878,7 @@ class OotrGraphPlugin extends GraphPlugin {
         // can be disabled for bulk setting updates to avoid looping through locations repeatedly,
         // but this requires running set_items manually
         world.state.reset();
+        this.reset_cache();
         if (update_vanilla_items) {
             let world_fill = this.export(true);
             let checked_locations: PlandoCheckedLocationList | PlandoMWCheckedLocationList = [];
@@ -1057,6 +1059,36 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): string {
+        const dungeonToEntranceMap: {[dungeonName: string]: string} = {
+            "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
+            "DCVN": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
+            "JABU": "Jabu Jabus Belly Before Boss -> Barinade Boss Room",
+            "FRST": "Forest Temple Before Boss -> Phantom Ganon Boss Room",
+            "FIRE": "Fire Temple Before Boss -> Volvagia Boss Room",
+            "WATR": "Water Temple Before Boss -> Morpha Boss Room",
+            "SPRT": "Spirit Temple Before Boss -> Twinrova Boss Room",
+            "SHDW": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
+        };
+        const entranceToBossRewardMap: {[entranceName: string]: string} = {
+            "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma",
+            "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo",
+            "Jabu Jabus Belly Before Boss -> Barinade Boss Room": "Barinade",
+            "Forest Temple Before Boss -> Phantom Ganon Boss Room": "Phantom Ganon",
+            "Fire Temple Before Boss -> Volvagia Boss Room": "Volvagia",
+            "Water Temple Before Boss -> Morpha Boss Room": "Morpha",
+            "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova",
+            "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo",
+        };
+        const bossToRewardMap: {[bossName: string]: string} = {
+            "GOMA": "Queen Gohma",
+            "KING": "King Dodongo",
+            "BARI": "Barinade",
+            "PHGA": "Phantom Ganon",
+            "VOLV": "Volvagia",
+            "MOR": "Morpha",
+            "TWIN": "Twinrova",
+            "BNGO": "Bongo Bongo",
+        };
         let item_dungeon_targets = [
             '????',
             'FREE',
