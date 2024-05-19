@@ -1,4 +1,4 @@
-import { GraphWorld } from "../GraphPlugin.js";
+import { GraphEntrance, GraphSettingType, GraphWorld } from "../GraphPlugin.js";
 
 import { Item, ItemFactory, MakeEventItem } from "./Item.js";
 import { Location, LocationFactory } from "./Location.js";
@@ -11,7 +11,7 @@ import WorldState from "./WorldState.js";
 import { HintAreas } from './Hints.js';
 import HintArea from "./HintArea.js";
 import OotrVersion from "./OotrVersion.js";
-import OotrGraphPlugin from "./OotrGraphPlugin.js";
+import { OotrGraphPlugin, entranceToBossRewardMap } from "./OotrGraphPlugin.js";
 import SettingsList from "./SettingsList.js";
 import type { SettingsDictionary } from "./SettingsList.js";
 import { RegionGroup } from "./RegionGroup.js";
@@ -84,6 +84,7 @@ class World implements GraphWorld {
 
     public id: number;
     public settings: SettingsDictionary;
+    public disabled_settings: {[key: string]: GraphSettingType};
     public version: OotrVersion;
     public parent_graph: OotrGraphPlugin;
     public regions: Region[] = [];
@@ -128,6 +129,10 @@ class World implements GraphWorld {
     public state: WorldState;
 
     public fixed_item_area_hints: {[item_name: string]: string} = {}
+    public pending_reward_assignments: {[entrance_name: string]: string} = {}
+
+    public viewable_unshuffled_items: string[] = [];
+    public explicitly_collected_unshuffled_items: string[] = ['Gold Skulltula Token'];
 
     constructor(id: number, settings: SettingsList, ootr_version: OotrVersion, parent_graph: OotrGraphPlugin) {
         if (Object.keys(settings).includes('randomized_settings')) {
@@ -137,7 +142,18 @@ class World implements GraphWorld {
                 settings.override_settings({settings: settings.randomized_settings});
             }
         }
+        // Some settings have separate toggles to randomize instead of a 'random' choice.
+        // Since this library is meant to be deterministic, always disable these alternate
+        // toggles instead to keep the specific setting valid.
+        settings.override_settings({
+            settings: {
+                trials_random: false,
+                chicken_count_random: false,
+                big_poe_count_random: false,
+            }
+        })
         this.settings = settings.settings;
+        this.disabled_settings = {};
         if (!(Object.keys(this.settings).includes('debug_parser'))) {
             this.settings.debug_parser = false;
         }
@@ -373,6 +389,17 @@ class World implements GraphWorld {
     // primary use case is Search variants with different settings/starting conditions
     copy(): World {
         let w = new World(this.id, this.parent_graph.settings_list.copy(), this.version, this.parent_graph);
+        for (let [ds_name, ds_value] of Object.entries(this.disabled_settings)) {
+            if (typeof ds_value === 'object') {
+                if (Array.isArray(ds_value)) {
+                    w.disabled_settings[ds_name] = [...ds_value];
+                } else {
+                    w.disabled_settings[ds_name] = Object.assign({}, ds_value);
+                }
+            } else {
+                w.disabled_settings[ds_name] = ds_value;
+            }
+        }
         w.regions = this.regions;
         w.dungeons = this.dungeons;
         w.region_groups = this.region_groups;
@@ -434,6 +461,43 @@ class World implements GraphWorld {
             if (new_region.name === 'Ganons Castle Grounds') {
                 new_region.provides_time = TimeOfDay.DAMPE;
             }
+            // Child trade quest mask turn-in events use at() in the Mask Shop,
+            // which assigns a "Subrule X" name to the created Mask Shop event.
+            // Since this numbering can change between branches if logic is
+            // updated, create fake event locations for tracker display that
+            // do not impact global logic but match the existing rules.
+            if (['Kakariko Village', 'Lost Woods', 'Graveyard', 'Hyrule Field', 'Hyrule Castle Grounds'].includes(region.region_name)) {
+                let lname: string;
+                let rule: string;
+                if (region.region_name === 'Kakariko Village') {
+                    lname = `OOTR GraphPlugin Keaton Mask Trade`;
+                    rule = 'here(is_child and Keaton_Mask)';
+                } else if (region.region_name === 'Lost Woods') {
+                    lname = `OOTR GraphPlugin Skull Mask Trade`;
+                    rule = 'here(is_child and can_play(Sarias_Song) and Skull_Mask)';
+                } else if (region.region_name === 'Graveyard') {
+                    lname = `OOTR GraphPlugin Spooky Mask Trade`;
+                    rule = 'here(is_child and at_day and Spooky_Mask)';
+                } else if (region.region_name === 'Hyrule Field') {
+                    lname = `OOTR GraphPlugin Bunny Hood Trade`;
+                    rule = 'here(is_child and has_all_stones and Bunny_Hood)';
+                } else {
+                    lname = `OOTR GraphPlugin Wake Up Child Talon`;
+                    rule = 'here(is_child and Weird_Egg or Chicken)';
+                }
+                let new_location = new Location(lname, 'Event', new_region, true, this);
+                new_location.rule_string = replace_python_booleans(rule);
+                if (this.settings.logic_rules !== 'none') {
+                    if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
+                    this.parser.parse_spot_rule(new_location);
+                }
+                if (!(new_location.never)) {
+                    new_location.world = this;
+                    new_region.locations.push(new_location);
+                    MakeEventItem(lname, new_location);
+                }
+            }
+            // Return to normal logic file parsing
             if (!!region.locations) {
                 for (const [location, rule] of Object.entries(region.locations)) {
                     let new_location = LocationFactory(location, this)[0];
@@ -648,6 +712,24 @@ class World implements GraphWorld {
         }
     }
 
+    initialize_locations(): void {
+        for (let location of this.get_locations(true)) {
+            location.viewable_if_unshuffled = false;
+            location.explicitly_collect_item = false;
+            if (location.internal) {
+                if (!!location.item) {
+                    if (this.viewable_unshuffled_items.includes(location.item.name)) location.viewable_if_unshuffled = true;
+                    if (this.explicitly_collected_unshuffled_items.includes(location.item.name)) location.explicitly_collect_item = true;
+                }
+            } else {
+                if (!!location.vanilla_item_name) {
+                    if (this.viewable_unshuffled_items.includes(location.vanilla_item_name)) location.viewable_if_unshuffled = true;
+                    if (this.explicitly_collected_unshuffled_items.includes(location.vanilla_item_name)) location.explicitly_collect_item = true;
+                }
+            }
+        }
+    }
+
     initialize_entrances(): void {
         let target_region;
         let dungeon_region_names = Object.values(this.dungeons).flat().map((r) => r.name);
@@ -786,6 +868,54 @@ class World implements GraphWorld {
         // Clean up any stray target regions erroneously marked as top-level Dungeon regions
         region_group.page = '';
         return region_group;
+    }
+
+    add_hinted_dungeon_reward(e: GraphEntrance, hinted_item: Item | null = null) {
+        let reward_item: Item;
+        if (hinted_item === null) {
+            if (Object.keys(this.pending_reward_assignments).includes(e.name)) {
+                reward_item = this.get_item(this.pending_reward_assignments[e.name]);
+            } else {
+                return;
+            }
+        } else {
+            reward_item = hinted_item;
+        }
+        if (!!e.connected_region) {
+            if (!this.mixed_pools_bosses &&
+                (this.settings.shuffle_dungeon_rewards == undefined ||
+                ['vanilla', 'reward'].includes(this.settings.shuffle_dungeon_rewards))) {
+                let boss_entrance_name = !!e.replaces ? e.replaces.name : e.name;
+                let boss_reward_location = this.get_location(entranceToBossRewardMap[boss_entrance_name]);
+                if (boss_reward_location.item === null) {
+                    this.parent_graph.set_location_item(boss_reward_location, reward_item);
+                    if (Object.keys(this.pending_reward_assignments).includes(e.name)) {
+                        delete this.pending_reward_assignments[e.name];
+                    }
+                }
+            }
+        } else {
+            this.pending_reward_assignments[e.name] = reward_item.name;
+        }
+    }
+
+    remove_hinted_dungeon_reward(e: GraphEntrance, clear_cache: boolean = false) {
+        if (Object.keys(entranceToBossRewardMap).includes(e.name) &&
+            !this.mixed_pools_bosses &&
+            (this.settings.shuffle_dungeon_rewards == undefined ||
+            ['vanilla', 'reward'].includes(this.settings.shuffle_dungeon_rewards))) {
+            if(!!e.connected_region) {
+                let boss_entrance_name = !!e.replaces ? e.replaces.name : e.name;
+                let boss_reward_location = this.get_location(entranceToBossRewardMap[boss_entrance_name]);
+                if (!!boss_reward_location.item) {
+                    this.pending_reward_assignments[e.name] = boss_reward_location.item.name;
+                    this.parent_graph.set_location_item(boss_reward_location, null);
+                }
+            }
+        }
+        if (Object.keys(this.pending_reward_assignments).includes(e.name) && clear_cache) {
+            delete this.pending_reward_assignments[e.name];
+        }
     }
 
     get_region_group(region_name: string): RegionGroup {
@@ -1026,7 +1156,9 @@ class World implements GraphWorld {
             }
         }
         if (!(this.keysanity) && !(this.dungeon_mq['Fire Temple'])) {
-            this.state.collect(ItemFactory('Small Key (Fire Temple)', this)[0]);
+            // The extra Fire Temple key is never visible to the player in-game, so
+            // don't add to the player inventory used for tracker displays.
+            this.state.collect(ItemFactory('Small Key (Fire Temple)', this)[0], true, false);
         }
         if (this.settings.shuffle_tcgkeys === 'remove') {
             this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);

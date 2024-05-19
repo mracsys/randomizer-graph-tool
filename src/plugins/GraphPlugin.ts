@@ -20,7 +20,8 @@ export interface GraphLocation {
     holds_shop_refill: boolean;
     is_restricted: boolean;
     internal: boolean;
-    viewable(): boolean;
+    public_event: boolean;
+    viewable(use_unshuffled_items_filter?: boolean): boolean;
 }
 
 export interface GraphItem {
@@ -221,9 +222,11 @@ export abstract class GraphPlugin {
     abstract get_required_locations_for_world(world: GraphWorld): GraphLocation[];
     abstract get_required_locations_for_items(world: GraphWorld, goal_items: GraphItem[]): GraphLocation[];
     abstract get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
+    // filters collected items for some unshuffled items like skull tokens
+    abstract get_player_inventory_for_world(world: GraphWorld): {[item_name: string]: number};
 
     // World building interface
-    abstract set_location_item(location: GraphLocation, item: GraphItem | null): void;
+    abstract set_location_item(location: GraphLocation, item: GraphItem | null, price?: number): void;
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
 
@@ -262,7 +265,7 @@ export abstract class GraphPlugin {
                 this.location_cache[w.id] = [];
                 for (let region of w.regions) {
                     for (let location of region.locations) {
-                        if (!location.internal && (location.shuffled || location.vanilla_item?.advancement) && !location.holds_shop_refill) {
+                        if ((!location.internal || location.public_event) && (location.shuffled || location.vanilla_item?.advancement) && !location.holds_shop_refill) {
                             this.location_cache[w.id].push(location);
                         }
                     }

@@ -42,7 +42,7 @@ export class RegionGroup implements GraphRegion {
             }
         }
         for (let location of region.locations) {
-            if (location.type !== 'Event' && location.type !== 'Drop') {
+            if ((location.type !== 'Event' || location.public_event) && location.type !== 'Drop') {
                 this.locations.push(location);
             }
         }

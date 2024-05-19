@@ -8,13 +8,17 @@ type Dictionary<T> = {
 
 class WorldState {
     public prog_items: Dictionary<number>;
+    public player_inventory: Dictionary<number>;
     public world: World;
     public search: Search | null;
     public _won: () => boolean;
     public ItemInfo: ItemInfo;
 
     constructor(parent: World) {
+        // Items logically collected
         this.prog_items = {};
+        // Items logically collected minus specified unshuffled items (skulls, keys, etc)
+        this.player_inventory = {};
         this.world = parent;
         this.ItemInfo = this.world.parent_graph.ItemInfo;
         this.search = null;
@@ -24,11 +28,13 @@ class WorldState {
     copy(): WorldState {
         let new_state = new WorldState(this.world);
         new_state.prog_items = Object.assign({}, this.prog_items);
+        new_state.player_inventory = Object.assign({}, this.prog_items);
         return new_state;
     }
 
     reset(): void {
         this.prog_items = {};
+        this.player_inventory = {};
         this.search?.reset_cache();
     }
 
@@ -163,18 +169,23 @@ class WorldState {
         return true;
     }
 
-    collect(item: Item): void {
+    collect(item: Item, add_to_progression: boolean = true, add_to_inventory: boolean = true): void {
+        if (add_to_progression) this.collect_in_cache(item, this.prog_items);
+        if (add_to_inventory) this.collect_in_cache(item, this.player_inventory);
+    }
+
+    collect_in_cache(item: Item, cache: Dictionary<number>): void {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
             if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].includes(dungeon_name)) {
-                this.prog_items[`Boss Key (${dungeon_name})`] = 1;
+                cache[`Boss Key (${dungeon_name})`] = 1;
             }
         }
         if (!!item.alias) {
-            if (!!this.prog_items[item.alias[0]]) {
-                this.prog_items[item.alias[0]] += item.alias[1];
+            if (!!cache[item.alias[0]]) {
+                cache[item.alias[0]] += item.alias[1];
             } else {
-                this.prog_items[item.alias[0]] = item.alias[1];
+                cache[item.alias[0]] = item.alias[1];
             }
         }
         if (item.advancement) {
@@ -183,16 +194,16 @@ class WorldState {
             // have the hyphen removed in the upstream logic files, so skipping item name
             // escaping has no effect.
             let item_name = item.name === 'Like-like Soul' ? 'Likelike Soul' : item.name;
-            if (!!this.prog_items[item_name]) {
-                this.prog_items[item_name] += 1;
+            if (!!cache[item_name]) {
+                cache[item_name] += 1;
             } else {
-                this.prog_items[item_name] = 1;
+                cache[item_name] = 1;
             }
         }
     }
 
-    collect_list(items: Item[]) {
-        items.map(i => this.collect(i));
+    collect_list(items: Item[], add_to_progression: boolean = true, add_to_inventory: boolean = true) {
+        items.map(i => this.collect(i, add_to_progression, add_to_inventory));
     }
 
     collect_starting_items(): void {
@@ -200,30 +211,38 @@ class WorldState {
         if (!!this.world.settings.starting_items) {
             for (let item_name of Object.keys(this.world.settings.starting_items)) {
                 starting_item = ItemFactory(item_name === 'Bottle with Milk (Half)' ? 'Bottle' : item_name, this.world)[0];
+                // Hack to allow trackers to increment skull counts without messing with 
+                // the count of logically reachable skulls if all skulls are unshuffled.
+                let collect_starting_tokens = item_name !== 'Gold Skulltula Token' || this.world.settings.tokensanity !== 'off';
                 for (let i = 0; i < this.world.settings.starting_items[item_name]; i++) {
-                    this.collect(starting_item);
+                    this.collect(starting_item, collect_starting_tokens, true);
                 }
             }
         }
     }
 
-    remove(item: Item): void {
+    remove(item: Item, remove_from_progression: boolean = true, remove_from_inventory: boolean = true): void {
+        if (remove_from_progression) this.remove_from_cache(item, this.prog_items);
+        if (remove_from_inventory) this.remove_from_cache(item, this.player_inventory);
+    }
+
+    remove_from_cache(item: Item, cache: Dictionary<number>): void {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
             if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].includes(dungeon_name)) {
-                this.prog_items[`Boss Key (${dungeon_name})`] = 0;
+                cache[`Boss Key (${dungeon_name})`] = 0;
             }
         }
-        if (!!item.alias && this.prog_items[item.alias[0]] > 0) {
-            this.prog_items[item.alias[0]] -= item.alias[1];
-            if (this.prog_items[item.alias[0]] <= 0) {
-                delete this.prog_items[item.alias[0]];
+        if (!!item.alias && cache[item.alias[0]] > 0) {
+            cache[item.alias[0]] -= item.alias[1];
+            if (cache[item.alias[0]] <= 0) {
+                delete cache[item.alias[0]];
             }
         }
-        if (this.prog_items[item.name] > 0) {
-            this.prog_items[item.name] -= 1;
-            if (this.prog_items[item.name] <= 0) {
-                delete this.prog_items[item.name];
+        if (cache[item.name] > 0) {
+            cache[item.name] -= 1;
+            if (cache[item.name] <= 0) {
+                delete cache[item.name];
             }
         }
     }

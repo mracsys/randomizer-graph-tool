@@ -2,6 +2,115 @@ import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
 import type { GraphSettingType, GraphSettingsLayout } from "../GraphPlugin.js";
 
+
+// Most of these are simple space -> _ and all lowercase replacements,
+// but for some godawful reason not all of them are consistent
+const starting_inventory_items: {[old_starting_item_name: string]: string} = {
+    "bombs": "Bomb Bag",
+    "bow": 'Bow',
+    "fire_arrow": "Fire Arrows",
+    "dins_fire": "Dins Fire",
+    "slingshot": 'Slingshot',
+    "ocarina": 'Ocarina',
+    "hookshot": "Progressive Hookshot",
+    "ice_arrow": "Ice Arrows",
+    "farores_wind": "Farores Wind",
+    "boomerang": 'Boomerang',
+    "lens": "Lens of Truth",
+    "beans": "Magic Bean Pack",
+    "megaton_hammer": "Megaton Hammer",
+    "light_arrow": "Light Arrows",
+    "nayrus_love": "Nayrus Love",
+    "bottle": 'Bottle',
+    "letter": "Rutos Letter",
+    "pocket_egg":    "Pocket Egg",
+    "pocket_cucco":  "Pocket Cucco",
+    "cojiro":        "Cojiro",
+    "odd_mushroom":  "Odd Mushroom",
+    "odd_potion":    "Odd Potion",
+    "poachers_saw":  "Poachers Saw",
+    "broken_sword":  "Broken Sword",
+    "prescription":  "Prescription",
+    "eyeball_frog":  "Eyeball Frog",
+    "eyedrops":      "Eyedrops",
+    "claim_check":   "Claim Check",
+    "weird_egg":     "Weird Egg",
+    "chicken":       "Chicken",
+    "zeldas_letter": "Zeldas Letter",
+    "keaton_mask":   "Keaton Mask",
+    "skull_mask":    "Skull Mask",
+    "spooky_mask":   "Spooky Mask",
+    "bunny_hood":    "Bunny Hood",
+    "goron_mask":    "Goron Mask",
+    "zora_mask":     "Zora Mask",
+    "gerudo_mask":   "Gerudo Mask",
+    "mask_of_truth": "Mask of Truth",
+    "ocarina_a_button":       "Ocarina A Button",
+    "ocarina_c_up_button":    "Ocarina C up Button",
+    "ocarina_c_down_button":  "Ocarina C down Button",
+    "ocarina_c_left_button":  "Ocarina C left Button",
+    "ocarina_c_right_button": "Ocarina C right Button",
+}
+
+const starting_songs_items: {[old_starting_item_name: string]: string} = {
+    "lullaby": "Zeldas Lullaby",
+    "eponas_song": "Eponas Song",
+    "sarias_song": "Sarias Song",
+    "suns_song": "Suns Song",
+    "song_of_time": "Song of Time",
+    "song_of_storms": "Song of Storms",
+    "minuet": "Minuet of Forest",
+    "bolero": "Bolero of Fire",
+    "serenade": "Serenade of Water",
+    "requiem": "Requiem of Spirit",
+    "nocturne": "Nocturne of Shadow",
+    "prelude": "Prelude of Light",
+}
+
+const starting_equipment_items: {[old_starting_item_name: string]: string} = {
+    "kokiri_sword": "Kokiri Sword",
+    "giants_knife": "Giants Knife",
+    "biggoron_sword": "Biggoron Sword",
+    "deku_shield": "Deku Shield",
+    "hylian_shield": "Hylian Shield",
+    "mirror_shield": "Mirror Shield",
+    "goron_tunic": "Goron Tunic",
+    "zora_tunic": "Zora Tunic",
+    "iron_boots": "Iron Boots",
+    "hover_boots": "Hover Boots",
+    "magic": "Magic Meter",
+    "strength": "Progressive Strength Upgrade",
+    "scale": "Progressive Scale",
+    "wallet": "Progressive Wallet",
+    "stone_of_agony": "Stone of Agony",
+    "defense": "Double Defense",
+}
+
+// Some settings have a value assigned when disabled that is outside
+// the range of the normal options. This causes unexpected behavior
+// when the setting is no longer disabled. This function is called
+// when undisabling settings to check if this is the case, and also
+// when disabling settings in order to save a sane value to revert to
+// after the setting is no longer disabled.
+export const setting_options_include_value = (setting_definition: Setting, setting_value: GraphSettingType): boolean => {
+    if (setting_value === null && setting_definition.type === 'null') return true;
+    if (setting_value === undefined || setting_value === null) return false;
+    if (setting_definition.type === 'bool') return typeof setting_value === 'boolean';
+    if (setting_definition.type === 'int') {
+        if (typeof setting_value !== 'number') return false;
+        if (!!setting_definition.minimum && setting_value < setting_definition.minimum) return false;
+        if (!!setting_definition.maximum && setting_value > setting_definition.maximum) return false;
+        return true;
+    }
+    if (setting_definition.type === 'str') {
+        if (typeof setting_value !== 'string') return false;
+        if (setting_definition.choices === undefined) return true; // no choices to validate against
+        return Object.keys(setting_definition.choices).includes(setting_value);
+    }
+    // no validation for list/dict setting types
+    return true;
+}
+
 export type Setting = {
     name: string,
     default: GraphSettingType,
@@ -53,12 +162,14 @@ export type SettingsDictionary = {
     disabled_locations?: string[],
     shuffle_dungeon_rewards?: string,
     mix_entrance_pools?: string[],
+    tokensanity?: string,
+    starting_inventory?: string[],
+    starting_equipment?: string[],
+    starting_songs?: string[],
 };
 
 export type SettingsPresets = {
-    [preset_name: string]: {
-        [setting_name: string]: GraphSettingType,
-    },
+    [preset_name: string]: SettingsDictionary,
 }
 
 type SettingLayout = {
@@ -74,7 +185,10 @@ type SettingLayout = {
 // the "specific" options for other settings. This library
 // doesn't handle random selection and expects explicit settings.
 export var global_settings_overrides: {[setting_name: string]: GraphSettingType} = {
-    'mq_dungeons_mode': 'specific',
+    mq_dungeons_mode: 'specific',
+    trials_random: false,
+    chicken_count_random: false,
+    big_poe_count_random: false,
 }
 
 class SettingsList {
@@ -216,6 +330,42 @@ class SettingsList {
             disables: [],
             disabled: (settings) => { return false },
         };
+        this.setting_definitions['graphplugin_viewable_unshuffled_items'] = {
+            name: 'graphplugin_viewable_unshuffled_items',
+            default: [],
+            disabled_default: [
+                'Gold Skulltula Tokens',
+                'Adult Trade Items',
+                'Child Trade Items',
+                'Dungeon Small Keys',
+                'Dungeon Boss Key',
+                'Dungeon Maps',
+                'Dungeon Compasses',
+                'Save Epona',
+                "Malon's Obstacle Course",
+                'Set Scarecrow Song',
+            ],
+            type: 'list',
+            display_name: 'Shown Unshuffled Items',
+            tab: this.setting_definitions['trials_random'].tab,
+            section: this.setting_definitions['trials_random'].section,
+            order: 10001,
+            cosmetic: false,
+            choices: {
+                'Gold Skulltula Tokens': 'Gold Skulltula Tokens',
+                'Adult Trade Items': 'Adult Trade Items',
+                'Child Trade Items': 'Child Trade Items',
+                'Dungeon Small Keys': 'Dungeon Small Keys',
+                'Dungeon Boss Key': 'Dungeon Boss Key',
+                'Dungeon Maps': 'Dungeon Maps',
+                'Dungeon Compasses': 'Dungeon Compasses',
+                'Save Epona': 'Save Epona',
+                "Malon's Obstacle Course": "Malon's Obstacle Course",
+                'Set Scarecrow Song': 'Set Scarecrow Song',
+            },
+            disables: [],
+            disabled: (settings) => { return false },
+        };
         this.setting_definitions['debug_parser'] = {
             name: 'debug_parser',
             default: false,
@@ -260,11 +410,13 @@ class SettingsList {
                 def.disables = []; // not sure why this is necessary, but otherwise settings inherit the list from past settings
                 for (let [option, disabling] of Object.entries(def.disable_map)) {
                     let negative = false;
-                    let remote_option = option;
+                    let remote_option: string | boolean | number = option;
                     if (option.startsWith('!')) {
                         negative = true;
                         remote_option = option.slice(1);
                     }
+                    if (def.type === 'int' && typeof remote_option === 'string') remote_option = parseInt(remote_option);
+                    if (def.type === 'bool' && (remote_option === 'true' || remote_option === 'false')) remote_option = remote_option === 'true';
                     if (disabling.settings) {
                         for (let affected_setting of disabling.settings) {
                             if (Object.keys(this.setting_definitions).includes(affected_setting)) {
@@ -433,6 +585,58 @@ class SettingsList {
         if (file_cache.files['data/presets_default.json'] === undefined) return;
         try {
             this.settings_presets = JSON.parse(file_cache.files['data/presets_default.json']);
+            // convert old-style starting items lists to dictionary format
+            for (let [preset_name, preset_settings] of Object.entries(this.settings_presets)) {
+                if (preset_settings.starting_items === null || preset_settings.starting_items === undefined) preset_settings.starting_items = {};
+                if (Object.keys(preset_settings).includes('starting_inventory') && Array.isArray(preset_settings['starting_inventory'])) {
+                    let inventory = preset_settings['starting_inventory'] as string[];
+                    for (let i of inventory) {
+                        if (Object.keys(starting_inventory_items).includes(i)) {
+                            let real_name = starting_inventory_items[i];
+                            if (Object.keys(preset_settings.starting_items).includes(real_name)) {
+                                preset_settings.starting_items[real_name] += 1;
+                            } else {
+                                preset_settings.starting_items[real_name] = 1;
+                            }
+                        } else {
+                            throw `Could not load settings presets: ${preset_name} has unknown starting inventory item ${i}`;
+                        }
+                    }
+                    preset_settings['starting_inventory'] = [];
+                }
+                if (Object.keys(preset_settings).includes('starting_songs') && Array.isArray(preset_settings['starting_songs'])) {
+                    let inventory = preset_settings['starting_songs'] as string[];
+                    for (let i of inventory) {
+                        if (Object.keys(starting_songs_items).includes(i)) {
+                            let real_name = starting_songs_items[i];
+                            if (Object.keys(preset_settings.starting_items).includes(real_name)) {
+                                preset_settings.starting_items[real_name] += 1;
+                            } else {
+                                preset_settings.starting_items[real_name] = 1;
+                            }
+                        } else {
+                            throw `Could not load settings presets: ${preset_name} has unknown starting song item ${i}`;
+                        }
+                    }
+                    preset_settings['starting_songs'] = [];
+                }
+                if (Object.keys(preset_settings).includes('starting_equipment') && Array.isArray(preset_settings['starting_equipment'])) {
+                    let inventory = preset_settings['starting_equipment'] as string[];
+                    for (let i of inventory) {
+                        if (Object.keys(starting_equipment_items).includes(i)) {
+                            let real_name = starting_equipment_items[i];
+                            if (Object.keys(preset_settings.starting_items).includes(real_name)) {
+                                preset_settings.starting_items[real_name] += 1;
+                            } else {
+                                preset_settings.starting_items[real_name] = 1;
+                            }
+                        } else {
+                            throw `Could not load settings presets: ${preset_name} has unknown starting equipment item ${i}`;
+                        }
+                    }
+                    preset_settings['starting_equipment'] = [];
+                }
+            }
         } catch {
             console.log(`Could not parse presets_default.json: ${file_cache.files['data/presets_default.json']}`);
         }

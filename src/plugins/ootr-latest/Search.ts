@@ -15,6 +15,7 @@ type SearchCache = {
     visited_locations: Set<Location>,
     visited_entrances: Set<Entrance>,
     spheres: { [sphere: number]: Location[] },
+    pending_collection_locations: Location[],
 };
 type TimeOfDayMap = {
     [world_id: number]: {
@@ -27,6 +28,9 @@ type SearchOptionalParams = {
     regions_only?: boolean,
     collect_checked_only?: boolean,
     collect_as_starting_items?: boolean,
+    collect_checked_shops_only?: boolean,
+    collect_checked_collectables_only?: string[],
+    collect_checked_events_only?: boolean,
 }
 
 class Search {
@@ -39,6 +43,9 @@ class Search {
     regions_only: boolean;
     public collect_checked_only: boolean;
     public collect_as_starting_items: boolean;
+    public collect_checked_shops_only: boolean;
+    public collect_checked_collectables_only: string[];
+    public collect_checked_events_only: boolean;
 
     constructor(state_list: WorldState[], 
     {
@@ -47,6 +54,9 @@ class Search {
         regions_only = false,
         collect_checked_only = false,
         collect_as_starting_items = false,
+        collect_checked_shops_only = false,
+        collect_checked_collectables_only = [],
+        collect_checked_events_only = false,
     }: SearchOptionalParams = {}) {
         this.state_list = state_list;
         this.current_sphere = 0;
@@ -55,6 +65,9 @@ class Search {
         this.regions_only = regions_only;
         this.collect_checked_only = collect_checked_only;
         this.collect_as_starting_items = collect_as_starting_items;
+        this.collect_checked_shops_only = collect_checked_shops_only;
+        this.collect_checked_collectables_only = collect_checked_collectables_only;
+        this.collect_checked_events_only = collect_checked_events_only;
         for (let state of this.state_list) {
             state.search = this;
         }
@@ -69,6 +82,7 @@ class Search {
             adult_regions: [],
             child_tod: {},
             adult_tod: {},
+            pending_collection_locations: [],
         }
         this.cached_spheres = [this._cache];
         // and do what typescript should have picked up on
@@ -104,6 +118,7 @@ class Search {
                 adult_regions: [...root_regions],
                 child_tod: ctod,
                 adult_tod: atod,
+                pending_collection_locations: [],
             };
             this.cached_spheres = [this._cache];
             this.next_sphere();
@@ -197,9 +212,9 @@ class Search {
         }
     }
 
-    collect(item: Item): void {
+    collect(item: Item, add_to_progression: boolean = true, add_to_inventory: boolean = true): void {
         if (item.world === null) throw `Failed to collect item ${item.name} for invalid world`;
-        this.state_list[item.world.id].collect(item);
+        this.state_list[item.world.id].collect(item, add_to_progression, add_to_inventory);
     }
 
     uncollect(item: Item): void {
@@ -299,6 +314,15 @@ class Search {
     }
 
     collect_locations(locations: Location[] | null = null) {
+        let new_pending_locations: Location[] = [];
+        for (let location of this._cache.pending_collection_locations) {
+            if (location.checked && !!location.item) {
+                this.collect(location.item, false, true);
+            } else {
+                new_pending_locations.push(location);
+            }
+        }
+        this._cache.pending_collection_locations = new_pending_locations;
         let l = !!locations ? locations : this.progression_locations();
         // collect checked locations regardless of logic if desired by the user ("race mode")
         if (this.collect_as_starting_items) {
@@ -310,7 +334,12 @@ class Search {
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
             if (!!location.item && ((location.checked && !this.collect_as_starting_items) || !this.collect_checked_only || !(location.viewable()))) {
-                this.collect(location.item);
+                if (!location.checked && location.explicitly_collect_item) {
+                    this.collect(location.item, true, false);
+                    this._cache.pending_collection_locations.push(location);
+                } else {
+                    this.collect(location.item);
+                }
             }
         }
     }

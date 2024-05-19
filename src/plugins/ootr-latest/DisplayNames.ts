@@ -26,7 +26,8 @@ export const display_names: DisplayNames = {
             "HC Garden",
             "HC Garden Locations",
             "Castle Grounds From Ganons Castle",
-            "Ganons Castle Grounds"
+            "Ganons Castle Grounds",
+            "Ganons Castle Ledge"
         ],
         "Death Mountain Crater": [
             "DMC Upper Nearby",
@@ -2260,7 +2261,17 @@ export const display_names: DisplayNames = {
         "Spirit Temple MQ Big Mirror Crate 2": "Boss Mirror Crate 2",
         "Spirit Temple MQ Big Mirror Crate 3": "Boss Mirror Crate 3",
         "Spirit Temple MQ Big Mirror Crate 4": "Boss Mirror Crate 4",
-        "Spirit Temple MQ Mirror Puzzle Invisible Chest": "Top Invisible Chest"
+        "Spirit Temple MQ Mirror Puzzle Invisible Chest": "Top Invisible Chest",
+        "Bonooru from Lake Hylia": "Play Scarecrow Song as Child",
+        "Pierre": "Play Scarecrow Song as Adult",
+        "Wake Up Adult Talon from Kak Carpenter Boss House": "Wake Up Talon",
+        "Epona from Lon Lon Ranch": "Save Epona",
+        "Links Cow from Lon Lon Ranch": "Complete Malon's Obstacle Course",
+        "OOTR GraphPlugin Keaton Mask Trade": "Trade Keaton Mask",
+        "OOTR GraphPlugin Skull Mask Trade": "Trade Skull Mask",
+        "OOTR GraphPlugin Spooky Mask Trade": "Trade Spooky Mask",
+        "OOTR GraphPlugin Bunny Hood Trade": "Trade Bunny Hood",
+        "OOTR GraphPlugin Wake Up Child Talon": "Wake Up Talon",
     },
     "entrance_aliases": {
         "Child Spawn -> KF Links House": "Child Spawn",
@@ -2335,6 +2346,7 @@ export const display_names: DisplayNames = {
         "Hyrule Castle Grounds -> HC Storms Grotto": "Storms Grotto",
         "Ganons Castle Grounds -> OGC Great Fairy Fountain": "Ganon's Castle Great Fairy Fountain",
         "Ganons Castle Grounds -> Ganons Castle Lobby": "Ganon's Castle",
+        "Ganons Castle Ledge -> Ganons Castle Lobby": "Ganon's Castle",
         "Kakariko Village -> Kak Carpenter Boss House": "Bottom House",
         "Kakariko Village -> Kak House of Skulltula": "Skulltula House",
         "Kakariko Village -> Kak Impas House": "Impa's House Front",

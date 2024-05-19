@@ -1,5 +1,6 @@
 import World from "../src/plugins/ootr-latest/World";
 import { ExternalFileCacheFactory, WorldGraphRemoteFactory, GraphEntrance, GraphLocation, GraphPlugin } from "../src/WorldGraph";
+import { non_required_items } from '../src/plugins/ootr-latest/ItemList.js';
 import { describe, expect, test, beforeAll } from "@jest/globals";
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'path';
@@ -58,7 +59,7 @@ describe('OOTR 7.1.195 R-1 world mutation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event').length)
+        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event' && (l.item === null || !non_required_items.includes(l.item.name))).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();
@@ -122,7 +123,7 @@ describe('OOTR 7.1.198 Rob-49 world mutation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event').length)
+        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event' && (l.item === null || !non_required_items.includes(l.item.name))).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();

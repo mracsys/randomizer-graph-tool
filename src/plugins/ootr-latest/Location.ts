@@ -18,6 +18,19 @@ const DisableType = {
     DISABLED: 2,
 }
 
+const viewable_events = [
+    'Wake Up Adult Talon from Kak Carpenter Boss House',
+    "OOTR GraphPlugin Keaton Mask Trade",
+    "OOTR GraphPlugin Skull Mask Trade",
+    "OOTR GraphPlugin Spooky Mask Trade",
+    "OOTR GraphPlugin Bunny Hood Trade",
+    "OOTR GraphPlugin Wake Up Child Talon",
+    "Epona from Lon Lon Ranch",
+    "Links Cow from Lon Lon Ranch",
+    "Bonooru from Lake Hylia",
+    "Pierre",
+];
+
 export class Location implements GraphLocation {
     constructor(
         public name: string = '',
@@ -53,11 +66,15 @@ export class Location implements GraphLocation {
         public is_restricted: boolean = false,
         public user_item: Item | null = null,
         public hint: Hint | null = null,
+        public viewable_if_unshuffled: boolean = false,
+        public explicitly_collect_item: boolean = false,
+        public public_event: boolean = false,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
         if (this.type === "Event" || this.name === "Gift from Sages") {
             this.internal = true;
             this.shuffled = false;
+            if (viewable_events.includes(this.name)) this.public_event = true;
         }
         if (this.type.startsWith('Hint')) {
             this.shuffled = false;
@@ -107,8 +124,8 @@ export class Location implements GraphLocation {
         return !!(this.parent_region) ? this.parent_region.dungeon : null; 
     }
 
-    viewable(): boolean {
-        return !this.internal && this.shuffled && !this.holds_shop_refill;
+    viewable(use_unshuffled_items_filter: boolean = false): boolean {
+        return ((!this.internal && this.shuffled) || (use_unshuffled_items_filter && this.viewable_if_unshuffled)) && !this.holds_shop_refill;
     }
 
     set_visited(with_tricks: boolean = false) {

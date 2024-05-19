@@ -7,6 +7,7 @@ import { GraphEntrance, GraphLocation, GraphPlugin } from '../plugins/GraphPlugi
 import { Location } from '../plugins/ootr-latest/Location.js';
 import Entrance from '../plugins/ootr-latest/Entrance.js';
 import World from '../plugins/ootr-latest/World.js';
+import { non_required_items } from '../plugins/ootr-latest/ItemList.js';
 
 // local paths to RSL script and OOTR for generating/validating world searches
 var rsl = '/home/mracsys/git/plando-random-settings';
@@ -27,6 +28,8 @@ test_import(true);
 //test_random_settings(4, true);
 //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
 //add_entrance_spheres_to_tests();
+//test_undisabling_settings();
+//test_settings_change();
 
 async function test_preset() {
     let version = '7.1.195 R-1';
@@ -36,6 +39,38 @@ async function test_preset() {
     graph.set_search_mode('Collected Items');
     graph.load_settings_preset('S7 Tournament');
     graph.collect_locations();
+}
+
+async function test_undisabling_settings() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+    graph.load_settings_preset('S7 Tournament');
+
+    let settings = graph.get_settings_options();
+    console.log(graph.worlds[0].settings['shuffle_hideoutkeys']);
+    graph.change_setting(graph.worlds[0], settings['gerudo_fortress'], 'open');
+    console.log(graph.worlds[0].settings['shuffle_hideoutkeys']);
+    graph.change_setting(graph.worlds[0], settings['gerudo_fortress'], 'fast');
+    console.log(graph.worlds[0].settings['shuffle_hideoutkeys']);
+}
+
+async function test_settings_change() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+    graph.load_settings_preset('S7 Tournament');
+
+    let settings = graph.get_settings_options();
+    console.log(`${graph.worlds[0].settings['shuffle_ganon_bosskey']} ${settings['shuffle_ganon_bosskey'].disabled(graph.worlds[0].settings)}`);
+    console.log(graph.worlds[0].settings['triforce_hunt']);
+    graph.change_setting(graph.worlds[0], settings['triforce_hunt'], true);
+    console.log(`${graph.worlds[0].settings['shuffle_ganon_bosskey']} ${settings['shuffle_ganon_bosskey'].disabled(graph.worlds[0].settings)}`);
+    console.log(graph.worlds[0].settings['triforce_hunt']);
 }
 
 async function test_collecting_checked_locations() {
@@ -204,13 +239,13 @@ async function test_entrance_pools() {
 
 async function test_import(debug: boolean = false) {
     let result_files = [
-        'python_plando_01T414Y62E.json',
+        'python_plando_WZAQVC07KZ.json',
         
     ];
-    let variant = 'main'
+    let variant = 'realrob'
     let initialized = false;
 
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '7.1.143', {files: {}});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '7.1.195 R-1', {files: {}});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files:string;
@@ -534,13 +569,13 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     let ldata = data.locations;
     console.log(`${graph.get_visited_locations().length} total visited JS locations`);
     console.log(`${Object.keys(ldata).filter((l) => ldata[l].visited).length} total visited python locations`);
-    console.log(`${graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint'))).length} visited non-event JS locations`);
+    console.log(`${graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint')) && (l.item === null || !non_required_items.includes(l.item.name))).length} visited non-event JS locations`);
     console.log(`${Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event' && !(ldata[l].type.startsWith('Hint'))).length} visited non-event python locations`);
 
     // Filter out extra event items as they usually show up because in-place logic settings replacement is removed,
     // which causes some always/never events to no longer be always/never.
     // Testing enough seeds will hopefully show any actual locations affected by extra events.
-    let success = graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint'))).length
+    let success = graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint')) && (l.item === null || !non_required_items.includes(l.item.name))).length
                     === Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event' && !(ldata[l].type.startsWith('Hint'))).length;
     let locs = graph.get_visited_locations();
     let loc_names = locs.map((loc: GraphLocation): string => loc.name);
@@ -556,13 +591,13 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
                     console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere},${!!loc.item.player ? ' Player '.concat(loc.item.player.toString()) : ''} ${loc.item.name}`);
                 }
                 // See above note on why events get filtered.
-                if (loc.type !== 'Event') {
+                if (loc.type !== 'Event' && (loc.item === null || !non_required_items.includes(loc.item.name))) {
                     success = false;
                 }
             } else if (ldata[loc.name].visited) {
                 //console.log(`Matching JS location ${loc.name}`);
             }
-        } else if (loc.type !== 'Event') {
+        } else if (loc.type !== 'Event' && (loc.item === null || !non_required_items.includes(loc.item.name))) {
             // See above note on why events get filtered.
             console.log(`Non-existent JS location ${loc.name}`);
             success = false;

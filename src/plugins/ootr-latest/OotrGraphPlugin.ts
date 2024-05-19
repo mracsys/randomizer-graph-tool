@@ -13,7 +13,7 @@ import LocationList from './LocationList.js';
 import ItemList from './ItemList.js';
 import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
-import { global_settings_overrides } from './SettingsList.js';
+import { global_settings_overrides, setting_options_include_value } from './SettingsList.js';
 import { Hint, HintGoal } from './Hints.js';
 import { Region } from './Region.js';
 
@@ -29,7 +29,125 @@ interface OotrPlando {
     ':tracked_hints': PlandoHintList | PlandoMWHintList,
 };
 
-class OotrGraphPlugin extends GraphPlugin {
+const dungeonToEntranceMap: {[dungeonName: string]: string} = {
+    "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
+    "DCVN": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
+    "JABU": "Jabu Jabus Belly Before Boss -> Barinade Boss Room",
+    "FRST": "Forest Temple Before Boss -> Phantom Ganon Boss Room",
+    "FIRE": "Fire Temple Before Boss -> Volvagia Boss Room",
+    "WATR": "Water Temple Before Boss -> Morpha Boss Room",
+    "SPRT": "Spirit Temple Before Boss -> Twinrova Boss Room",
+    "SHDW": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
+};
+export const entranceToBossRewardMap: {[entranceName: string]: string} = {
+    "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma",
+    "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo",
+    "Jabu Jabus Belly Before Boss -> Barinade Boss Room": "Barinade",
+    "Forest Temple Before Boss -> Phantom Ganon Boss Room": "Phantom Ganon",
+    "Fire Temple Before Boss -> Volvagia Boss Room": "Volvagia",
+    "Water Temple Before Boss -> Morpha Boss Room": "Morpha",
+    "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova",
+    "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo",
+};
+const bossToRewardMap: {[bossName: string]: string} = {
+    "GOMA": "Queen Gohma",
+    "KING": "King Dodongo",
+    "BARI": "Barinade",
+    "PHGA": "Phantom Ganon",
+    "VOLV": "Volvagia",
+    "MOR": "Morpha",
+    "TWIN": "Twinrova",
+    "BNGO": "Bongo Bongo",
+};
+
+const option_to_item_names: {[option: string]: string[]} = {
+    'Gold Skulltula Tokens': [
+        'Gold Skulltula Token'
+    ],
+    'Adult Trade Items': [
+        "Pocket Egg",
+        "Pocket Cucco",
+        "Cojiro",
+        "Odd Mushroom",
+        "Odd Potion",
+        "Poachers Saw",
+        "Broken Sword",
+        "Prescription",
+        "Eyeball Frog",
+        "Eyedrops",
+        "Claim Check",
+        "Wake Up Adult Talon",
+    ],
+    'Child Trade Items': [
+        "Weird Egg",
+        "Chicken",
+        "Zeldas Letter",
+        "Keaton Mask",
+        "Skull Mask",
+        "Spooky Mask",
+        "Bunny Hood",
+        "Mask of Truth",
+        "OOTR GraphPlugin Keaton Mask Trade",
+        "OOTR GraphPlugin Skull Mask Trade",
+        "OOTR GraphPlugin Spooky Mask Trade",
+        "OOTR GraphPlugin Bunny Hood Trade",
+        "OOTR GraphPlugin Wake Up Child Talon",
+    ],
+    'Dungeon Small Keys': [
+        'Small Key (Forest Temple)',
+        'Small Key (Fire Temple)',
+        'Small Key (Water Temple)',
+        'Small Key (Spirit Temple)',
+        'Small Key (Shadow Temple)',
+        'Small Key (Bottom of the Well)',
+        'Small Key (Gerudo Training Ground)',
+        'Small Key (Ganons Castle)',
+    ],
+    'Dungeon Boss Key': [
+        'Boss Key (Forest Temple)',
+        'Boss Key (Fire Temple)',
+        'Boss Key (Water Temple)',
+        'Boss Key (Spirit Temple)',
+        'Boss Key (Shadow Temple)',
+        'Boss Key (Ganons Castle)',
+    ],
+    'Dungeon Maps': [
+        'Map (Deku Tree)',
+        'Map (Dodongos Cavern)',
+        'Map (Jabu Jabus Belly)',
+        'Map (Forest Temple)',
+        'Map (Fire Temple)',
+        'Map (Water Temple)',
+        'Map (Spirit Temple)',
+        'Map (Shadow Temple)',
+        'Map (Bottom of the Well)',
+        'Map (Ice Cavern)',
+    ],
+    'Dungeon Compasses': [
+        'Compass (Deku Tree)',
+        'Compass (Dodongos Cavern)',
+        'Compass (Jabu Jabus Belly)',
+        'Compass (Forest Temple)',
+        'Compass (Fire Temple)',
+        'Compass (Water Temple)',
+        'Compass (Spirit Temple)',
+        'Compass (Shadow Temple)',
+        'Compass (Bottom of the Well)',
+        'Compass (Ice Cavern)',
+    ],
+    'Save Epona': [
+        'Epona',
+    ],
+    'Malon\'s Obstacle Course': [
+        'Links Cow',
+    ],
+    'Set Scarecrow Song': [
+        'Bonooru',
+        'Scarecrow Song',
+    ],
+}
+
+export class OotrGraphPlugin extends GraphPlugin {
     private version_list = [
         '7.1.143',
         '7.1.154',
@@ -54,6 +172,9 @@ class OotrGraphPlugin extends GraphPlugin {
     private disabled_settings: GraphSetting[] = [];
     public collect_checked_only: boolean = false;
     public collect_as_starting_items: boolean = false;
+    public collect_checked_shops_only: boolean = false;
+    public collect_checked_collectables_only: string[] = [];
+    public collect_checked_events_only: boolean = false;
 
     constructor(
         public user_overrides: any,
@@ -157,9 +278,27 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     create_searches() {
-        this.search = new Search(this.worlds.map((world) => world.state), {collect_as_starting_items: this.collect_as_starting_items, collect_checked_only: this.collect_checked_only});
-        this.all_tricks_search = new Search(this.all_tricks_worlds.map((world) => world.state), {with_tricks: true, collect_as_starting_items: this.collect_as_starting_items, collect_checked_only: this.collect_checked_only});
-        this.all_tricks_and_keys_search = new Search(this.all_tricks_and_keys_worlds.map((world) => world.state), {regions_only: true, collect_as_starting_items: this.collect_as_starting_items, collect_checked_only: this.collect_checked_only});
+        this.search = new Search(this.worlds.map((world) => world.state), 
+            {
+                collect_as_starting_items: this.collect_as_starting_items,
+                collect_checked_only: this.collect_checked_only,
+                collect_checked_shops_only: this.collect_checked_shops_only,
+                collect_checked_collectables_only: this.collect_checked_collectables_only,
+                collect_checked_events_only: this.collect_checked_events_only,
+            });
+        this.all_tricks_search = new Search(this.all_tricks_worlds.map((world) => world.state),
+            {
+                with_tricks: true,
+                collect_as_starting_items: this.collect_as_starting_items,
+                collect_checked_only: this.collect_checked_only,
+            });
+        this.all_tricks_and_keys_search = new Search(this.all_tricks_and_keys_worlds.map((world) => world.state),
+            {
+                with_tricks: true,
+                regions_only: true,
+                collect_as_starting_items: this.collect_as_starting_items,
+                collect_checked_only: this.collect_checked_only,
+            });
     }
 
     reset_searches() {
@@ -204,9 +343,11 @@ class OotrGraphPlugin extends GraphPlugin {
         let graph_settings = this.get_settings_options();
 
         for (let world of this.worlds) {
+            // invalidate saved restoration settings from previous seed
+            world.disabled_settings = {};
             for (let [setting, def] of Object.entries(graph_settings)) {
                 if (Object.keys(global_settings_overrides).includes(setting)) {
-                    this.change_setting(world, def, global_settings_overrides[setting], {update_vanilla_items: false});
+                    this.change_setting(world, def, global_settings_overrides[setting], {update_vanilla_items: false, from_import: true});
                 } else {
                     let randomized_settings: any = {};
                     if (Object.keys(plando).includes('randomized_settings')) {
@@ -217,15 +358,15 @@ class OotrGraphPlugin extends GraphPlugin {
                         }
                     }
                     if (Object.keys(randomized_settings).includes(setting)) {
-                        this.change_setting(world, def, <GraphSettingType>randomized_settings[setting], {update_vanilla_items: false});
+                        this.change_setting(world, def, <GraphSettingType>randomized_settings[setting], {update_vanilla_items: false, from_import: true});
                     } else if (Object.keys(plando).includes('settings')) {
                         if (Object.keys(plando.settings).includes(setting)) {
-                            this.change_setting(world, def, <GraphSettingType>plando.settings[setting], {update_vanilla_items: false});
+                            this.change_setting(world, def, <GraphSettingType>plando.settings[setting], {update_vanilla_items: false, from_import: true});
                         } else {
-                            this.change_setting(world, def, def.default, {update_vanilla_items: false});
+                            this.change_setting(world, def, def.default, {update_vanilla_items: false, from_import: true});
                         }
                     } else {
-                        this.change_setting(world, def, def.default, {update_vanilla_items: false});
+                        this.change_setting(world, def, def.default, {update_vanilla_items: false, from_import: true});
                     }
                 }
             }
@@ -237,7 +378,7 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, {update_vanilla_items: false});
+            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, {update_vanilla_items: false, from_import: true});
             let active_trials: string[] = [];
             if (Object.keys(plando).includes('trials')) {
                 for (let [trial, active] of Object.entries(plando.trials)) {
@@ -246,11 +387,11 @@ class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, {update_vanilla_items: false});
+            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, {update_vanilla_items: false, from_import: true});
             if (Object.keys(plando).includes('songs')) {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, {update_vanilla_items: false});
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, {update_vanilla_items: false, from_import: true});
             } else {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], {}, {update_vanilla_items: false});
+                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], {}, {update_vanilla_items: false, from_import: true});
             }
         }
 
@@ -259,7 +400,7 @@ class OotrGraphPlugin extends GraphPlugin {
             for (let def of Object.values(graph_settings)) {
                 for (let remote_setting of def.disables) {
                     if (remote_setting.disabled(world.settings)) {
-                        this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true});
+                        this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true, from_import: true});
                     }
                 }
             }
@@ -267,6 +408,7 @@ class OotrGraphPlugin extends GraphPlugin {
         }
 
         this.worlds.forEach((world) => world.state.reset());
+        this.worlds.forEach((world) => world.initialize_fixed_item_area_hints());
         let checked_locations: PlandoCheckedLocationList | PlandoMWCheckedLocationList = [];
         if (Object.keys(plando).includes(':checked')) {
             checked_locations = plando[':checked'];
@@ -287,6 +429,9 @@ class OotrGraphPlugin extends GraphPlugin {
                 if (hint_location_name === 'temple_of_time_altar') {
                     if (hint_data.fixed_areas === undefined) throw `Can't import fixed hints with undefined data`;
                     this.worlds[0].fixed_item_area_hints = Object.assign({}, hint_data.fixed_areas);
+                } else if (hint_location_name === 'pending_location_assignments') {
+                    if (hint_data.fixed_areas === undefined) throw `Can't import pending reward location hints with undefined data`;
+                    this.worlds[0].pending_reward_assignments = Object.assign({}, hint_data.fixed_areas);
                 } else {
                     let hint_location = this.worlds[0].get_location(hint_location_name);
                     let item: Item;
@@ -499,6 +644,10 @@ class OotrGraphPlugin extends GraphPlugin {
                 fixed_areas: Object.assign({}, this.worlds[0].fixed_item_area_hints),
             }
             plando[':tracked_hints']['temple_of_time_altar'] = fixed_hints;
+            plando[':tracked_hints']['pending_location_assignments'] = {
+                type: 'fixed',
+                fixed_areas: Object.assign({}, this.worlds[0].pending_reward_assignments),
+            }
 
             let entrances = this.worlds[0].get_entrances();
             let simplified_target_types: string[] = [
@@ -662,6 +811,11 @@ class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].prog_items;
     }
 
+    // filters collected items for some unshuffled items like skull tokens
+    get_player_inventory_for_world(world: GraphWorld): {[item_name: string]: number} {
+        return this.search.state_list[world.id].player_inventory;
+    }
+
     get_item(world: World, item_name: string): GraphItem {
         return ItemFactory(item_name, world)[0];
     }
@@ -726,7 +880,7 @@ class OotrGraphPlugin extends GraphPlugin {
         this.change_setting(world, this.settings_list.setting_definitions['starting_items'], current_starting_items);
     }
 
-    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false, update_world_only=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean, update_world_only?: boolean} = {}) {
+    change_setting(world: World, setting: GraphSetting, value: GraphSettingType, { update_vanilla_items=true, update_setting_only=false, update_world_only=false, from_import=false, disabling_setting=false }: {update_vanilla_items?: boolean, update_setting_only?: boolean, update_world_only?: boolean, from_import?: boolean, disabling_setting?: boolean} = {}) {
         let new_setting_value: GraphSettingType;
         if (Object.keys(global_settings_overrides).includes(setting.name)) {
             new_setting_value = global_settings_overrides[setting.name];
@@ -863,16 +1017,60 @@ class OotrGraphPlugin extends GraphPlugin {
                 || (typeof old_setting_value === 'string' && !(['vanilla', 'reward'].includes(old_setting_value)) && typeof new_setting_value === 'string' && ['vanilla', 'reward'].includes(new_setting_value))) {
                     world.initialize_fixed_item_area_hints();
                 }
+                break;
+            case 'graphplugin_viewable_unshuffled_items':
+                world.viewable_unshuffled_items = [];
+                if (!!new_setting_value && Array.isArray(new_setting_value)) {
+                    for (let option of new_setting_value) {
+                        if (Object.keys(option_to_item_names).includes(option)) {
+                            world.viewable_unshuffled_items.push(...option_to_item_names[option]);
+                        }
+                    }
+                }
+                world.initialize_locations();
+                break;
             default:
                 break;
         }
         for (let remote_setting of setting.disables) {
             if (!(this.disabled_settings.includes(remote_setting)) && remote_setting.disabled(world.settings)) {
                 this.disabled_settings.push(remote_setting);
-                this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true});
+                // Only save the old setting before disabling if this was an individual setting change from the user,
+                // not part of multiple changes from a plando. Otherwise this leads to settings inconsistency post-import.
+                this.change_setting(world, remote_setting, remote_setting.disabled_default, {update_setting_only: true, disabling_setting: !from_import});
+            }
+        }
+        // Save user setting preference to restore when undisabled, validating that the option exists.
+        // This has to run after the disabled settings loop to ensure the previous user value is saved,
+        // not a default value from multiple hits in the disabled loop.
+        if (disabling_setting) {
+            if (setting_options_include_value(this.settings_list.setting_definitions[setting.name], old_setting_value)) {
+                world.disabled_settings[setting.name] = old_setting_value;
+            } else {
+                world.disabled_settings[setting.name] = this.settings_list.setting_definitions[setting.name].default;
             }
         }
         if (update_setting_only) return;
+        // Reset settings that were disabled but are no longer to their previous values
+        // because some of the disabled_default values are invalid settings....
+        while (true) {
+            // Boolean is changed if a setting is changed, which could cascade to further disabled settings changes
+            let undisabled_setting = false;
+            for (let [setting_name, setting_def] of Object.entries(this.settings_list.setting_definitions)) {
+                if (!setting_def.disabled(world.settings)) {
+                    if (Object.keys(world.disabled_settings).includes(setting_name)) {
+                        this.change_setting(world, setting_def, world.disabled_settings[setting_name], {update_setting_only: true});
+                        delete world.disabled_settings[setting_name];
+                        undisabled_setting = true;
+                    } else if (!setting_options_include_value(setting_def, world.settings[setting_name])) {
+                        this.change_setting(world, setting_def, setting_def.default, {update_setting_only: true});
+                        undisabled_setting = true;
+                    }
+                    // If the disabled option is a valid setting and there was no user option stored, leave it as-is.
+                }
+            }
+            if (!undisabled_setting) break;
+        }
         world.update_internal_settings();
         // updates unshuffled items
         // can be disabled for bulk setting updates to avoid looping through locations repeatedly,
@@ -901,7 +1099,7 @@ class OotrGraphPlugin extends GraphPlugin {
         this.disabled_settings = [];
     }
 
-    set_location_item(location: GraphLocation, item: GraphItem | null): void {
+    set_location_item(location: GraphLocation, item: GraphItem | null, price: number = -1): void {
         if (location.world !== null) {
             let l: Location = this.worlds[location.world.id].get_location(location.name);
             if (!!item) {
@@ -911,6 +1109,9 @@ class OotrGraphPlugin extends GraphPlugin {
                 let i: Item = ItemFactory(item.name, l.world)[0];
                 l.item = i;
                 i.location = l;
+                if (price >= 0) {
+                    location.price = price;
+                }
                 if (!!location.price) {
                     l.price = location.price;
                     i.price = location.price;
@@ -946,15 +1147,19 @@ class OotrGraphPlugin extends GraphPlugin {
             e.connect(t.original_connection);
             e.replaces = t;
             e.user_connection = t;
+            e.world.add_hinted_dungeon_reward(e);
             if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.connect(e.reverse.original_connection);
                 t.reverse.replaces = e.reverse;
+                t.reverse.world.add_hinted_dungeon_reward(t.reverse);
             }
         } else if (!!e.connected_region) {
             if (!!(e.replaces?.reverse) && e.coupled && !!(e.replaces.reverse.connected_region)) {
+                e.replaces.reverse.world.remove_hinted_dungeon_reward(e.replaces.reverse);
                 e.replaces.reverse.disconnect();
                 e.replaces.reverse.replaces = null;
             }
+            e.world.remove_hinted_dungeon_reward(e);
             e.disconnect();
             e.replaces = null;
             e.user_connection = null;
@@ -1059,36 +1264,6 @@ class OotrGraphPlugin extends GraphPlugin {
     }
 
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): string {
-        const dungeonToEntranceMap: {[dungeonName: string]: string} = {
-            "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
-            "DCVN": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
-            "JABU": "Jabu Jabus Belly Before Boss -> Barinade Boss Room",
-            "FRST": "Forest Temple Before Boss -> Phantom Ganon Boss Room",
-            "FIRE": "Fire Temple Before Boss -> Volvagia Boss Room",
-            "WATR": "Water Temple Before Boss -> Morpha Boss Room",
-            "SPRT": "Spirit Temple Before Boss -> Twinrova Boss Room",
-            "SHDW": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
-        };
-        const entranceToBossRewardMap: {[entranceName: string]: string} = {
-            "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma",
-            "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo",
-            "Jabu Jabus Belly Before Boss -> Barinade Boss Room": "Barinade",
-            "Forest Temple Before Boss -> Phantom Ganon Boss Room": "Phantom Ganon",
-            "Fire Temple Before Boss -> Volvagia Boss Room": "Volvagia",
-            "Water Temple Before Boss -> Morpha Boss Room": "Morpha",
-            "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova",
-            "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo",
-        };
-        const bossToRewardMap: {[bossName: string]: string} = {
-            "GOMA": "Queen Gohma",
-            "KING": "King Dodongo",
-            "BARI": "Barinade",
-            "PHGA": "Phantom Ganon",
-            "VOLV": "Volvagia",
-            "MOR": "Morpha",
-            "TWIN": "Twinrova",
-            "BNGO": "Bongo Bongo",
-        };
         let item_dungeon_targets = [
             '????',
             'FREE',
@@ -1153,6 +1328,7 @@ class OotrGraphPlugin extends GraphPlugin {
         ];
         let cycle_areas = (item_name: string, world: World, forward: boolean, targets: string[]) => {
             let area_index = targets.indexOf(world.fixed_item_area_hints[item_name]);
+            let prev_index = area_index;
             if (area_index === -1) throw `Unable to find fixed item area ${world.fixed_item_area_hints[item_name]}`;
             if (forward) {
                 if (area_index >= targets.length - 1) {
@@ -1160,24 +1336,83 @@ class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     area_index++;
                 }
+                while(Object.values(world.fixed_item_area_hints).includes(targets[area_index]) && targets[area_index] !== '????') {
+                    if (area_index === prev_index) {
+                        throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
+                    }
+                    if (area_index >= targets.length - 1) {
+                        area_index = 0;
+                    } else {
+                        area_index++;
+                    }
+                }
             } else {
                 if (area_index <= 0) {
                     area_index = targets.length - 1;
                 } else {
                     area_index--;
                 }
+                while(Object.values(world.fixed_item_area_hints).includes(targets[area_index]) && targets[area_index] !== '????') {
+                    if (area_index === prev_index) {
+                        throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
+                    }
+                    if (area_index <= 0) {
+                        area_index = targets.length - 1;
+                    } else {
+                        area_index--;
+                    }
+                }
             }
-            return targets[area_index];
+            return [targets[area_index], targets[prev_index]];
         }
         let world = this.worlds[graph_world.id]; // "casts" from GraphWorld to World
         if (Object.keys(world.fixed_item_area_hints).includes(item_name)) {
+            let reward_item = world.get_item(item_name);
             if (!!(world.settings.shuffle_dungeon_rewards) && !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) {
-                world.fixed_item_area_hints[item_name] = cycle_areas(item_name, world, forward, item_area_targets);
+                let prev_area: string;
+                [world.fixed_item_area_hints[item_name], prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
             } else if (world.mixed_pools_bosses) {
-                world.fixed_item_area_hints[item_name] = cycle_areas(item_name, world, forward, item_boss_targets);
+                let [reward_boss, prev_boss] = cycle_areas(item_name, world, forward, item_boss_targets);
+                world.fixed_item_area_hints[item_name] = reward_boss;
+                if (!(['????', 'FREE'].includes(reward_boss))) {
+                    let boss_location = world.get_location(bossToRewardMap[reward_boss]);
+                    this.set_location_item(boss_location, reward_item);
+                }
+                if (!(['????', 'FREE'].includes(prev_boss))) {
+                    let boss_location = world.get_location(bossToRewardMap[prev_boss]);
+                    this.set_location_item(boss_location, null);
+                }
+                if (reward_boss === 'FREE') {
+                    let boss_location = world.get_location("Links Pocket");
+                    this.set_location_item(boss_location, reward_item);
+                }
+                if (prev_boss === 'FREE') {
+                    let boss_location = world.get_location("Links Pocket");
+                    this.set_location_item(boss_location, null);
+                }
+                this.reset_searches();
             } else {
-                world.fixed_item_area_hints[item_name] = cycle_areas(item_name, world, forward, item_dungeon_targets);
+                let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
+                world.fixed_item_area_hints[item_name] = reward_dungeon;
+                if (!(['????', 'FREE'].includes(reward_dungeon))) {
+                    let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[reward_dungeon]);
+                    world.add_hinted_dungeon_reward(dungeon_boss_entrance, reward_item);
+                }
+                if (!(['????', 'FREE'].includes(prev_dungeon))) {
+                    let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
+                    world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
+                }
+                if (reward_dungeon === 'FREE') {
+                    let boss_location = world.get_location("Links Pocket");
+                    this.set_location_item(boss_location, reward_item);
+                }
+                if (prev_dungeon === 'FREE') {
+                    let boss_location = world.get_location("Links Pocket");
+                    this.set_location_item(boss_location, null);
+                }
+                this.reset_searches();
             }
+            this.set_viewable_region_groups();
         } else {
             world.fixed_item_area_hints[item_name] = '????';
         }
@@ -1296,6 +1531,7 @@ class OotrGraphPlugin extends GraphPlugin {
             savewarps_to_connect.push(...(world.load_regions_from_json('Bosses.json')));
             savewarps_to_connect.push(...(world.create_dungeons()));
             world.create_internal_locations();
+            world.initialize_locations();
 
             // add hint rules
         }
@@ -1722,6 +1958,10 @@ class OotrGraphPlugin extends GraphPlugin {
                         }
                     } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon)) {
                         shuffle_setting = <string>world.settings.shuffle_smallkeys;
+                    } else if (loc.vanilla_item.name === dungeon_text('Map', dungeon)) {
+                        shuffle_setting = <string>world.settings.shuffle_mapcompass;
+                    } else if (loc.vanilla_item.name === dungeon_text('Compass', dungeon)) {
+                        shuffle_setting = <string>world.settings.shuffle_mapcompass;
                     } else if (loc.type === 'SilverRupee') {
                         shuffle_setting = <string>world.settings.shuffle_silver_rupees;
                     }

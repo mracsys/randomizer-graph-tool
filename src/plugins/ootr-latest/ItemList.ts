@@ -32,6 +32,18 @@ export type ItemTable = {
     ]
 };
 
+// List of items to force world state to collect instead of ignore
+// so that the player inventory shows useful but not required items,
+// such as the Biggoron Sword.
+export const non_required_items = [
+    'Biggoron Sword',
+    'Deku Shield',
+    'Hylian Shield',
+    'Goron Mask',
+    'Zora Mask',
+    'Gerudo Mask',
+];
+
 export default class ItemList {
     public item_table: ItemTable;
 
@@ -94,6 +106,9 @@ export default class ItemList {
         }
         parsed_lines += '}';
         let python_entries: ItemTable = JSON.parse(parsed_lines);
+        for (let item of non_required_items) {
+            python_entries[item][1] = true;
+        }
         this.item_table = python_entries;
     }
 }
