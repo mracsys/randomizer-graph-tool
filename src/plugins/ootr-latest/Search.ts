@@ -16,6 +16,7 @@ type SearchCache = {
     visited_entrances: Set<Entrance>,
     spheres: { [sphere: number]: Location[] },
     pending_collection_locations: Location[],
+    pending_inventory_locations: Set<Location>,
 };
 type TimeOfDayMap = {
     [world_id: number]: {
@@ -83,6 +84,7 @@ class Search {
             child_tod: {},
             adult_tod: {},
             pending_collection_locations: [],
+            pending_inventory_locations: new Set<Location>(),
         }
         this.cached_spheres = [this._cache];
         // and do what typescript should have picked up on
@@ -119,6 +121,7 @@ class Search {
                 child_tod: ctod,
                 adult_tod: atod,
                 pending_collection_locations: [],
+                pending_inventory_locations: new Set<Location>(),
             };
             this.cached_spheres = [this._cache];
             this.next_sphere();
@@ -338,8 +341,21 @@ class Search {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);
                 } else {
-                    this.collect(location.item);
+                    if (this._cache.pending_inventory_locations.has(location)) {
+                        this.collect(location.item, true, false);
+                        this._cache.pending_inventory_locations.delete(location);
+                    } else {
+                        this.collect(location.item);
+                    }
                 }
+            }
+        }
+        // Add checked out-of-logic locations to inventory if
+        // they aren't being dumped into the starting inventory.
+        for (let location of l) {
+            if (!(this._cache.visited_locations.has(location)) && !(this._cache.pending_inventory_locations.has(location)) && location.checked && !!location.item) {
+                this.collect(location.item, false, true);
+                this._cache.pending_inventory_locations.add(location);
             }
         }
     }
