@@ -1068,11 +1068,13 @@ class World implements GraphWorld {
         }
         this.skipped_locations.push(location);
         location.internal = true;
+        location.skipped = true;
     }
 
     clear_skipped_locations(): void {
         for (let l of this.skipped_locations) {
             if (l.type !== 'Event') l.internal = false;
+            l.skipped = false;
         }
         this.skipped_locations = [];
     }
@@ -1126,7 +1128,11 @@ class World implements GraphWorld {
         for (let item of this.skipped_items) {
             this.state.collect(item);
         }
-        this.skipped_locations.push(this.get_location('Links Pocket'));
+        // Don't use skip_location in order to keep Link's Pocket
+        // non-internal, allowing it to show up in trackers.
+        let pocket = this.get_location('Links Pocket');
+        this.skipped_locations.push(pocket);
+        pocket.skipped = true;
         if (!(this.settings.shuffle_gerudo_card) && this.settings.gerudo_fortress === 'open') {
             this.state.collect(ItemFactory('Gerudo Membership Card', this)[0]);
             this.skip_location('Hideout Gerudo Membership Card');

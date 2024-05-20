@@ -13,6 +13,7 @@ export interface GraphLocation {
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
+    skipped: boolean;
     checked: boolean;
     is_hint: boolean;
     hint: GraphHint | null;

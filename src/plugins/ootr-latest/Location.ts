@@ -57,6 +57,7 @@ export class Location implements GraphLocation {
         public sphere: number = -1,
         public visited: boolean = false,
         public visited_with_other_tricks: boolean = false,
+        public skipped: boolean = false,
         public checked: boolean = false,
         public alias: string = '',
         public shuffled: boolean = true,

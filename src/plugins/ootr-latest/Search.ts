@@ -17,6 +17,7 @@ type SearchCache = {
     spheres: { [sphere: number]: Location[] },
     pending_collection_locations: Location[],
     pending_inventory_locations: Set<Location>,
+    pending_skipped_locations: Set<Location>,
 };
 type TimeOfDayMap = {
     [world_id: number]: {
@@ -85,6 +86,7 @@ class Search {
             adult_tod: {},
             pending_collection_locations: [],
             pending_inventory_locations: new Set<Location>(),
+            pending_skipped_locations: new Set<Location>(),
         }
         this.cached_spheres = [this._cache];
         // and do what typescript should have picked up on
@@ -122,6 +124,7 @@ class Search {
                 adult_tod: atod,
                 pending_collection_locations: [],
                 pending_inventory_locations: new Set<Location>(),
+                pending_skipped_locations: new Set<Location>(),
             };
             this.cached_spheres = [this._cache];
             this.next_sphere();
@@ -317,6 +320,17 @@ class Search {
     }
 
     collect_locations(locations: Location[] | null = null) {
+        // check skipped locations that didn't have items set at search start
+        let new_skipped_locations = new Set<Location>();
+        for (let location of this._cache.pending_skipped_locations) {
+            if (!!location.item) {
+                this.collect(location.item);
+            } else {
+                new_skipped_locations.add(location);
+            }
+        }
+        this._cache.pending_skipped_locations = new_skipped_locations;
+        // update player inventory with known items that are now checked
         let new_pending_locations: Location[] = [];
         for (let location of this._cache.pending_collection_locations) {
             if (location.checked && !!location.item) {
@@ -407,9 +421,13 @@ class Search {
     collect_pseudo_starting_items() {
         for (let location of this.iter_pseudo_starting_locations()) {
             if (!!(location.item)) {
-                location.sphere = -1;
                 this.collect(location.item);
+            } else {
+                this._cache.pending_skipped_locations.add(location);
             }
+            location.sphere = -1;
+            this._cache.visited_locations.add(location);
+            if (!this.regions_only) location.set_visited(this.with_tricks);
         }
     }
 
