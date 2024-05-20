@@ -39,6 +39,7 @@ export interface GraphEntrance {
     use_target_alias: boolean;
     type: string | null;
     type_alias: string;
+    type_priority: number;
     shuffled: boolean;
     coupled: boolean;
     is_warp: boolean;

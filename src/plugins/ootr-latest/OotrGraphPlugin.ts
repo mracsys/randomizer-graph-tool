@@ -1595,6 +1595,26 @@ export class OotrGraphPlugin extends GraphPlugin {
             'WarpSong',
         ];
 
+        let entrance_type_priority: {[type: string]: number} = {
+            'Overworld': 1,
+            'OverworldOneWay': 1,
+            'OwlDrop': 2,
+            'Spawn': 3,
+            'WarpSong': 4,
+            'Dungeon': 5,
+            'DungeonSpecial': 5,
+            'GraphGanonsTower': 5,
+            'Interior': 6,
+            'SpecialInterior': 6,
+            'Hideout': 6,
+            'Grotto': 7,
+            'Grave': 7,
+            'ChildBoss': 8,
+            'AdultBoss': 8,
+            'BlueWarp': 9,
+            'Extra': 10,
+        }
+
         for (let world of this.worlds) {
             // Region groups need to be created before entrance metadata to ensure
             // overworld entrance categories are valid.
@@ -1610,6 +1630,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 if (!(world.dungeon_mq['Ganons Castle']) && source_region_name === 'Ganons Castle Main') continue;
                 let forward_entrance = world.get_entrance(forward_entry[0]);
                 forward_entrance.type = type;
+                forward_entrance.type_priority = entrance_type_priority[type];
                 forward_entrance.primary = true;
                 if (Object.keys(display_names.entrance_aliases).includes(forward_entrance.name)) {
                     forward_entrance.alias = display_names.entrance_aliases[forward_entrance.name];
@@ -1662,6 +1683,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 if (!!return_entry) {
                     let return_entrance = world.get_entrance(return_entry[0]);
                     return_entrance.type = type;
+                    return_entrance.type_priority = entrance_type_priority[type];
                     return_entrance.secondary = true;
                     if (Object.keys(display_names.entrance_aliases).includes(return_entrance.name)) {
                         return_entrance.alias = display_names.entrance_aliases[return_entrance.name];
