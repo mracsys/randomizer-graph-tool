@@ -144,9 +144,11 @@ class Entrance implements GraphEntrance {
     viewable(): boolean {
         // only shufflable entrances are given a type from the entrance table
         let target = !!(this.replaces) ? this.replaces : this;
-        if (this.type !== null && target.target_group !== null) {
+        if (this.type !== null && this.is_warp) { // one way entrances always visible, run before next check because it catches Child Spawn
+            return true;
+        } else if (this.type !== null && target.target_group !== null) { // filter "dead end" entrances with no locations or connectors
             return target.target_group.page !== '' || target.target_group.locations.filter(l => l.shuffled).length > 0;
-        } else if (this.type !== null && this.connected_region === null) {
+        } else if (this.type !== null && this.connected_region === null) { // unconnected shuffled entrances always visible
             return true;
         } else {
             return false;
