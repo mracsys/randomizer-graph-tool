@@ -14,8 +14,9 @@ import ItemList from './ItemList.js';
 import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
 import { global_settings_overrides, setting_options_include_value } from './SettingsList.js';
-import { Hint, HintGoal } from './Hints.js';
+import { Hint, HintAreas, HintGoal } from './Hints.js';
 import { Region } from './Region.js';
+import HintArea from './HintArea.js';
 
 interface OotrPlando {
     ':version': string,
@@ -39,6 +40,16 @@ const dungeonToEntranceMap: {[dungeonName: string]: string} = {
     "SPRT": "Spirit Temple Before Boss -> Twinrova Boss Room",
     "SHDW": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
 };
+const entranceToDungeonMap: {[entrance: string]: string} = {
+    "Deku Tree Before Boss -> Queen Gohma Boss Room": "DEKU",
+    "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "DCVN",
+    "Jabu Jabus Belly Before Boss -> Barinade Boss Room": "JABU",
+    "Forest Temple Before Boss -> Phantom Ganon Boss Room": "FRST",
+    "Fire Temple Before Boss -> Volvagia Boss Room": "FIRE",
+    "Water Temple Before Boss -> Morpha Boss Room": "WATR",
+    "Spirit Temple Before Boss -> Twinrova Boss Room": "SPRT",
+    "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "SHDW",
+}
 export const entranceToBossRewardMap: {[entranceName: string]: string} = {
     "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma",
     "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo",
@@ -49,6 +60,16 @@ export const entranceToBossRewardMap: {[entranceName: string]: string} = {
     "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova",
     "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo",
 };
+const bossRewardToEntranceMap: {[bossName: string]: string} = {
+    "Queen Gohma": "Deku Tree Before Boss -> Queen Gohma Boss Room",
+    "King Dodongo": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
+    "Barinade": "Jabu Jabus Belly Before Boss -> Barinade Boss Room",
+    "Phantom Ganon": "Forest Temple Before Boss -> Phantom Ganon Boss Room",
+    "Volvagia": "Fire Temple Before Boss -> Volvagia Boss Room",
+    "Morpha": "Water Temple Before Boss -> Morpha Boss Room",
+    "Twinrova": "Spirit Temple Before Boss -> Twinrova Boss Room",
+    "Bongo Bongo": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
+}
 const bossToRewardMap: {[bossName: string]: string} = {
     "GOMA": "Queen Gohma",
     "KING": "King Dodongo",
@@ -59,6 +80,17 @@ const bossToRewardMap: {[bossName: string]: string} = {
     "TWIN": "Twinrova",
     "BNGO": "Bongo Bongo",
 };
+const rewardToBossMap: {[reward: string]: string} = {
+    'Links Pocket': 'FREE',
+    "Queen Gohma": "GOMA",
+    "King Dodongo": "KING",
+    "Barinade": "BARI",
+    "Phantom Ganon": "PHGA",
+    "Volvagia": "VOLV",
+    "Morpha": "MOR",
+    "Twinrova": "TWIN",
+    "Bongo Bongo": "BNGO",
+}
 
 const option_to_item_names: {[option: string]: string[]} = {
     'Gold Skulltula Tokens': [
@@ -1107,6 +1139,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                     this.reset_searches();
                 }
                 let i: Item = ItemFactory(item.name, l.world)[0];
+                // update dungeon reward hints before changing the item so
+                // we can clear replaced dungeon items if necessary
+                this.try_set_hinted_area_for_item(i.name, location.world, location);
                 l.item = i;
                 i.location = l;
                 if (price >= 0) {
@@ -1118,6 +1153,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 l.user_item = i;
             } else {
+                if (!!l.item && Object.keys(location.world.fixed_item_area_hints).includes(l.item.name)) {
+                    location.world.fixed_item_area_hints[l.item.name] = '????';
+                }
                 l.item = null;
                 l.price = null;
                 l.user_item = null;
@@ -1147,10 +1185,13 @@ export class OotrGraphPlugin extends GraphPlugin {
             e.connect(t.original_connection);
             e.replaces = t;
             e.user_connection = t;
-            e.world.add_hinted_dungeon_reward(e);
             if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.connect(e.reverse.original_connection);
                 t.reverse.replaces = e.reverse;
+            }
+            // has to run after the reverse is linked to look up the linked dungeon for boss shuffle
+            e.world.add_hinted_dungeon_reward(e);
+            if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.world.add_hinted_dungeon_reward(t.reverse);
             }
         } else if (!!e.connected_region) {
@@ -1168,20 +1209,23 @@ export class OotrGraphPlugin extends GraphPlugin {
         // link blue warp to boss room exit
         if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type)) {
             let boss_exit: Entrance | null = null;
-            if (e.primary && e.coupled) {
-                boss_exit = e.reverse;
+            if (e.primary && e.coupled && !!e.replaces) {
+                boss_exit = e.replaces.reverse;
             } else if (e.secondary) {
                 boss_exit = e;
             }
             if (!!boss_exit) {
                 let blue_warp: Entrance | null = null;
-                for (let exit of boss_exit.parent_region.exits) {
-                    if (exit.type === 'BlueWarp') {
-                        blue_warp = exit;
+                let blue_warp_search_region = !!e.replaces ? e.replaces.reverse : e.reverse;
+                if (!!blue_warp_search_region) {
+                    for (let exit of blue_warp_search_region.parent_region.exits) {
+                        if (exit.type === 'BlueWarp') {
+                            blue_warp = exit;
+                        }
                     }
-                }
-                if (!!blue_warp) {
-                    this.set_blue_warp(blue_warp, boss_exit);
+                    if (!!blue_warp) {
+                        this.set_blue_warp(blue_warp, boss_exit);
+                    }
                 }
             }
         }
@@ -1264,68 +1308,6 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): string {
-        let item_dungeon_targets = [
-            '????',
-            'FREE',
-            'DEKU',
-            'DCVN',
-            'JABU',
-            'FRST',
-            'FIRE',
-            'WATR',
-            'SPRT',
-            'SHDW',
-        ];
-        let item_boss_targets = [
-            '????',
-            'FREE',
-            'GOMA',
-            'KING',
-            'BARI',
-            'PHGA',
-            'VOLV',
-            'MOR',
-            'TWIN',
-            'BNGO',
-        ];
-        let item_area_targets = [
-            '????',
-            'FREE',
-            'FLD',
-            'LLR',
-            'MRKT',
-            'TOT',
-            'HYCA',
-            'GAN',
-            'KOK',
-            'DEKU',
-            'LOST',
-            'MEAD',
-            'FRST',
-            'DMT',
-            'DCVN',
-            'GORO',
-            'DMC',
-            'FIRE',
-            'RIVR',
-            'DMAN',
-            'FNTN',
-            'JABU',
-            'ICE',
-            'LAKE',
-            'WATR',
-            'KAK',
-            'WELL',
-            'GRAV',
-            'SHDW',
-            'VALL',
-            'FORT',
-            'HIDE',
-            'GTG',
-            'WAST',
-            'COLO',
-            'SPRT',
-        ];
         let cycle_areas = (item_name: string, world: World, forward: boolean, targets: string[]) => {
             let area_index = targets.indexOf(world.fixed_item_area_hints[item_name]);
             let prev_index = area_index;
@@ -1370,8 +1352,13 @@ export class OotrGraphPlugin extends GraphPlugin {
             let reward_item = world.get_item(item_name);
             if (!!(world.settings.shuffle_dungeon_rewards) && !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) {
                 let prev_area: string;
+                let item_area_targets = Object.values(HintAreas).map(a => a.abbreviation);
+                item_area_targets.push('????');
                 [world.fixed_item_area_hints[item_name], prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
             } else if (world.mixed_pools_bosses) {
+                let item_boss_targets = Object.keys(bossToRewardMap);
+                item_boss_targets.push('????');
+                item_boss_targets.push('FREE');
                 let [reward_boss, prev_boss] = cycle_areas(item_name, world, forward, item_boss_targets);
                 world.fixed_item_area_hints[item_name] = reward_boss;
                 if (!(['????', 'FREE'].includes(reward_boss))) {
@@ -1392,6 +1379,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 this.reset_searches();
             } else {
+                let item_dungeon_targets = Object.keys(dungeonToEntranceMap);
+                item_dungeon_targets.push('????');
+                item_dungeon_targets.push('FREE');
                 let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
                 world.fixed_item_area_hints[item_name] = reward_dungeon;
                 if (!(['????', 'FREE'].includes(reward_dungeon))) {
@@ -1417,6 +1407,71 @@ export class OotrGraphPlugin extends GraphPlugin {
             world.fixed_item_area_hints[item_name] = '????';
         }
         return world.fixed_item_area_hints[item_name];
+    }
+
+    // Call when setting an item location to a dungeon reward
+    // to update any previously unknown hints.
+    try_set_hinted_area_for_item(item_name: string, graph_world: GraphWorld, location: GraphLocation) {
+        let world = this.worlds[graph_world.id]; // "casts" from GraphWorld to World
+        if (Object.keys(world.fixed_item_area_hints).includes(item_name)) {
+            // Clear previous item hint if necessary
+            if (!!location.item && location.item.name !== item_name && Object.keys(world.fixed_item_area_hints).includes(location.item.name)) {
+                world.fixed_item_area_hints[location.item.name] = '????';
+            }
+            let reward_dungeon: string;
+            try {
+                if (!!(world.settings.shuffle_dungeon_rewards) && !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) {
+                    // Search out from entrances to the target region to find a top level region with an alias.
+                    // Entrance search instead of exit because decoupled breaks the entrance/exit relationship.
+                    // If there are multiple ways in through connector regions, there are potentially multiple
+                    // answers to which top level region to use. The shortest path is always chosen. 
+                    let world_location = world.get_location(location.name);
+                    let parent_region = HintArea.at(world_location, false);
+                    if (parent_region === null) throw `Could not update dungeon reward hint for disconnected location ${location.name}`;
+                    reward_dungeon = parent_region.abbreviation;
+                } else if (world.mixed_pools_bosses) {
+                    reward_dungeon = rewardToBossMap[location.name];
+                    let prev_boss = world.fixed_item_area_hints[item_name];
+                    if (!!prev_boss) {
+                        if (!(['????', 'FREE'].includes(prev_boss))) {
+                            let boss_location = world.get_location(bossToRewardMap[prev_boss]);
+                            this.set_location_item(boss_location, null);
+                        }
+                        if (prev_boss === 'FREE') {
+                            let boss_location = world.get_location("Links Pocket");
+                            this.set_location_item(boss_location, null);
+                        }
+                    }
+                } else {
+                    let prev_dungeon = world.fixed_item_area_hints[item_name];
+                    if (location.name === 'Links Pocket') {
+                        reward_dungeon = 'FREE';
+                    } else {
+                        let boss_exit = world.get_entrance(bossRewardToEntranceMap[location.name]);
+                        let connected_dungeon_exit = !!boss_exit.reverse?.replaces ? boss_exit.reverse.replaces.reverse : boss_exit;
+                        if (connected_dungeon_exit === null) throw `Could not update dungeon reward hint for disconnected boss region`;
+                        reward_dungeon = entranceToDungeonMap[connected_dungeon_exit.name];
+                    }
+                    if (!!prev_dungeon) {
+                        if (!(['????', 'FREE'].includes(prev_dungeon))) {
+                            let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
+                            world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
+                        }
+                        if (prev_dungeon === 'FREE') {
+                            let boss_location = world.get_location("Links Pocket");
+                            this.set_location_item(boss_location, null);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Safe default to return to if any of the location/entrance lookups fail.
+                // This may result in a disconnect between location fill and hints
+                console.log(e);
+                reward_dungeon = '????';
+            }
+            world.fixed_item_area_hints[item_name] = reward_dungeon;
+        }
+        // No need to reset searches as this is handled in set_location_item
     }
 
     get_entrance_pool(world: World, entrance: Entrance): GraphEntrancePool {
@@ -2286,7 +2341,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         }
         // only provide a target if the provided entrance is connected
         // in order to work with partially connected worlds
-        if (!!(ret?.connected_region)) {
+        if (!!(entrance.connected_region)) {
             return ret;
         } else {
             return null;
