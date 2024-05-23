@@ -762,6 +762,24 @@ export default class RuleParser {
                 subrule_name = `${target} Soil Patch ${subrule_number}`;
                 modified_subrule_name = true;
             }
+            // Fixed names for child trade events
+            const child_trade_rule_items = [
+                'Keaton_Mask',
+                'Skull_Mask',
+                'Spooky_Mask',
+                'Bunny_Hood',
+                'Weird_Egg',
+            ];
+            if (['Kakariko Village', 'Lost Woods', 'Graveyard', 'Hyrule Field', 'Hyrule Castle Grounds'].includes(target)) {
+                for (let trade_item of child_trade_rule_items) {
+                    if (rule.includes(trade_item)) {
+                        subrule_number = 1 + Object.keys(self.replaced_named_rules[full_target]).length;
+                        subrule_name = `${target} Child Trade ${subrule_number}`;
+                        modified_subrule_name = true;
+                        break;
+                    }
+                }
+            }
             self.delayed_rules.push({"target": target, "node": node, "subrule": rule, "subrule_name": subrule_name, "dungeon_variant": self.world.dungeon_variant});
             let item_rule = t.callExpression(
                 t.memberExpression(

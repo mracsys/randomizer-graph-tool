@@ -20,11 +20,11 @@ const DisableType = {
 
 const viewable_events = [
     'Wake Up Adult Talon from Kak Carpenter Boss House',
-    "OOTR GraphPlugin Keaton Mask Trade",
-    "OOTR GraphPlugin Skull Mask Trade",
-    "OOTR GraphPlugin Spooky Mask Trade",
-    "OOTR GraphPlugin Bunny Hood Trade",
-    "OOTR GraphPlugin Wake Up Child Talon",
+    "Kakariko Village Child Trade 1",
+    "Lost Woods Child Trade 1",
+    "Graveyard Child Trade 1",
+    "Hyrule Field Child Trade 1",
+    "Hyrule Castle Grounds Child Trade 1",
     "Epona from Lon Lon Ranch",
     "Links Cow from Lon Lon Ranch",
     "Bonooru from Lake Hylia",
@@ -135,7 +135,7 @@ export class Location implements GraphLocation {
     }
 
     viewable(use_unshuffled_items_filter: boolean = false): boolean {
-        return ((!this.internal && this.shuffled) || (use_unshuffled_items_filter && this.viewable_if_unshuffled)) && !this.holds_shop_refill;
+        return ((!this.internal && this.shuffled) || (use_unshuffled_items_filter && this.viewable_if_unshuffled && !this.skipped)) && !this.holds_shop_refill;
     }
 
     set_visited(with_tricks: boolean = false) {

@@ -482,43 +482,6 @@ class World implements GraphWorld {
             if (new_region.name === 'Ganons Castle Grounds') {
                 new_region.provides_time = TimeOfDay.DAMPE;
             }
-            // Child trade quest mask turn-in events use at() in the Mask Shop,
-            // which assigns a "Subrule X" name to the created Mask Shop event.
-            // Since this numbering can change between branches if logic is
-            // updated, create fake event locations for tracker display that
-            // do not impact global logic but match the existing rules.
-            if (['Kakariko Village', 'Lost Woods', 'Graveyard', 'Hyrule Field', 'Hyrule Castle Grounds'].includes(region.region_name)) {
-                let lname: string;
-                let rule: string;
-                if (region.region_name === 'Kakariko Village') {
-                    lname = `OOTR GraphPlugin Keaton Mask Trade`;
-                    rule = 'here(is_child and Keaton_Mask)';
-                } else if (region.region_name === 'Lost Woods') {
-                    lname = `OOTR GraphPlugin Skull Mask Trade`;
-                    rule = 'here(is_child and can_play(Sarias_Song) and Skull_Mask)';
-                } else if (region.region_name === 'Graveyard') {
-                    lname = `OOTR GraphPlugin Spooky Mask Trade`;
-                    rule = 'here(is_child and at_day and Spooky_Mask)';
-                } else if (region.region_name === 'Hyrule Field') {
-                    lname = `OOTR GraphPlugin Bunny Hood Trade`;
-                    rule = 'here(is_child and has_all_stones and Bunny_Hood)';
-                } else {
-                    lname = `OOTR GraphPlugin Wake Up Child Talon`;
-                    rule = 'here(is_child and Weird_Egg or Chicken)';
-                }
-                let new_location = new Location(lname, 'Event', new_region, true, this);
-                new_location.rule_string = replace_python_booleans(rule);
-                if (this.settings.logic_rules !== 'none') {
-                    if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
-                    this.parser.parse_spot_rule(new_location);
-                }
-                if (!(new_location.never)) {
-                    new_location.world = this;
-                    new_region.locations.push(new_location);
-                    MakeEventItem(lname, new_location);
-                }
-            }
-            // Return to normal logic file parsing
             if (!!region.locations) {
                 for (const [location, rule] of Object.entries(region.locations)) {
                     let new_location = LocationFactory(location, this)[0];
@@ -1097,6 +1060,10 @@ class World implements GraphWorld {
             if (l.type !== 'Event') l.internal = false;
             l.skipped = false;
         }
+        let l = this.get_location('HC Malon Egg');
+        l.skipped = false;
+        l = this.get_location('Hyrule Castle Grounds Child Trade 1');
+        l.skipped = false;
         this.skipped_locations = [];
     }
 
@@ -1159,8 +1126,21 @@ class World implements GraphWorld {
             this.skip_location('Hideout Gerudo Membership Card');
         }
         if (this.skip_child_zelda) {
+            // Upstream randomizer doesn't include Malon at Castle
+            // at all if SCZ is on. Adding it to skipped locations
+            // would add a false test failure for the location in the
+            // playthrough. Same applies to the Wake Up Talon event.
+            // Setting the location to skipped doesn't do anything in
+            // the library. It's only for trackers to reference.
             this.state.collect(ItemFactory('Weird Egg', this)[0]);
+            let egg = this.get_location('HC Malon Egg');
+            egg.skipped = true;
+            let talon = this.get_location('Hyrule Castle Grounds Child Trade 1');
+            talon.skipped = true;
+
             this.skip_location('HC Zeldas Letter');
+
+            // Same deal as Link's Pocket
             let pocket = this.get_location('Song from Impa');
             this.skipped_locations.push(pocket);
             pocket.skipped = true;
