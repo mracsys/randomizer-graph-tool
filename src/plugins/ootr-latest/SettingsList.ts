@@ -585,8 +585,8 @@ class SettingsList {
         if (file_cache.files['data/presets_default.json'] === undefined) return;
         try {
             this.settings_presets = JSON.parse(file_cache.files['data/presets_default.json']);
-            // convert old-style starting items lists to dictionary format
             for (let [preset_name, preset_settings] of Object.entries(this.settings_presets)) {
+                // convert old-style starting items lists to dictionary format
                 if (preset_settings.starting_items === null || preset_settings.starting_items === undefined) preset_settings.starting_items = {};
                 if (Object.keys(preset_settings).includes('starting_inventory') && Array.isArray(preset_settings['starting_inventory'])) {
                     let inventory = preset_settings['starting_inventory'] as string[];
@@ -635,6 +635,25 @@ class SettingsList {
                         }
                     }
                     preset_settings['starting_equipment'] = [];
+                }
+                // Some presets use "random" option for some settings, but the library
+                // requires all settings to be clearly defined. In general, the option
+                // before "random" in the setting option list has the highest level of
+                // randomized locations/entrances/regions, so use that to be conservative
+                // for possible things for the user to check.
+                for (let [setting_name, setting_value] of Object.entries(preset_settings)) {
+                    if (setting_value === 'random') {
+                        let setting_choices = this.setting_definitions[setting_name].choices;
+                        if (!!setting_choices) {
+                            let setting_options = Object.keys(setting_choices);
+                            let setting_index = setting_options.indexOf(setting_value);
+                            setting_index--;
+                            if (setting_index < 0) setting_index = setting_options.length - 1;
+                            preset_settings[setting_name] = setting_options[setting_index];
+                        } else {
+                            throw `Failed to change random setting to non-random value: undefined setting choices`;
+                        }
+                    }
                 }
             }
         } catch {

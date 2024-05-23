@@ -132,9 +132,9 @@ class Search {
     }
 
     reset_visits() {
-        if (this.with_tricks) {
+        if (this.with_tricks && !this.regions_only) {
             this.reset_tricked_visits();
-        } else {
+        } else if (!this.regions_only) {
             this.reset_logical_visits();
         }
     }

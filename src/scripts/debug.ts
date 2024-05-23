@@ -8,6 +8,7 @@ import { Location } from '../plugins/ootr-latest/Location.js';
 import Entrance from '../plugins/ootr-latest/Entrance.js';
 import World from '../plugins/ootr-latest/World.js';
 import { non_required_items } from '../plugins/ootr-latest/ItemList.js';
+import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
 
 // local paths to RSL script and OOTR for generating/validating world searches
 var rsl = '/home/mracsys/git/plando-random-settings';
@@ -22,7 +23,7 @@ var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 //test_entrance_linking();
 //test_region_viewability();
 //test_entrance_pools();
-test_import(true);
+//test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
 //test_random_settings(4, true);
@@ -30,6 +31,7 @@ test_import(true);
 //add_entrance_spheres_to_tests();
 //test_undisabling_settings();
 //test_settings_change();
+test_trick_visited_entrances();
 
 async function test_preset() {
     let version = '7.1.195 R-1';
@@ -39,6 +41,32 @@ async function test_preset() {
     graph.set_search_mode('Collected Items');
     graph.load_settings_preset('S7 Tournament');
     graph.collect_locations();
+}
+
+async function test_trick_visited_entrances() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+    graph.load_settings_preset('S7 Tournament');
+
+    graph.collect_locations();
+    console.log(`Visited normal entrances count: ${graph.worlds[0].get_entrances().filter(e => e.visited).length}`);
+    console.log(`Cached visited entrances: ${graph.search._cache.visited_entrances.size}`);
+    //let entrance = graph.worlds[0].get_entrance('SFM Forest Temple Entrance Ledge -> Forest Temple Lobby');
+    console.log(`Visited tricked entrances count: ${graph.all_tricks_worlds[0].get_entrances().filter(e => e.visited_with_other_tricks).length}`);
+    console.log(`Cached visited entrances: ${graph.all_tricks_search._cache.visited_entrances.size}`);
+
+    graph.add_starting_item(graph.worlds[0], graph.get_item(graph.worlds[0], 'Progressive Hookshot'));
+
+    console.log(`Visited tricked entrances count: ${graph.all_tricks_worlds[0].get_entrances().filter(e => e.visited_with_other_tricks).length}`);
+    console.log(`Cached visited entrances: ${graph.all_tricks_search._cache.visited_entrances.size}`);
+
+    graph.collect_locations();
+    console.log(`Visited tricked entrances count: ${graph.all_tricks_worlds[0].get_entrances().filter(e => e.visited_with_other_tricks).length}`);
+    console.log(`Cached visited entrances: ${graph.all_tricks_search._cache.visited_entrances.size}`);
+    console.log('Done');
 }
 
 async function test_undisabling_settings() {
