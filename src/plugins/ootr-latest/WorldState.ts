@@ -171,17 +171,19 @@ class WorldState {
 
     collect(item: Item, add_to_progression: boolean = true, add_to_inventory: boolean = true): void {
         if (add_to_progression) this.collect_in_cache(item, this.prog_items);
-        if (add_to_inventory) this.collect_in_cache(item, this.player_inventory);
+        if (add_to_inventory) this.collect_in_cache(item, this.player_inventory, false);
     }
 
-    collect_in_cache(item: Item, cache: Dictionary<number>): void {
+    collect_in_cache(item: Item, cache: Dictionary<number>, is_prog: boolean = true): void {
         if (item.name.includes('Small Key Ring') && this.world.settings.keyring_give_bk) {
             let dungeon_name = item.name.substring(0, item.name.length-1).split('(')[1];
             if (['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].includes(dungeon_name)) {
                 cache[`Boss Key (${dungeon_name})`] = 1;
             }
         }
-        if (!!item.alias) {
+        // Don't collect 10 magic bean alias for the player inventory so that item trackers
+        // can reflect the player actually buying them. 
+        if (!!item.alias && (is_prog || item.name !== 'Buy Magic Bean')) {
             if (!!cache[item.alias[0]]) {
                 cache[item.alias[0]] += item.alias[1];
             } else {

@@ -170,6 +170,9 @@ const option_to_item_names: {[option: string]: string[]} = {
     'Save Epona': [
         'Epona',
     ],
+    'Buy Magic Beans': [
+        'Buy Magic Bean',
+    ],
     'Malon\'s Obstacle Course': [
         'Links Cow',
     ],

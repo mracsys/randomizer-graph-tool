@@ -350,8 +350,8 @@ class Search {
         }
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
-            if (!!location.item && ((location.checked && !this.collect_as_starting_items) || !this.collect_checked_only || !(location.viewable()))) {
-                if (!location.checked && location.explicitly_collect_item) {
+            if (!!location.item && ((location.checked && !this.collect_as_starting_items) || !this.collect_checked_only || !(location.viewable()) || location.skipped)) {
+                if (!location.checked && location.explicitly_collect_item && !location.skipped) {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);
                 } else {
