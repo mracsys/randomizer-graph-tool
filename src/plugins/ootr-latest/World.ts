@@ -132,7 +132,28 @@ class World implements GraphWorld {
     public pending_reward_assignments: {[entrance_name: string]: string} = {}
 
     public viewable_unshuffled_items: string[] = [];
-    public explicitly_collected_unshuffled_items: string[] = ['Gold Skulltula Token'];
+    public explicitly_collected_unshuffled_items: string[] = [
+        'Gold Skulltula Token',
+        "Pocket Egg",
+        "Pocket Cucco",
+        "Cojiro",
+        "Odd Mushroom",
+        "Odd Potion",
+        "Poachers Saw",
+        "Broken Sword",
+        "Prescription",
+        "Eyeball Frog",
+        "Eyedrops",
+        "Claim Check",
+        "Weird Egg",
+        "Chicken",
+        "Zeldas Letter",
+        "Keaton Mask",
+        "Skull Mask",
+        "Spooky Mask",
+        "Bunny Hood",
+        "Mask of Truth",
+    ];
 
     constructor(id: number, settings: SettingsList, ootr_version: OotrVersion, parent_graph: OotrGraphPlugin) {
         if (Object.keys(settings).includes('randomized_settings')) {
