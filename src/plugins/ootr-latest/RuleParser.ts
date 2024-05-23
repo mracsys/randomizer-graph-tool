@@ -62,6 +62,11 @@ export default class RuleParser {
             [rule_str: string]: babeltypes.CallExpression,
         },
     };
+    public replaced_named_rules: {
+        [target_region: string]: {
+            [rule_str: string]: babeltypes.CallExpression,
+        },
+    };
     public delayed_rules: DelayedRule[];
     public rule_cache: RuleCache;
     public subrule_cache: SubruleCache;
@@ -91,6 +96,7 @@ export default class RuleParser {
         this.version = ootr_version;
         this.events = new Set();
         this.replaced_rules = {};
+        this.replaced_named_rules = {};
         this.delayed_rules = [];
         this.rule_cache = {};
         this.subrule_cache = {};
@@ -729,11 +735,33 @@ export default class RuleParser {
             if (!(target in self.replaced_rules)) {
                 self.replaced_rules[target] = {};
             }
+            if (!(full_target in self.replaced_named_rules)) {
+                self.replaced_named_rules[full_target] = {};
+            }
+            if (!(target in self.replaced_named_rules)) {
+                self.replaced_named_rules[target] = {};
+            }
             let subrule_number = 1 + Object.keys(self.replaced_rules[target]).length;
             if (self.world.dungeon_variant !== '') {
                 subrule_number += Object.keys(self.replaced_rules[full_target]).length;
             }
             let subrule_name = `${target} Subrule ${subrule_number}`;
+            // Use fixed name for bean planting to make them referencable for tracking.
+            // There is one area in 7.x (Death Mountain Trail) that has additional rules
+            // besides can_plant_beans in the here() call. This means we can't merge the
+            // subrules generically for each soil patch area. Search ignores the user
+            // checking events, so we only need to know the name of the first one to display.
+            // The others are still renamed, but they remain completely internal.
+            //
+            // This relies on stable area names, which is not guaranteed upstream. Death Mountain
+            // Crater is likely to be changed at some point due to the complex tunic logic.
+            // Display names must be versioned to work with this.
+            let modified_subrule_name = false;
+            if (rule.includes('can_plant_bean')) {
+                subrule_number = 1 + Object.keys(self.replaced_named_rules[full_target]).length;
+                subrule_name = `${target} Soil Patch ${subrule_number}`;
+                modified_subrule_name = true;
+            }
             self.delayed_rules.push({"target": target, "node": node, "subrule": rule, "subrule_name": subrule_name, "dungeon_variant": self.world.dungeon_variant});
             let item_rule = t.callExpression(
                 t.memberExpression(
@@ -742,6 +770,9 @@ export default class RuleParser {
                 [t.stringLiteral(subrule_name)]
             );
             self.replaced_rules[full_target][rule] = item_rule;
+            if (modified_subrule_name) {
+                self.replaced_named_rules[full_target][rule] = item_rule;
+            }
             path.replaceWith(item_rule);
         }
         path.skip();

@@ -173,6 +173,17 @@ const option_to_item_names: {[option: string]: string[]} = {
     'Buy Magic Beans': [
         'Buy Magic Bean',
     ],
+    'Plant Magic Beans': [
+        'Kokiri Forest Soil Patch 1',
+        'Lost Woods Soil Patch 1',
+        'LW Beyond Mido Soil Patch 1',
+        'Lake Hylia Soil Patch 1',
+        'Desert Colossus Soil Patch 1',
+        'Graveyard Soil Patch 1',
+        'Death Mountain Soil Patch 1',
+        'DMC Central Nearby Soil Patch 1',
+        'Zora River Soil Patch 1',
+    ],
     'Malon\'s Obstacle Course': [
         'Links Cow',
     ],
