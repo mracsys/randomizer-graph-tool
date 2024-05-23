@@ -126,6 +126,7 @@ class Search {
                 pending_inventory_locations: new Set<Location>(),
                 pending_skipped_locations: new Set<Location>(),
             };
+            this.visit_pseudo_starting_items();
             this.cached_spheres = [this._cache];
             this.next_sphere();
         }
@@ -178,7 +179,7 @@ class Search {
             state.collect_starting_items();
             state.world.collect_skipped_locations();
         }
-        this.collect_pseudo_starting_items();
+        //this.collect_pseudo_starting_items();
     }
 
     static max_explore(state_list: WorldState[], {itempool = [], with_tricks = false}: {itempool?: Item[], with_tricks?: boolean} = {}): Search {
@@ -320,16 +321,7 @@ class Search {
     }
 
     collect_locations(locations: Location[] | null = null) {
-        // check skipped locations that didn't have items set at search start
-        let new_skipped_locations = new Set<Location>();
-        for (let location of this._cache.pending_skipped_locations) {
-            if (!!location.item) {
-                this.collect(location.item);
-            } else {
-                new_skipped_locations.add(location);
-            }
-        }
-        this._cache.pending_skipped_locations = new_skipped_locations;
+        this.check_pending_starting_items();
         // update player inventory with known items that are now checked
         let new_pending_locations: Location[] = [];
         for (let location of this._cache.pending_collection_locations) {
@@ -378,7 +370,8 @@ class Search {
     // so this method has to run from sphere 0 every time
     collect_spheres(locations: Location[] | null = null) {
         this.reset_cache();
-        this.collect_pseudo_starting_items();
+        this.check_pending_starting_items();
+        //this.collect_pseudo_starting_items();
         let l = !!locations ? locations : this.progression_locations();
         let remaining_entrances = new Set(this.state_list.flatMap((state) => state.world.get_entrances()));
         let unaccessed_entrances: Set<Entrance>;
@@ -416,6 +409,28 @@ class Search {
                 yield location;
             }
         }
+    }
+
+    visit_pseudo_starting_items() {
+        for (let location of this.iter_pseudo_starting_locations()) {
+            this._cache.pending_skipped_locations.add(location);
+            location.sphere = -1;
+            this._cache.visited_locations.add(location);
+            if (!this.regions_only) location.set_visited(this.with_tricks);
+        }
+    }
+
+    check_pending_starting_items() {
+        // check skipped locations that didn't have items set at search start
+        let new_skipped_locations = new Set<Location>();
+        for (let location of this._cache.pending_skipped_locations) {
+            if (!!location.item) {
+                this.collect(location.item);
+            } else {
+                new_skipped_locations.add(location);
+            }
+        }
+        this._cache.pending_skipped_locations = new_skipped_locations;
     }
 
     collect_pseudo_starting_items() {

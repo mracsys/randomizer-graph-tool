@@ -31,7 +31,8 @@ var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 //add_entrance_spheres_to_tests();
 //test_undisabling_settings();
 //test_settings_change();
-test_trick_visited_entrances();
+//test_trick_visited_entrances();
+test_skipped_locations();
 
 async function test_preset() {
     let version = '7.1.195 R-1';
@@ -66,6 +67,28 @@ async function test_trick_visited_entrances() {
     graph.collect_locations();
     console.log(`Visited tricked entrances count: ${graph.all_tricks_worlds[0].get_entrances().filter(e => e.visited_with_other_tricks).length}`);
     console.log(`Cached visited entrances: ${graph.all_tricks_search._cache.visited_entrances.size}`);
+    console.log('Done');
+}
+
+async function test_skipped_locations() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
+    graph.set_search_mode('Collected Items');
+    graph.load_settings_preset('S7 Tournament');
+
+    console.log(`Visited skipped locations count: ${graph.search._cache.pending_skipped_locations.size}`);
+    graph.collect_locations();
+    console.log(`Visited skipped locations count: ${graph.search._cache.pending_skipped_locations.size}`);
+
+    let zl = graph.worlds[0].get_location('Song from Impa');
+    let song = graph.get_item(graph.worlds[0], 'Zeldas Lullaby');
+    graph.set_location_item(zl, song);
+
+    console.log(`Visited skipped locations count: ${graph.search._cache.pending_skipped_locations.size}`);
+    graph.collect_locations();
+    console.log(`Visited skipped locations count: ${graph.search._cache.pending_skipped_locations.size}`);
     console.log('Done');
 }
 

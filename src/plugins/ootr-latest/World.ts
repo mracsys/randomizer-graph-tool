@@ -1139,10 +1139,10 @@ class World implements GraphWorld {
         }
         if (this.skip_child_zelda) {
             this.state.collect(ItemFactory('Weird Egg', this)[0]);
-            //if (!(this.get_location('HC Malon Egg').shuffled)) this.skip_location('HC Malon Egg');
-            for (let loc_name of ['HC Zeldas Letter', 'Song from Impa']) {
-                this.skip_location(loc_name);
-            }
+            this.skip_location('HC Zeldas Letter');
+            let pocket = this.get_location('Song from Impa');
+            this.skipped_locations.push(pocket);
+            pocket.skipped = true;
         }
         if (this.settings.free_scarecrow) {
             this.state.collect(ItemFactory('Scarecrow Song', this)[0]);
