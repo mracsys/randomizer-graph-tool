@@ -13,7 +13,7 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     }
 
     import(save_file: any): void { return };
-    export(pretty: boolean): string { return '' };
+    export(pretty: boolean, settings_only: boolean): string { return '' };
 
     get_settings_presets(): string[] { return [] };
     get_settings_preset(preset_name: string): any { return };

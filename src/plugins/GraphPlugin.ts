@@ -186,7 +186,7 @@ export abstract class GraphPlugin {
 
     // plando file processing
     abstract import(save_file: any): void;
-    abstract export(with_user_overrides?: boolean): any;
+    abstract export(with_user_overrides?: boolean, settings_only?: boolean): any;
 
     abstract get_settings_presets(): string[];
     abstract get_settings_preset(preset_name: string): any;

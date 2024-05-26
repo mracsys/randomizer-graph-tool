@@ -556,7 +556,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.reset_cache();
     }
 
-    export(with_user_overrides: boolean = false): any {
+    export(with_user_overrides: boolean = false, settings_only: boolean = false): any {
         let plando: OotrPlando = {
             ':version': this.ootr_version.to_string(),
             settings: this.worlds[0].settings,
@@ -585,149 +585,160 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
             }
 
-            // this is either the full list of vanilla songs or, if melodies are randomized,
-            // only known song melodies
-            plando.songs = this.worlds[0].settings.graphplugin_song_melodies;
+            if (!settings_only) {
+                // this is either the full list of vanilla songs or, if melodies are randomized,
+                // only known song melodies
+                plando.songs = this.worlds[0].settings.graphplugin_song_melodies;
 
-            plando[':tracked_hints'] = {};
-            let locations = this.worlds[0].get_locations();
-            for (let location of locations) {
-                if (location.type !== 'Event' && !!(location.item)) {
-                    if (location.shuffled) {
-                        let location_item: PlandoItem | string;
-                        if (!!(location.item.price)) {
-                            location_item = { item: location.item.name, price: location.item.price };
-                        } else {
-                            location_item = location.item.name;
-                        }
-                        plando.locations[location.name] = location_item;
-                    } else if (with_user_overrides && !!location.user_item) {
-                        let location_item: PlandoItem | string;
-                        if (!!(location.user_item.price)) {
-                            location_item = { item: location.user_item.name, price: location.user_item.price };
-                        } else {
-                            location_item = location.user_item.name;
-                        }
-                        plando.locations[location.name] = location_item;
-                    }
-                }
-                if (location.checked && Array.isArray(plando[':checked'])) plando[':checked'].push(location.name);
-
-                // Hints are implemented as locations
-                if (location.type === 'Hint' && !!location.hint) {
-                    let plando_hint: PlandoHint = { type: 'undefined' };
-                    switch (location.hint.type) {
-                        case 'location':
-                            if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
-                            if (location.hint.location.item === null) throw `Can't save location hint with undefined item ${location.name}`;
+                plando[':tracked_hints'] = {};
+                let locations = this.worlds[0].get_locations();
+                for (let location of locations) {
+                    if (location.type !== 'Event' && !!(location.item)) {
+                        if (location.shuffled) {
                             let location_item: PlandoItem | string;
-                            if (!!(location.hint.location.item?.price)) {
-                                location_item = { item: location.hint.location.item.name, price: location.hint.location.item.price };
+                            if (!!(location.item.price)) {
+                                location_item = { item: location.item.name, price: location.item.price };
                             } else {
-                                location_item = location.hint.location.item.name;
+                                location_item = location.item.name;
                             }
-                            plando_hint = {
-                                type: 'location',
-                                location: location.hint.location?.name,
-                                item: location_item,
+                            plando.locations[location.name] = location_item;
+                        } else if (with_user_overrides && !!location.user_item) {
+                            let location_item: PlandoItem | string;
+                            if (!!(location.user_item.price)) {
+                                location_item = { item: location.user_item.name, price: location.user_item.price };
+                            } else {
+                                location_item = location.user_item.name;
                             }
-                            break;
-                        case 'entrance':
-                            if (location.hint.entrance === undefined || location.hint.entrance === null) throw `Can't save entrance hint with undefined source entrance ${location.name}`;
-                            if (location.hint.entrance?.replaces === null || location.hint.entrance.original_connection === null || location.hint.entrance.connected_region === null) throw `Can't save entrance hint with undefined target entrance ${location.name}`;
-                            plando_hint = {
-                                type: 'entrance',
-                                entrance: {
-                                    source: { region: location.hint.entrance.original_connection.name, from: location.hint.entrance.parent_region.name },
-                                    target: { region: location.hint.entrance.connected_region?.name, from: location.hint.entrance.replaces.name },
-                                }
-                            }
-                            break;
-                        case 'woth':
-                            if (location.hint.area === undefined || location.hint.area === null) throw `Can't save woth hint with undefined region ${location.name}`;
-                            plando_hint = {
-                                type: 'woth',
-                                area: location.hint.area.name,
-                            }
-                            break;
-                        case 'goal':
-                            if (location.hint.area === undefined || location.hint.area === null) throw `Can't save goal hint with undefined region ${location.name}`;
-                            if (location.hint.goal === undefined || location.hint.goal === null) throw `Can't save goal hint with undefined goal ${location.name}`;
-                            plando_hint = {
-                                type: 'goal',
-                                area: location.hint.area.name,
-                                goal: {
-                                    location: location.hint.goal.location?.name,
-                                    item: location.hint.goal.item?.name,
-                                    item_count: location.hint.goal.item_count,
-                                }
-                            }
-                            break;
-                        case 'foolish':
-                            if (location.hint.area === undefined || location.hint.area === null) throw `Can't save foolish hint with undefined region ${location.name}`;
-                            plando_hint = {
-                                type: 'foolish',
-                                area: location.hint.area.name,
-                            }
-                            break;
-                        case 'misc':
-                            if (location.hint.area === undefined || location.hint.area === null) throw `Can't save misc hint with undefined region ${location.name}`;
-                            if (location.hint.item === undefined || location.hint.item === null) throw `Can't save misc hint with undefined item ${location.name}`;
-                            plando_hint = {
-                                type: 'misc',
-                                area: location.hint.area.name,
-                                item: location.hint.item.name,
-                            }
-                            break;
-                        default:
-                            throw `Unknown hint type encountered while exporting: ${location.hint.type}`;
+                            plando.locations[location.name] = location_item;
+                        }
                     }
-                    plando[':tracked_hints'][location.name] = plando_hint;
-                }
-            }
-            let fixed_hints = {
-                type: 'fixed',
-                fixed_areas: Object.assign({}, this.worlds[0].fixed_item_area_hints),
-            }
-            plando[':tracked_hints']['temple_of_time_altar'] = fixed_hints;
-            plando[':tracked_hints']['pending_location_assignments'] = {
-                type: 'fixed',
-                fixed_areas: Object.assign({}, this.worlds[0].pending_reward_assignments),
-            }
+                    if (location.checked && Array.isArray(plando[':checked'])) plando[':checked'].push(location.name);
 
-            let entrances = this.worlds[0].get_entrances();
-            let simplified_target_types: string[] = [
-                'Interior',
-                'SpecialInterior',
-                'Grotto',
-                'Grave'
-            ];
-            for (let entrance of entrances) {
-                if ((!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
-                    if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.replaces.type) && !!(entrance.connected_region)) {
-                        let target: PlandoEntranceTarget | string;
-                        if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
-                            target = entrance.connected_region.name;
-                        } else {
-                            target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
+                    // Hints are implemented as locations
+                    if (location.type === 'Hint' && !!location.hint) {
+                        let plando_hint: PlandoHint = { type: 'undefined' };
+                        switch (location.hint.type) {
+                            case 'location':
+                                if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
+                                if (location.hint.location.item === null) throw `Can't save location hint with undefined item ${location.name}`;
+                                let location_item: PlandoItem | string;
+                                if (!!(location.hint.location.item?.price)) {
+                                    location_item = { item: location.hint.location.item.name, price: location.hint.location.item.price };
+                                } else {
+                                    location_item = location.hint.location.item.name;
+                                }
+                                plando_hint = {
+                                    type: 'location',
+                                    location: location.hint.location?.name,
+                                    item: location_item,
+                                }
+                                break;
+                            case 'entrance':
+                                if (location.hint.entrance === undefined || location.hint.entrance === null) throw `Can't save entrance hint with undefined source entrance ${location.name}`;
+                                if (location.hint.entrance?.replaces === null || location.hint.entrance.original_connection === null || location.hint.entrance.connected_region === null) throw `Can't save entrance hint with undefined target entrance ${location.name}`;
+                                plando_hint = {
+                                    type: 'entrance',
+                                    entrance: {
+                                        source: { region: location.hint.entrance.original_connection.name, from: location.hint.entrance.parent_region.name },
+                                        target: { region: location.hint.entrance.connected_region?.name, from: location.hint.entrance.replaces.name },
+                                    }
+                                }
+                                break;
+                            case 'woth':
+                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save woth hint with undefined region ${location.name}`;
+                                plando_hint = {
+                                    type: 'woth',
+                                    area: location.hint.area.name,
+                                }
+                                break;
+                            case 'goal':
+                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save goal hint with undefined region ${location.name}`;
+                                if (location.hint.goal === undefined || location.hint.goal === null) throw `Can't save goal hint with undefined goal ${location.name}`;
+                                plando_hint = {
+                                    type: 'goal',
+                                    area: location.hint.area.name,
+                                    goal: {
+                                        location: location.hint.goal.location?.name,
+                                        item: location.hint.goal.item?.name,
+                                        item_count: location.hint.goal.item_count,
+                                    }
+                                }
+                                break;
+                            case 'foolish':
+                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save foolish hint with undefined region ${location.name}`;
+                                plando_hint = {
+                                    type: 'foolish',
+                                    area: location.hint.area.name,
+                                }
+                                break;
+                            case 'misc':
+                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save misc hint with undefined region ${location.name}`;
+                                if (location.hint.item === undefined || location.hint.item === null) throw `Can't save misc hint with undefined item ${location.name}`;
+                                plando_hint = {
+                                    type: 'misc',
+                                    area: location.hint.area.name,
+                                    item: location.hint.item.name,
+                                }
+                                break;
+                            default:
+                                throw `Unknown hint type encountered while exporting: ${location.hint.type}`;
                         }
-                        plando.entrances[entrance.name] = target;
-                    // preserve user connections if they are overridden by an unshuffled entrance setting
-                    } else if (with_user_overrides && !!entrance.user_connection && !!entrance.user_connection.type && !!entrance.user_connection.original_connection) {
-                        let target: PlandoEntranceTarget | string;
-                        if (simplified_target_types.includes(entrance.user_connection.type) && entrance.user_connection.primary) {
-                            target = entrance.user_connection.original_connection.name;
-                        } else {
-                            target = { 'region': entrance.user_connection.original_connection.name, 'from': entrance.user_connection.parent_region.name };
+                        plando[':tracked_hints'][location.name] = plando_hint;
+                    }
+                }
+                let fixed_hints = {
+                    type: 'fixed',
+                    fixed_areas: Object.assign({}, this.worlds[0].fixed_item_area_hints),
+                }
+                plando[':tracked_hints']['temple_of_time_altar'] = fixed_hints;
+                plando[':tracked_hints']['pending_location_assignments'] = {
+                    type: 'fixed',
+                    fixed_areas: Object.assign({}, this.worlds[0].pending_reward_assignments),
+                }
+
+                let entrances = this.worlds[0].get_entrances();
+                let simplified_target_types: string[] = [
+                    'Interior',
+                    'SpecialInterior',
+                    'Grotto',
+                    'Grave'
+                ];
+                for (let entrance of entrances) {
+                    if ((!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
+                        if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.replaces.type) && !!(entrance.connected_region)) {
+                            let target: PlandoEntranceTarget | string;
+                            if (simplified_target_types.includes(entrance.replaces.type) && entrance.replaces.primary) {
+                                target = entrance.connected_region.name;
+                            } else {
+                                target = { 'region': entrance.connected_region.name, 'from': entrance.replaces.parent_region.name };
+                            }
+                            plando.entrances[entrance.name] = target;
+                        // preserve user connections if they are overridden by an unshuffled entrance setting
+                        } else if (with_user_overrides && !!entrance.user_connection && !!entrance.user_connection.type && !!entrance.user_connection.original_connection) {
+                            let target: PlandoEntranceTarget | string;
+                            if (simplified_target_types.includes(entrance.user_connection.type) && entrance.user_connection.primary) {
+                                target = entrance.user_connection.original_connection.name;
+                            } else {
+                                target = { 'region': entrance.user_connection.original_connection.name, 'from': entrance.user_connection.parent_region.name };
+                            }
+                            plando.entrances[entrance.name] = target;
                         }
-                        plando.entrances[entrance.name] = target;
                     }
                 }
             }
         } else {
         }
 
-        return plando;
+        if (!settings_only) {
+            return plando;
+        } else {
+            return {
+                ':version': plando[':version'],
+                settings: plando.settings,
+                dungeons: plando.dungeons,
+                trials: plando.trials,
+            }
+        }
     }
 
     get_search_modes(): string[] {
