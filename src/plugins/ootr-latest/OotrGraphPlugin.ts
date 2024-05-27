@@ -167,6 +167,9 @@ const option_to_item_names: {[option: string]: string[]} = {
         'Compass (Bottom of the Well)',
         'Compass (Ice Cavern)',
     ],
+    'Ocarinas': [
+        'Ocarina',
+    ],
     'Save Epona': [
         'Epona',
     ],

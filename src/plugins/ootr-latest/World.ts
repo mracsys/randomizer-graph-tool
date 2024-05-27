@@ -153,6 +153,7 @@ class World implements GraphWorld {
         "Spooky Mask",
         "Bunny Hood",
         "Mask of Truth",
+        "Ocarina",
     ];
 
     constructor(id: number, settings: SettingsList, ootr_version: OotrVersion, parent_graph: OotrGraphPlugin) {
