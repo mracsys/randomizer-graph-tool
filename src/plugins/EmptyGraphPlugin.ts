@@ -33,9 +33,6 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void { return };
 
     // Search interface
-    get_search_modes(): string[] { return [] };
-    set_search_mode(mode: string): void { return };
-
     check_location(location: GraphLocation): void { return };
     uncheck_location(location: GraphLocation): void { return };
     collect_locations(): void { return };

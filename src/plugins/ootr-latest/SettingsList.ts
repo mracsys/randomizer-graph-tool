@@ -86,6 +86,12 @@ const starting_equipment_items: {[old_starting_item_name: string]: string} = {
     "defense": "Double Defense",
 }
 
+export const settings_to_never_reset_to_default = [
+    'graphplugin_world_search_mode',
+    'graphplugin_region_visibility_mode',
+    'graphplugin_viewable_unshuffled_items',
+];
+
 // Some settings have a value assigned when disabled that is outside
 // the range of the normal options. This causes unexpected behavior
 // when the setting is no longer disabled. This function is called
@@ -372,6 +378,43 @@ class SettingsList {
             disables: [],
             disabled: (settings) => { return false },
         };
+        this.setting_definitions['graphplugin_world_search_mode'] = {
+            name: 'graphplugin_world_search_mode',
+            default: 'known',
+            disabled_default: 'known',
+            type: 'str',
+            display_name: 'World Search Mode',
+            tab: this.setting_definitions['trials_random'].tab,
+            section: this.setting_definitions['trials_random'].section,
+            order: 10002,
+            cosmetic: false,
+            choices: {
+                'starting_items': 'Collected Items as Starting Items',
+                'collected': 'Collected Items',
+                'known': 'Known Items',
+            },
+            disables: [],
+            disabled: (settings) => { return false },
+        };
+        this.setting_definitions['graphplugin_region_visibility_mode'] = {
+            name: 'graphplugin_region_visibility_mode',
+            default: 'tricks',
+            disabled_default: 'tricks',
+            type: 'str',
+            display_name: 'Region Visibility Mode',
+            tab: this.setting_definitions['trials_random'].tab,
+            section: this.setting_definitions['trials_random'].section,
+            order: 10002,
+            cosmetic: false,
+            choices: {
+                'matching': 'Logically Reachable',
+                'tricks': 'Reachable with All Tricks',
+                'connected': 'Connected',
+                'always': 'Always Visible',
+            },
+            disables: [],
+            disabled: (settings) => { return false },
+        };
         this.setting_definitions['debug_parser'] = {
             name: 'debug_parser',
             default: false,
@@ -581,7 +624,8 @@ class SettingsList {
         for (let setting of Object.keys(this.settings)) {
             if (!!(this.setting_definitions.allowed_tricks.choices) && Object.keys(this.setting_definitions.allowed_tricks.choices).includes(setting)) {
                 this.settings[setting] = false;
-            } else {
+            // Only allow explicit override of tracker-specific settings
+            } else if (!(settings_to_never_reset_to_default.includes(setting))) {
                 this.settings[setting] = this.setting_definitions[setting].default;
             }
         }

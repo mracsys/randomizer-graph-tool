@@ -156,6 +156,12 @@ class World implements GraphWorld {
         "Ocarina",
     ];
 
+    public collect_checked_only: boolean = false;
+    public collect_as_starting_items: boolean = false;
+    public visit_all_entrances: boolean = false;
+    public visit_all_connected_entrances: boolean = false;
+    public visit_all_trick_entrances: boolean = true; // default to visit logical entrances + all tricks
+
     constructor(id: number, settings: SettingsList, ootr_version: OotrVersion, parent_graph: OotrGraphPlugin) {
         if (Object.keys(settings).includes('randomized_settings')) {
             if (!!(settings.settings.world_count) && settings.settings.world_count > 1) {
@@ -434,6 +440,11 @@ class World implements GraphWorld {
         w.state = this.state.copy();
         w.state.world = w;
         w.update_internal_settings();
+        w.collect_checked_only = this.collect_checked_only;
+        w.collect_as_starting_items = this.collect_as_starting_items;
+        w.visit_all_entrances = this.visit_all_entrances;
+        w.visit_all_connected_entrances = this.visit_all_connected_entrances;
+        w.visit_all_trick_entrances = this.visit_all_trick_entrances; // default to visit logical entrances + all tricks
         return w;
     }
 

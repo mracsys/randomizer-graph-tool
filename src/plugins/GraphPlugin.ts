@@ -207,9 +207,6 @@ export abstract class GraphPlugin {
     abstract replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void;
 
     // Search interface
-    abstract get_search_modes(): string[];
-    abstract set_search_mode(mode: string): void;
-
     abstract check_location(location: GraphLocation): void;
     abstract uncheck_location(location: GraphLocation): void;
     abstract collect_locations(): void;

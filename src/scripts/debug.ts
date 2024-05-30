@@ -32,16 +32,74 @@ var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 //test_undisabling_settings();
 //test_settings_change();
 //test_trick_visited_entrances();
-test_skipped_locations();
+//test_skipped_locations();
+test_race_mode_inventory();
+//test_region_visibility();
 
 async function test_preset() {
     let version = '7.1.195 R-1';
     let local_files = 'tests/ootr-local-roman-195';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
     graph.load_settings_preset('S7 Tournament');
     graph.collect_locations();
+}
+
+async function test_race_mode_inventory() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
+    let plando = JSON.parse(readFileSync(resolve('tests/seeds/manual', 'seed143.json'), { encoding: 'utf8'}));
+    //graph.set_search_mode('Collected Items as Starting Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'starting_items');
+    graph.import(plando);
+
+    let inventory = graph.get_player_inventory_for_world(graph.worlds[0]);
+    console.log(`Total inventory items: ${Object.values(inventory).reduce((p, a) => p + a, 0)}`);
+    graph.collect_locations();
+    inventory = graph.get_player_inventory_for_world(graph.worlds[0]);
+    console.log(`Total inventory items: ${Object.values(inventory).reduce((p, a) => p + a, 0)}`);
+
+    console.log('Done');
+}
+
+async function test_region_visibility() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-roman-195';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
+    //graph.set_search_mode('Collected Items as Starting Items');
+    //graph.set_region_search_mode('Logically Reachable');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'starting_items');
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_region_visibility_mode'], 'connected');
+
+    let inventory = graph.get_player_inventory_for_world(graph.worlds[0]);
+    console.log(`Total inventory items: ${Object.values(inventory).reduce((p, a) => p + a, 0)}`);
+    graph.collect_locations();
+    inventory = graph.get_player_inventory_for_world(graph.worlds[0]);
+    console.log(`Total inventory items: ${Object.values(inventory).reduce((p, a) => p + a, 0)}`);
+
+    graph.change_setting(graph.worlds[0], graph_settings['shuffle_overworld_entrances'], true);
+    graph.change_setting(graph.worlds[0], graph_settings['shuffle_dungeon_entrances'], 'simple');
+
+    let lw = graph.worlds[0].get_entrance('Kokiri Forest -> Lost Woods');
+    let zr = graph.worlds[0].get_entrance('Lost Woods -> Zora River');
+    let zd = graph.worlds[0].get_entrance('ZR Behind Waterfall -> Zoras Domain');
+    let dmt = graph.worlds[0].get_entrance('Kak Behind Gate -> Death Mountain');
+    let wl = graph.worlds[0].get_entrance('Wasteland Near Fortress -> GF Outside Gate');
+    let me = graph.worlds[0].get_entrance('Market -> Market Entrance');
+    graph.set_entrance(lw, zr);
+    graph.set_entrance(zd, dmt);
+    graph.set_entrance(wl, me);
+    graph.collect_locations();
+
+    console.log('Done');
 }
 
 async function test_trick_visited_entrances() {
@@ -49,7 +107,9 @@ async function test_trick_visited_entrances() {
     let local_files = 'tests/ootr-local-roman-195';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
     graph.load_settings_preset('S7 Tournament');
 
     graph.collect_locations();
@@ -75,7 +135,9 @@ async function test_skipped_locations() {
     let local_files = 'tests/ootr-local-roman-195';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await OotrGraphPlugin.create_remote_graph({}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
     graph.load_settings_preset('S7 Tournament');
 
     console.log(`Visited skipped locations count: ${graph.search._cache.pending_skipped_locations.size}`);
@@ -97,7 +159,9 @@ async function test_undisabling_settings() {
     let local_files = 'tests/ootr-local-roman-195';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
     graph.load_settings_preset('S7 Tournament');
 
     let settings = graph.get_settings_options();
@@ -113,7 +177,9 @@ async function test_settings_change() {
     let local_files = 'tests/ootr-local-roman-195';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
     graph.load_settings_preset('S7 Tournament');
 
     let settings = graph.get_settings_options();
@@ -129,7 +195,9 @@ async function test_collecting_checked_locations() {
     let local_files = 'tests/ootr-local-143';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    graph.set_search_mode('Collected Items');
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
 
     let locations_to_check: {[location: string]: string} = {
         'KF Midos Top Left Chest': 'Kokiri Sword',

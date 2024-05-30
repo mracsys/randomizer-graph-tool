@@ -28,11 +28,9 @@ type SearchOptionalParams = {
     initial_cache?: SearchCache | null,
     with_tricks?: boolean,
     regions_only?: boolean,
-    collect_checked_only?: boolean,
-    collect_as_starting_items?: boolean,
-    collect_checked_shops_only?: boolean,
-    collect_checked_collectables_only?: string[],
-    collect_checked_events_only?: boolean,
+    visit_all_entrances?: boolean;
+    visit_all_connected_entrances?: boolean;
+    visit_all_trick_entrances?: boolean;
 }
 
 class Search {
@@ -43,33 +41,18 @@ class Search {
     initial_cache: SearchCache | null;
     with_tricks: boolean;
     regions_only: boolean;
-    public collect_checked_only: boolean;
-    public collect_as_starting_items: boolean;
-    public collect_checked_shops_only: boolean;
-    public collect_checked_collectables_only: string[];
-    public collect_checked_events_only: boolean;
 
     constructor(state_list: WorldState[], 
     {
         initial_cache = null,
         with_tricks = false,
         regions_only = false,
-        collect_checked_only = false,
-        collect_as_starting_items = false,
-        collect_checked_shops_only = false,
-        collect_checked_collectables_only = [],
-        collect_checked_events_only = false,
     }: SearchOptionalParams = {}) {
         this.state_list = state_list;
         this.current_sphere = 0;
         this.initial_cache = initial_cache;
         this.with_tricks = with_tricks || regions_only;
         this.regions_only = regions_only;
-        this.collect_checked_only = collect_checked_only;
-        this.collect_as_starting_items = collect_as_starting_items;
-        this.collect_checked_shops_only = collect_checked_shops_only;
-        this.collect_checked_collectables_only = collect_checked_collectables_only;
-        this.collect_checked_events_only = collect_checked_events_only;
         for (let state of this.state_list) {
             state.search = this;
         }
@@ -231,6 +214,28 @@ class Search {
 
     _expand_regions(exit_queue: Entrance[], regions: Region[], tods: TimeOfDayMap, age: string): Entrance[] {
         let failed = [];
+        // If this search is just determining region viewability for trackers, skip
+        // entrance access rules for worlds where the user wants to always see every
+        // region group.
+        // Also handle connected overworld/warp entrances if selected and there is
+        // a connected island somewhere that can't be reached from the root region,
+        // and thus would not end up in the exit queue.
+        if (this.regions_only) {
+            for (let state of this.state_list) {
+                if (state.world.visit_all_entrances) {
+                    let all_regions = this.state_list.flatMap((state) => [...state.world.regions]);
+                    regions.push(...all_regions);
+                } else if (state.world.visit_all_connected_entrances) {
+                    // Don't check for warps here, wait until the warp is available through the queue.
+                    // Also don't add time of day as these could be hinted connections with no actual
+                    // access yet.
+                    let connected_regions = this.state_list.flatMap((state) => [...state.world.regions.filter(r => r.exits.filter(e => !!e.connected_region && e.shuffled).length)]);
+                    regions.push(...connected_regions);
+                    exit_queue.push(...connected_regions.flatMap(r => r.exits));
+                }
+            }
+        }
+        // Normal search
         for (let exit of exit_queue) {
             if (!!exit.connected_region && !(regions.includes(exit.connected_region))) {
                 if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
@@ -246,6 +251,15 @@ class Search {
                     exit_queue.push(...exit.connected_region.exits);
                 } else {
                     failed.push(exit);
+                    // If the user for this exit's world wants to always show regions for
+                    // which they have found an entrance, add it to the list and assume
+                    // the user has found a repeatable way there for time-of-day. This
+                    // only affects region viewability for trackers, not location logic.
+                    if (exit.world.visit_all_connected_entrances && this.regions_only && (exit.shuffled || exit.is_warp)) {
+                        regions.push(exit.connected_region);
+                        tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
+                        exit_queue.push(...exit.connected_region.exits);
+                    }
                 }
             } else if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
                 if (exit.connected_region === null) {
@@ -291,14 +305,14 @@ class Search {
             for (let l of item_locations) {
                 if (!(visited_locations.has(l)) && !!l.parent_region && !!l.world) {
                     if (adult_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'adult'})) {
-                        if (!!l.item && (l.checked || !this.collect_checked_only || !(l.viewable()))) {
+                        if (!!l.item && (l.checked || !l.world.collect_checked_only || !(l.viewable()))) {
                             had_reachable_locations = true;
                             visited_locations.add(l);
                         }
                         if (!this.regions_only) l.set_visited(this.with_tricks);
                         yield l;
                     } else if (child_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'child'})) {
-                        if (!!l.item && (l.checked || !this.collect_checked_only || !(l.viewable()))) {
+                        if (!!l.item && (l.checked || !l.world.collect_checked_only || !(l.viewable()))) {
                             had_reachable_locations = true;
                             visited_locations.add(l);
                         }
@@ -321,7 +335,6 @@ class Search {
     }
 
     collect_locations(locations: Location[] | null = null) {
-        this.check_pending_starting_items();
         // update player inventory with known items that are now checked
         let new_pending_locations: Location[] = [];
         for (let location of this._cache.pending_collection_locations) {
@@ -333,16 +346,21 @@ class Search {
         }
         this._cache.pending_collection_locations = new_pending_locations;
         let l = !!locations ? locations : this.progression_locations();
-        // collect checked locations regardless of logic if desired by the user ("race mode")
-        if (this.collect_as_starting_items) {
+        // Collect checked locations regardless of logic if desired by the user ("race mode")
+        // Applies to all worlds if enabled for any world.
+        let race_mode = this.state_list.some((state) => state.world.collect_as_starting_items);
+        if (race_mode) {
             this.reset_states();
             for (let location of l) {
                 if (location.checked && !!location.item) this.collect(location.item);
             }
         }
+        // Pending starting items have to be collected after race mode checks
+        // to handle the state reset
+        this.check_pending_starting_items();
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
-            if (!!location.item && ((location.checked && !this.collect_as_starting_items) || !this.collect_checked_only || !(location.viewable()) || location.skipped)) {
+            if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable()) || location.skipped)) {
                 if (!location.checked && location.explicitly_collect_item && !location.skipped) {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);
@@ -358,10 +376,12 @@ class Search {
         }
         // Add checked out-of-logic locations to inventory if
         // they aren't being dumped into the starting inventory.
-        for (let location of l) {
-            if (!(this._cache.visited_locations.has(location)) && !(this._cache.pending_inventory_locations.has(location)) && location.checked && !!location.item) {
-                this.collect(location.item, false, true);
-                this._cache.pending_inventory_locations.add(location);
+        if (!race_mode) {
+            for (let location of l) {
+                if (!(this._cache.visited_locations.has(location)) && !(this._cache.pending_inventory_locations.has(location)) && location.checked && !!location.item) {
+                    this.collect(location.item, false, true);
+                    this._cache.pending_inventory_locations.add(location);
+                }
             }
         }
     }

@@ -13,7 +13,7 @@ import LocationList from './LocationList.js';
 import ItemList from './ItemList.js';
 import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
-import { global_settings_overrides, setting_options_include_value } from './SettingsList.js';
+import { global_settings_overrides, setting_options_include_value, settings_to_never_reset_to_default } from './SettingsList.js';
 import { Hint, HintAreas, HintGoal } from './Hints.js';
 import { Region } from './Region.js';
 import HintArea from './HintArea.js';
@@ -219,11 +219,6 @@ export class OotrGraphPlugin extends GraphPlugin {
     public item_list: ItemList;
     public ItemInfo: ItemInfo;
     private disabled_settings: GraphSetting[] = [];
-    public collect_checked_only: boolean = false;
-    public collect_as_starting_items: boolean = false;
-    public collect_checked_shops_only: boolean = false;
-    public collect_checked_collectables_only: string[] = [];
-    public collect_checked_events_only: boolean = false;
 
     constructor(
         public user_overrides: any,
@@ -327,26 +322,15 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     create_searches() {
-        this.search = new Search(this.worlds.map((world) => world.state), 
-            {
-                collect_as_starting_items: this.collect_as_starting_items,
-                collect_checked_only: this.collect_checked_only,
-                collect_checked_shops_only: this.collect_checked_shops_only,
-                collect_checked_collectables_only: this.collect_checked_collectables_only,
-                collect_checked_events_only: this.collect_checked_events_only,
-            });
+        this.search = new Search(this.worlds.map((world) => world.state));
         this.all_tricks_search = new Search(this.all_tricks_worlds.map((world) => world.state),
             {
                 with_tricks: true,
-                collect_as_starting_items: this.collect_as_starting_items,
-                collect_checked_only: this.collect_checked_only,
             });
         this.all_tricks_and_keys_search = new Search(this.all_tricks_and_keys_worlds.map((world) => world.state),
             {
                 with_tricks: true,
                 regions_only: true,
-                collect_as_starting_items: this.collect_as_starting_items,
-                collect_checked_only: this.collect_checked_only,
             });
     }
 
@@ -358,8 +342,6 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     reset_search(search: Search) {
-        search.collect_checked_only = this.collect_checked_only;
-        search.collect_as_starting_items = this.collect_as_starting_items;
         search.reset_states();
     }
 
@@ -411,7 +393,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     } else if (Object.keys(plando).includes('settings')) {
                         if (Object.keys(plando.settings).includes(setting)) {
                             this.change_setting(world, def, <GraphSettingType>plando.settings[setting], {update_vanilla_items: false, from_import: true});
-                        } else {
+                        } else if (!(settings_to_never_reset_to_default.includes(setting))) {
                             this.change_setting(world, def, def.default, {update_vanilla_items: false, from_import: true});
                         }
                     } else {
@@ -752,7 +734,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         ];
     }
 
-    set_search_mode(mode: string): void {
+    /*set_search_mode(mode: string): void {
         switch(mode) {
             case 'Collected Items as Starting Items':
                 this.collect_as_starting_items = true;
@@ -771,6 +753,36 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.reset_searches();
         this.set_viewable_region_groups();
     }
+
+    set_region_search_mode(mode: string): void {
+        switch(mode) {
+            case 'Reachable with All Tricks':
+                this.visit_all_entrances = false;
+                this.visit_all_connected_entrances = false;
+                this.visit_all_trick_entrances = true;
+                break;
+            case 'Connected':
+                this.visit_all_entrances = false;
+                this.visit_all_connected_entrances = true;
+                this.visit_all_trick_entrances = true;
+                break;
+            case 'Always Visible':
+                this.visit_all_entrances = true;
+                this.visit_all_connected_entrances = true;
+                this.visit_all_trick_entrances = true;
+                break;
+            case 'Logically Reachable':
+            default:
+                this.visit_all_entrances = false;
+                this.visit_all_connected_entrances = false;
+                this.visit_all_trick_entrances = false;
+                break;
+        }
+        // reset first to clear out world states
+        this.reset_searches();
+        this.create_searches();
+        this.set_viewable_region_groups();
+    }*/
 
     get_game_versions(): GraphGameVersions {
         let ootr: GraphGameVersions = {
@@ -1088,6 +1100,48 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
                 world.initialize_locations();
+                break;
+            case 'graphplugin_world_search_mode':
+                switch (value) {
+                    case 'starting_items':
+                        world.collect_as_starting_items = true;
+                        world.collect_checked_only = true;
+                        break;
+                    case 'collected':
+                        world.collect_as_starting_items = false;
+                        world.collect_checked_only = true;
+                        break;
+                    case 'known':
+                    default:
+                        world.collect_as_starting_items = false;
+                        world.collect_checked_only = false;
+                        break;
+                }
+                break;
+            case 'graphplugin_region_visibility_mode':
+                switch(value) {
+                    case 'tricks':
+                        world.visit_all_entrances = false;
+                        world.visit_all_connected_entrances = false;
+                        world.visit_all_trick_entrances = true;
+                        break;
+                    case 'connected':
+                        world.visit_all_entrances = false;
+                        world.visit_all_connected_entrances = true;
+                        world.visit_all_trick_entrances = true;
+                        break;
+                    case 'always':
+                        world.visit_all_entrances = true;
+                        world.visit_all_connected_entrances = true;
+                        world.visit_all_trick_entrances = true;
+                        break;
+                    case 'matching':
+                    default:
+                        world.visit_all_entrances = false;
+                        world.visit_all_connected_entrances = false;
+                        world.visit_all_trick_entrances = false;
+                        break;
+                }
                 break;
             default:
                 break;
@@ -2250,7 +2304,11 @@ export class OotrGraphPlugin extends GraphPlugin {
         let all_tricks_worlds = this.worlds.map(w => w.copy());
         let tricks = !!(this.settings_list.setting_definitions.allowed_tricks.choices) ? Object.keys(this.settings_list.setting_definitions.allowed_tricks.choices) : [];
         for (let world of all_tricks_worlds) {
-            this.change_setting(world, this.settings_list.setting_definitions.allowed_tricks, tricks, {update_world_only: true});
+            // Always enable tricks for checking reachable locations,
+            // but limit region visibility if requested by user settings.
+            if (!keysy || (keysy && world.visit_all_trick_entrances)) {
+                this.change_setting(world, this.settings_list.setting_definitions.allowed_tricks, tricks, {update_world_only: true});
+            }
             if (keysy) {
                 // Collect 10 small keys for each dungeon to simulate optimal key usage
                 // Relevant for Spirit Temple exits to the Colossus hands providing Desert Colossus access
