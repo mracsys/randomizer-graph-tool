@@ -1681,7 +1681,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
         } else {
             // Normal entrances can only link to exactly one shuffled target.
-            let used_targets = all_targets.map(e => e.replaces).filter(e => e !== null);
+            let used_targets = all_targets.map(e => e.is_savewarp ? null : e.replaces).filter(e => e !== null);
             let targets = all_targets.filter(e => !(used_targets.includes(e)) && !!e.type && e.shuffled);
             for (let target of targets) {
                 if (!!(target.type) && !!(entrance.type)) {
@@ -1741,6 +1741,7 @@ export class OotrGraphPlugin extends GraphPlugin {
 
         for (let [savewarp, replaces] of savewarps_to_connect) {
             if (savewarp.world === null) throw `Attempted to connect savewarp without parent world`;
+            savewarp.is_savewarp = true;
             savewarp.replaces = savewarp.world.get_entrance(replaces);
             if (savewarp.replaces === null || savewarp.replaces.connected_region === null) throw `Attempted to connect savewarp with no equivalent entrance`;
             savewarp.connect(savewarp.replaces.connected_region);
@@ -1753,6 +1754,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     savewarp.parent_region.dungeon :
                     `${savewarp.parent_region.dungeon} MQ`;
                 let alt_savewarp = savewarp.world.get_entrance(savewarp.name, dungeon_variant_name);
+                alt_savewarp.is_savewarp = true;
                 let alt_savewarp_target = savewarp.world.get_region(savewarp.replaces.connected_region.name, dungeon_variant_name);
                 alt_savewarp.connect(alt_savewarp_target);
             }

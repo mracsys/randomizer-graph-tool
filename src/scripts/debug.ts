@@ -22,7 +22,7 @@ var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 //test_dungeon_region_group_swap();
 //test_entrance_linking();
 //test_region_viewability();
-//test_entrance_pools();
+test_entrance_pools();
 //test_import(true);
 //test_spoiler(false, true);
 //test_remote_files();
@@ -33,7 +33,7 @@ var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 //test_settings_change();
 //test_trick_visited_entrances();
 //test_skipped_locations();
-test_race_mode_inventory();
+//test_race_mode_inventory();
 //test_region_visibility();
 
 async function test_preset() {
@@ -333,6 +333,19 @@ async function test_region_viewability() {
 }
 
 async function test_entrance_pools() {
+    let version = '7.1.195 R-1';
+    let local_files = 'tests/ootr-local-143';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    let settings = graph.get_settings_options();
+    let er = settings['shuffle_dungeon_entrances'];
+    graph.change_setting(graph.worlds[0], er, 'simple');
+    let entrance = graph.worlds[0].get_entrance('KF Outside Deku Tree -> Deku Tree Lobby');
+    let pool = graph.get_entrance_pool(graph.worlds[0], entrance);
+    console.log(Object.keys(pool['Dungeons']).length);
+}
+
+async function test_oneway_entrance_pools() {
     let version = '7.1.143 R-1';
     let local_files = 'tests/ootr-local-143';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
