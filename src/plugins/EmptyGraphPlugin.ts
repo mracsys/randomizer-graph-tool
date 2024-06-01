@@ -52,6 +52,8 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     // World building interface
     get_item(world: GraphWorld, item_name: string): GraphItem { return { name: '', price: null, advancement: false } };
     set_location_item(location: GraphLocation, item: GraphItem, price?: number): void { return };
+    get_full_exit_pool(world: GraphWorld) { return {} };
+    get_full_entrance_pool(world: GraphWorld) { return {} };
     get_entrance_pool(world: GraphWorld, entrance: GraphEntrance) { return {} };
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
 

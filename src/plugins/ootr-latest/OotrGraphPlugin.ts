@@ -15,7 +15,7 @@ import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
 import { global_settings_overrides, setting_options_include_value, settings_to_never_reset_to_default } from './SettingsList.js';
 import { Hint, HintAreas, HintGoal } from './Hints.js';
-import { Region } from './Region.js';
+import { RegionGroup } from './RegionGroup.js';
 import HintArea from './HintArea.js';
 
 interface OotrPlando {
@@ -466,7 +466,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     let hint_location = this.worlds[0].get_location(hint_location_name);
                     let item: Item;
-                    let area: Region;
+                    let area: RegionGroup;
                     switch(hint_data.type) {
                         case 'location':
                             if (hint_data.location === undefined) throw `Can't import location hint with undefined location: ${hint_location_name}`;
@@ -488,13 +488,13 @@ export class OotrGraphPlugin extends GraphPlugin {
                             break;
                         case 'woth':
                             if (hint_data.area === undefined) throw `Can't import woth hint with undefined region: ${hint_location_name}`;
-                            area = this.worlds[0].get_region(hint_data.area);
+                            area = this.worlds[0].get_region_group(hint_data.area);
                             this.hint_required_area(hint_location, area);
                             break;
                         case 'goal':
                             if (hint_data.area === undefined) throw `Can't import goal hint with undefined region: ${hint_location_name}`;
                             if (hint_data.goal === undefined) throw `Can't import goal hint with undefined goal: ${hint_location_name}`;
-                            area = this.worlds[0].get_region(hint_data.area);
+                            area = this.worlds[0].get_region_group(hint_data.area);
                             let goal = new HintGoal();
                             if (!!hint_data.goal.item) {
                                 if (typeof hint_data.goal.item === 'string') {
@@ -511,13 +511,13 @@ export class OotrGraphPlugin extends GraphPlugin {
                             break;
                         case 'foolish':
                             if (hint_data.area === undefined) throw `Can't import foolish hint with undefined region: ${hint_location_name}`;
-                            area = this.worlds[0].get_region(hint_data.area);
+                            area = this.worlds[0].get_region_group(hint_data.area);
                             this.hint_unrequired_area(hint_location, area);
                             break;
                         case 'misc':
                             if (hint_data.area === undefined) throw `Can't import misc hint with undefined region: ${hint_location_name}`;
                             if (hint_data.item === undefined) throw `Can't import misc hint with undefined item: ${hint_location_name}`;
-                            area = this.worlds[0].get_region(hint_data.area);
+                            area = this.worlds[0].get_region_group(hint_data.area);
                             if (typeof hint_data.item === 'string') {
                                 item = this.worlds[0].get_item(hint_data.item)
                             } else {
@@ -600,7 +600,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (location.checked && Array.isArray(plando[':checked'])) plando[':checked'].push(location.name);
 
                     // Hints are implemented as locations
-                    if (location.type === 'Hint' && !!location.hint) {
+                    if (location.is_hint && !!location.hint) {
                         let plando_hint: PlandoHint = { type: 'undefined' };
                         switch (location.hint.type) {
                             case 'location':
@@ -1315,6 +1315,9 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
         this.set_location_item(hinted_location, item);
         let hint = new Hint('location')
         hint.location = hinted_location;
@@ -1323,6 +1326,9 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
         this.set_entrance(hinted_entrance, replaced_entrance);
         let hint = new Hint('entrance');
         hint.entrance = hinted_entrance;
@@ -1330,6 +1336,9 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
         hinted_area.is_required = true;
         let hint = new Hint('woth');
         hint.area = hinted_area;
@@ -1337,7 +1346,10 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void {
-        hinted_area.required_for = hinted_goal;
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
+        hinted_area.required_for.push(hinted_goal);
         let hint = new Hint('goal');
         hint.area = hinted_area;
         hint.goal = hinted_goal;
@@ -1345,6 +1357,9 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
         hinted_area.is_not_required = true;
         let hint = new Hint('foolish');
         hint.area = hinted_area;
@@ -1352,6 +1367,9 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_item: GraphItem) {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
         hinted_area.hinted_items.push(hinted_item);
         let hint = new Hint('misc') // covers Ganondorf Light Arrow hint and Dampe Diary hint
         hint.area = hinted_area;
@@ -1375,8 +1393,17 @@ export class OotrGraphPlugin extends GraphPlugin {
                 this.set_entrance(hint_location.hint.entrance, null);
             } else if (hint_location.hint?.type === 'woth' && !!hint_location.hint.area) {
                 hint_location.hint.area.is_required = false;
-            } else if (hint_location.hint?.type === 'goal' && !!hint_location.hint.area) {
-                hint_location.hint.area.required_for = null;
+            } else if (hint_location.hint?.type === 'goal' && !!hint_location.hint.area && !!hint_location.hint.goal) {
+                let hinted_area = hint_location.hint.area;
+                let area_paths: GraphHintGoal[] = [];
+                for (let path of hinted_area.required_for) {
+                    if (!(path.item?.name === hint_location.hint.goal.item?.name &&
+                        path.location?.name === hint_location.hint.goal.location?.name &&
+                        path.item_count === hint_location.hint.goal.item_count)) {
+                        area_paths.push(path);
+                    }
+                }
+                hinted_area.required_for = area_paths;
             } else if (hint_location.hint?.type === 'foolish' && !!hint_location.hint.area) {
                 hint_location.hint.area.is_not_required = false;
             } else if (hint_location.hint?.type === 'misc' && !!hint_location.hint.item && !!hint_location.hint.area && hint_location.hint.area.hinted_items.length > 0) {
@@ -1554,6 +1581,27 @@ export class OotrGraphPlugin extends GraphPlugin {
             world.fixed_item_area_hints[item_name] = reward_dungeon;
         }
         // No need to reset searches as this is handled in set_location_item
+    }
+
+    get_full_exit_pool(world: World): GraphEntrancePool {
+        let pool: GraphEntrancePool = {};
+        let all_exits = world.region_groups.filter(r => r.page !== '').flatMap(r => r.exits).filter(e => !(e.is_reverse()) && e.shuffled);
+        for (let exit of all_exits) {
+            let type_alias = !!exit.source_group ? exit.source_group.name : 'Unknown Region';
+            if (!(Object.keys(pool).includes(type_alias))) pool[type_alias] = [];
+            pool[type_alias].push(exit);
+        }
+        return pool;
+    }
+
+    get_full_entrance_pool(world: World): GraphEntrancePool {
+        let pool: GraphEntrancePool = {};
+        let all_targets = world.get_entrances().filter(e => !!e.type && e.shuffled);
+        for (let target of all_targets) {
+            if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
+            pool[target.type_alias].push(target);
+        }
+        return pool;
     }
 
     get_entrance_pool(world: World, entrance: Entrance): GraphEntrancePool {

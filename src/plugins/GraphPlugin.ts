@@ -71,7 +71,7 @@ export interface GraphRegion {
     locations: GraphLocation[];
     world: GraphWorld;
     is_required: boolean;
-    required_for: GraphHintGoal | null;
+    required_for: GraphHintGoal[];
     is_not_required: boolean;
     hinted_items: GraphItem[];
     viewable: boolean;
@@ -226,6 +226,8 @@ export abstract class GraphPlugin {
 
     // World building interface
     abstract set_location_item(location: GraphLocation, item: GraphItem | null, price?: number): void;
+    abstract get_full_exit_pool(world: GraphWorld): GraphEntrancePool;
+    abstract get_full_entrance_pool(world: GraphWorld): GraphEntrancePool;
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
 

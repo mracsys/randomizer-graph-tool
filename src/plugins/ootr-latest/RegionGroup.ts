@@ -20,7 +20,7 @@ export class RegionGroup implements GraphRegion {
         public page: string = 'Overworld',
         public viewable: boolean = false,
         public is_required: boolean = false,
-        public required_for: HintGoal | null = null,
+        public required_for: HintGoal[] = [],
         public is_not_required: boolean = false,
         public hinted_items: Item[] = [],
     ) {

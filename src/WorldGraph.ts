@@ -16,6 +16,8 @@ import {
     GraphLocation,
     GraphItem,
     GraphItemDictionary,
+    GraphHint,
+    GraphHintGoal,
 } from "./plugins/GraphPlugin.js";
 import EmptyGraphPlugin from "./plugins/EmptyGraphPlugin.js";
 import OotrGraphPlugin from './plugins/ootr-latest/OotrGraphPlugin.js';
@@ -104,4 +106,6 @@ export {
     GraphLocation,
     GraphItem,
     GraphItemDictionary,
+    GraphHint,
+    GraphHintGoal,
 };

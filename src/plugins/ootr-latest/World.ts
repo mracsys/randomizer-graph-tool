@@ -826,7 +826,7 @@ class World implements GraphWorld {
             }
         }
         if (alias !== '') {
-            let region_group = this.get_region_group(alias);
+            let region_group = this.get_new_region_group(alias);
             region_group.add_region(region);
             return region_group;
         }
@@ -836,7 +836,7 @@ class World implements GraphWorld {
     create_target_region_group(starting_entrance: Entrance): RegionGroup {
         let starting_region = starting_entrance.original_connection;
         if (starting_region === null) throw `Failed to create target region group: empty original connection for entrance ${starting_entrance.name}`
-        let region_group = this.get_region_group(starting_entrance.name);
+        let region_group = this.get_new_region_group(starting_entrance.name);
         region_group.add_region(starting_region);
         let exits: Entrance[] = [];
         let regions: Region[] = [];
@@ -914,11 +914,20 @@ class World implements GraphWorld {
         }
     }
 
-    get_region_group(region_name: string): RegionGroup {
+    get_new_region_group(region_name: string): RegionGroup {
         if (!(region_name in this._region_group_cache)) {
             this._region_group_cache[region_name] = new RegionGroup(region_name, this);
         }
         return this._region_group_cache[region_name];
+    }
+
+    get_region_group(region_name: string): RegionGroup {
+        let region_group = this.region_groups.filter(r => r.name === region_name);
+        if (region_group.length === 1) {
+            return region_group[0];
+        } else {
+            throw(`No such region group ${region_name}`);
+        }
     }
 
     get_region(region_name: Region | string, dungeon_variant_name: string = ''): Region {
