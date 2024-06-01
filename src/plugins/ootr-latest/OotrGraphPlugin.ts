@@ -454,6 +454,15 @@ export class OotrGraphPlugin extends GraphPlugin {
         } else {
             this.set_entrances(null);
         }
+        // Reset hints
+        for (let world of this.worlds) {
+            let hint_locations = world.get_locations().filter(l => l.is_hint);
+            for (let hint_location of hint_locations) {
+                if (hint_location.hint !== null) {
+                    this.unhint(hint_location);
+                }
+            }
+        }
         if (Object.keys(plando).includes(':tracked_hints')) {
             let hints = plando[':tracked_hints'] as PlandoHintList;
             for (let [hint_location_name, hint_data] of Object.entries(hints)) {
@@ -1270,6 +1279,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             if (!!(e.reverse) && !!(t.reverse) && !!(e.reverse.original_connection) && e.coupled) {
                 t.reverse.connect(e.reverse.original_connection);
                 t.reverse.replaces = e.reverse;
+                t.reverse.user_connection = e.reverse;
             }
             // has to run after the reverse is linked to look up the linked dungeon for boss shuffle
             e.world.add_hinted_dungeon_reward(e);
@@ -1281,6 +1291,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 e.replaces.reverse.world.remove_hinted_dungeon_reward(e.replaces.reverse);
                 e.replaces.reverse.disconnect();
                 e.replaces.reverse.replaces = null;
+                e.replaces.reverse.user_connection = null;
             }
             e.world.remove_hinted_dungeon_reward(e);
             e.disconnect();
@@ -1407,10 +1418,13 @@ export class OotrGraphPlugin extends GraphPlugin {
             } else if (hint_location.hint?.type === 'foolish' && !!hint_location.hint.area) {
                 hint_location.hint.area.is_not_required = false;
             } else if (hint_location.hint?.type === 'misc' && !!hint_location.hint.item && !!hint_location.hint.area && hint_location.hint.area.hinted_items.length > 0) {
-                let item_index = hint_location.hint.area.hinted_items.indexOf(hint_location.hint.item);
-                if (item_index >= 0) {
-                    hint_location.hint.area.hinted_items.slice(item_index, 1);
+                let area_items: GraphItem[] = [];
+                for (let hinted_item of hint_location.hint.area.hinted_items) {
+                    if (hinted_item.name !== hint_location.hint.item.name) {
+                        area_items.push(hinted_item);
+                    }
                 }
+                hint_location.hint.area.hinted_items = area_items;
             }
         }
         hint_location.hint = null;
