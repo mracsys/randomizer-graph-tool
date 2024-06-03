@@ -1,6 +1,6 @@
-import { GraphRegion } from "../GraphPlugin.js";
+import { GraphRegion, GraphHintGoal } from "../GraphPlugin.js";
 
-import { HintAreas, HintGoal } from "./Hints.js";
+import { HintAreas } from "./Hints.js";
 import Entrance from './Entrance.js';
 import { Location } from "./Location.js";
 import World from './World.js';
@@ -42,9 +42,10 @@ export class Region implements GraphRegion {
         public page: string = '',
         public viewable: boolean = false,
         public is_required: boolean = false,
-        public required_for: HintGoal[] = [],
+        public required_for: GraphHintGoal[] = [],
         public is_not_required: boolean = false,
         public hinted_items: Item[] = [],
+        public num_major_items: number | null = null,
     ) {
         this.alias = this.name;
     }

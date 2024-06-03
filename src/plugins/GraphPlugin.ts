@@ -9,14 +9,21 @@ export interface GraphLocation {
     item: GraphItem | null;
     vanilla_item: GraphItem | null;
     parent_region: GraphRegion | null;
+    hint_area(): string | null;
     world: GraphWorld | null;
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
+    child_visited: boolean;
+    child_visited_with_other_tricks: boolean;
+    adult_visited: boolean;
+    adult_visited_with_other_tricks: boolean;
     skipped: boolean;
     checked: boolean;
     is_hint: boolean;
     hint: GraphHint | null;
+    hint_text: string;
+    hinted: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
     is_restricted: boolean;
@@ -54,6 +61,12 @@ export interface GraphEntrance {
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
+    child_visited: boolean;
+    child_visited_with_other_tricks: boolean;
+    adult_visited: boolean;
+    adult_visited_with_other_tricks: boolean;
+    checked: boolean;
+    hinted: boolean;
     viewable(): boolean;
     is_reverse(): boolean;
 }
@@ -74,6 +87,7 @@ export interface GraphRegion {
     required_for: GraphHintGoal[];
     is_not_required: boolean;
     hinted_items: GraphItem[];
+    num_major_items: number | null;
     viewable: boolean;
 }
 
@@ -81,15 +95,14 @@ export interface GraphHint {
     type: string;
     area: GraphRegion | null;
     location: GraphLocation | null;
+    location2: GraphLocation | null;
     entrance: GraphEntrance | null;
+    target: GraphEntrance | null;
     goal: GraphHintGoal | null;
     item: GraphItem | null;
-}
-
-export interface GraphHintGoal {
-    location: GraphLocation | null;
-    item: GraphItem | null;
-    item_count: number;
+    item2: GraphItem | null;
+    num_major_items: number | null;
+    equals(other_hint: GraphHint): boolean;
 }
 
 export interface GraphWorld {
@@ -162,6 +175,22 @@ export type GraphItemDictionary = {
     },
 };
 
+export class GraphHintGoal {
+    public location: GraphLocation | null = null;
+    public item: GraphItem | null = null;
+    public item_count: number = 0;
+
+    equals(other_goal: GraphHintGoal): boolean {
+        return (
+            this.location?.name === other_goal.location?.name
+            && this.item?.name === other_goal.item?.name
+            && this.item?.player === other_goal.item?.player
+            && this.item?.price === other_goal.item?.price
+            && this.item_count === other_goal.item_count
+        )
+    }
+}
+
 export abstract class GraphPlugin {
     abstract worlds: GraphWorld[];
     abstract file_cache: ExternalFileCache;
@@ -209,6 +238,8 @@ export abstract class GraphPlugin {
     // Search interface
     abstract check_location(location: GraphLocation): void;
     abstract uncheck_location(location: GraphLocation): void;
+    abstract check_entrance(entrance: GraphEntrance): void;
+    abstract uncheck_entrance(entrance: GraphEntrance): void;
     abstract collect_locations(): void;
     abstract collect_spheres(): void;
     abstract get_accessible_entrances(): GraphEntrance[];
@@ -235,12 +266,15 @@ export abstract class GraphPlugin {
     abstract get_item(world: GraphWorld, item_name: string): GraphItem;
 
     // Hint interface
+    abstract unhide_hint(hint_location: GraphLocation): void;
     abstract hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void;
+    abstract hint_dual_locations(hint_location: GraphLocation, hinted_location1: GraphLocation, item1: GraphItem, hinted_location2: GraphLocation, item2: GraphItem): void;
     abstract hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
     abstract hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
     abstract hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void;
     abstract hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
     abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void;
+    abstract hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void;
     abstract unhint(hint_location: GraphLocation): void;
     abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string;
 

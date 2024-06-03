@@ -45,9 +45,15 @@ class Entrance implements GraphEntrance {
         public sphere: number = -1,
         public visited: boolean = false,
         public visited_with_other_tricks: boolean = false,
+        public child_visited: boolean = false,
+        public child_visited_with_other_tricks: boolean = false,
+        public adult_visited: boolean = false,
+        public adult_visited_with_other_tricks: boolean = false,
+        public checked: boolean = false,
         public source_group: RegionGroup | null = null,
         public target_group: RegionGroup | null = null,
         public user_connection: Entrance | null = null,
+        public hinted: boolean = false,
     ) {
         this.world = this.parent_region.world;
         this.alias = this.name;
@@ -156,11 +162,27 @@ class Entrance implements GraphEntrance {
         }
     }
 
-    set_visited(with_tricks: boolean = false) {
+    set_visited(with_tricks: boolean = false, age: string = '') {
         if (with_tricks) {
             this.visited_with_other_tricks = true;
+            if (age === 'child') {
+                this.child_visited_with_other_tricks = true;
+            } else if (age === 'adult') {
+                this.adult_visited_with_other_tricks = true;
+            } else if (age === 'both') {
+                this.child_visited_with_other_tricks = true;
+                this.adult_visited_with_other_tricks = true;
+            }
         } else {
             this.visited = true;
+            if (age === 'child') {
+                this.child_visited = true;
+            } else if (age === 'adult') {
+                this.adult_visited = true;
+            } else if (age === 'both') {
+                this.child_visited = true;
+                this.adult_visited = true;
+            }
         }
     }
 

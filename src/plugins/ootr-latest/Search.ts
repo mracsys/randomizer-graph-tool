@@ -229,7 +229,7 @@ class Search {
                     // Don't check for warps here, wait until the warp is available through the queue.
                     // Also don't add time of day as these could be hinted connections with no actual
                     // access yet.
-                    let connected_regions = this.state_list.flatMap((state) => [...state.world.regions.filter(r => r.exits.filter(e => !!e.connected_region && e.shuffled).length)]);
+                    let connected_regions = this.state_list.flatMap((state) => [...state.world.regions.filter(r => r.exits.filter(e => !!e.connected_region && e.shuffled && (!e.world.settings.graphplugin_simulator_mode || e.checked)).length)]);
                     regions.push(...connected_regions);
                     exit_queue.push(...connected_regions.flatMap(r => r.exits));
                 }
@@ -238,24 +238,28 @@ class Search {
         // Normal search
         for (let exit of exit_queue) {
             if (!!exit.connected_region && !(regions.includes(exit.connected_region))) {
-                if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
+                if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age}) && (!exit.world.settings.graphplugin_simulator_mode || exit.checked || !exit.shuffled)) {
                     if (exit.connected_region.provides_time && !((tods[exit.world.id][exit.world.get_region('Root').name] & exit.connected_region.provides_time) === exit.connected_region.provides_time)) {
                         exit_queue.push(...failed);
                         failed = [];
                         tods[exit.world.id][exit.world.get_region('Root').name] |= exit.connected_region.provides_time;
                     }
                     this._cache.visited_entrances.add(exit);
-                    if (!this.regions_only) exit.set_visited(this.with_tricks);
+                    if (!this.regions_only) exit.set_visited(this.with_tricks, age);
                     regions.push(exit.connected_region);
                     tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
                     exit_queue.push(...exit.connected_region.exits);
                 } else {
                     failed.push(exit);
+                    if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
+                        this._cache.visited_entrances.add(exit);
+                        if (!this.regions_only) exit.set_visited(this.with_tricks, age);
+                    }
                     // If the user for this exit's world wants to always show regions for
                     // which they have found an entrance, add it to the list and assume
                     // the user has found a repeatable way there for time-of-day. This
                     // only affects region viewability for trackers, not location logic.
-                    if (exit.world.visit_all_connected_entrances && this.regions_only && (exit.shuffled || exit.is_warp)) {
+                    if (exit.world.visit_all_connected_entrances && this.regions_only && (exit.shuffled || exit.is_warp) && (!exit.world.settings.graphplugin_simulator_mode || exit.checked || !exit.shuffled)) {
                         regions.push(exit.connected_region);
                         tods[exit.world.id][exit.connected_region.name] |= exit.connected_region.provides_time;
                         exit_queue.push(...exit.connected_region.exits);
@@ -266,7 +270,7 @@ class Search {
                     failed.push(exit);
                 }
                 this._cache.visited_entrances.add(exit);
-                if (!this.regions_only) exit.set_visited(this.with_tricks);
+                if (!this.regions_only) exit.set_visited(this.with_tricks, age);
             }
         }
         return failed;
@@ -309,14 +313,14 @@ class Search {
                             had_reachable_locations = true;
                             visited_locations.add(l);
                         }
-                        if (!this.regions_only) l.set_visited(this.with_tricks);
+                        if (!this.regions_only) l.set_visited(this.with_tricks, 'adult');
                         yield l;
                     } else if (child_regions.includes(l.parent_region) && l.access_rule(this.state_list[l.world.id], {'spot': l, 'age': 'child'})) {
                         if (!!l.item && (l.checked || !l.world.collect_checked_only || !(l.viewable()))) {
                             had_reachable_locations = true;
                             visited_locations.add(l);
                         }
-                        if (!this.regions_only) l.set_visited(this.with_tricks);
+                        if (!this.regions_only) l.set_visited(this.with_tricks, 'child');
                         yield l;
                     // Collect completely out of logic checks if the player obtains them, such as
                     // using glitches to bypass glitchless logic. Only apply to tricked searches
@@ -436,7 +440,7 @@ class Search {
             this._cache.pending_skipped_locations.add(location);
             location.sphere = -1;
             this._cache.visited_locations.add(location);
-            if (!this.regions_only) location.set_visited(this.with_tricks);
+            if (!this.regions_only) location.set_visited(this.with_tricks, 'both');
         }
     }
 
@@ -462,7 +466,7 @@ class Search {
             }
             location.sphere = -1;
             this._cache.visited_locations.add(location);
-            if (!this.regions_only) location.set_visited(this.with_tricks);
+            if (!this.regions_only) location.set_visited(this.with_tricks, 'both');
         }
     }
 

@@ -40,6 +40,10 @@ export type PlandoMWCheckedLocationList = {
     [world_key: string]: PlandoCheckedLocationList,
 };
 export type PlandoCheckedLocationList = string[];
+export type PlandoMWCheckedEntranceList = {
+    [world_key: string]: PlandoCheckedEntranceList,
+};
+export type PlandoCheckedEntranceList = string[];
 export type PlandoItem = {
     item: string,
     price?: number,
@@ -48,6 +52,12 @@ export type PlandoItem = {
 }
 export type PlandoMWLocationList = {
     [world_key: string]: PlandoLocationList,
+}
+export type PlandoHintTextList = {
+    [hint_location_name: string]: string,
+}
+export type PlandoMWHintTextList = {
+    [world_key: string]: PlandoHintTextList,
 }
 export type PlandoHintList = {
     [hint_location_name: string]: PlandoHint,
@@ -58,6 +68,7 @@ export type PlandoMWHintList = {
 export type PlandoHint = {
     type: string,
     location?: string,
+    location2?: string,
     entrance?: {
         source: {
             region: string,
@@ -70,11 +81,13 @@ export type PlandoHint = {
     },
     area?: string,
     item?: PlandoItem | string,
+    item2?: PlandoItem | string,
     goal?: {
         location?: string,
         item?: PlandoItem | string,
         item_count: number,
     },
+    num_major_items?: number,
     fixed_areas?: {
         [item_name: string]: string,
     },

@@ -35,6 +35,8 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     // Search interface
     check_location(location: GraphLocation): void { return };
     uncheck_location(location: GraphLocation): void { return };
+    check_entrance(entrance: GraphEntrance): void { return };
+    uncheck_entrance(entrance: GraphEntrance): void { return };
     collect_locations(): void { return };
     collect_spheres(): void { return };
     get_accessible_entrances(): GraphEntrance[] { return [] };
@@ -58,12 +60,15 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
 
     // Hint interface
+    unhide_hint(hint_location: GraphLocation): void { return };
     hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void { return };
+    hint_dual_locations(hint_location: GraphLocation, hinted_location1: GraphLocation, item1: GraphItem, hinted_location2: GraphLocation, item2: GraphItem): void { return };
     hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
     hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void { return };
     hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void { return };
     hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void { return };
     hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void { return };
+    hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void { return };
     unhint(hint_location: GraphLocation): void { return };
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string { return '' };
 }

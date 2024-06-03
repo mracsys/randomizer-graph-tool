@@ -59,34 +59,38 @@ export class Hint implements GraphHint {
     public type: string;
     public area: GraphRegion | null = null;
     public location: GraphLocation | null = null;
+    public location2: GraphLocation | null = null;
     public entrance: GraphEntrance | null = null;
-    public goal: HintGoal | null = null;
+    public target: GraphEntrance | null = null;
+    public goal: GraphHintGoal | null = null;
     public item: GraphItem | null = null;
+    public item2: GraphItem | null = null;
+    public num_major_items: number | null = null;
 
     constructor(hint_type: string) {
         this.type = hint_type;
     }
 
-    equals(other_hint: GraphHint) {
+    equals(other_hint: GraphHint): boolean {
         return (
             this.type === other_hint.type
-            && this.area === other_hint.area
-            && this.location === other_hint.location
-            && this.entrance === other_hint.entrance
+            && this.area?.name === other_hint.area?.name
+            && this.location?.name === other_hint.location?.name
+            && this.location2?.name === other_hint.location2?.name
+            && this.entrance?.name === other_hint.entrance?.name
+            && this.target?.name === other_hint.target?.name
             && this.item?.name === other_hint.item?.name
             && this.item?.player === other_hint.item?.player
             && this.item?.price === other_hint.item?.price
-            && this.goal?.location === other_hint.goal?.location
+            && this.item2?.name === other_hint.item2?.name
+            && this.item2?.player === other_hint.item2?.player
+            && this.item2?.price === other_hint.item2?.price
+            && this.num_major_items === other_hint.num_major_items
+            && this.goal?.location?.name === other_hint.goal?.location?.name
             && this.goal?.item_count === other_hint.goal?.item_count
             && this.goal?.item?.name === other_hint.goal?.item?.name
             && this.goal?.item?.player === other_hint.goal?.item?.player
             && this.goal?.item?.price === other_hint.goal?.item?.price
         );
     }
-}
-
-export class HintGoal implements GraphHintGoal {
-    public location: GraphLocation | null = null;
-    public item: GraphItem | null = null;
-    public item_count: number = 0;
 }

@@ -1,4 +1,4 @@
-import { GraphLocation } from "../GraphPlugin.js";
+import { GraphLocation, GraphRegion } from "../GraphPlugin.js";
 
 import { Region } from "./Region.js";
 import World from './World.js';
@@ -7,6 +7,7 @@ import Entrance from './Entrance.js';
 import { Item, ItemFactory } from './Item.js';
 import { display_names } from './DisplayNames.js';
 import { Hint } from "./Hints.js";
+import HintArea from "./HintArea.js";
 
 type Spot = Entrance | Location;
 type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -66,6 +67,10 @@ export class Location implements GraphLocation {
         public sphere: number = -1,
         public visited: boolean = false,
         public visited_with_other_tricks: boolean = false,
+        public child_visited: boolean = false,
+        public child_visited_with_other_tricks: boolean = false,
+        public adult_visited: boolean = false,
+        public adult_visited_with_other_tricks: boolean = false,
         public skipped: boolean = false,
         public checked: boolean = false,
         public alias: string = '',
@@ -76,6 +81,8 @@ export class Location implements GraphLocation {
         public is_restricted: boolean = false,
         public user_item: Item | null = null,
         public hint: Hint | null = null,
+        public hint_text: string = '',
+        public hinted: boolean = false,
         public viewable_if_unshuffled: boolean = false,
         public explicitly_collect_item: boolean = false,
         public public_event: boolean = false,
@@ -134,15 +141,36 @@ export class Location implements GraphLocation {
         return !!(this.parent_region) ? this.parent_region.dungeon : null; 
     }
 
+    hint_area(): string | null {
+        if (this.parent_region === null || this.parent_region.parent_group === null) return null;
+        return this.parent_region.parent_group.page === '' ? '' : this.parent_region.parent_group?.name;
+    }
+
     viewable(use_unshuffled_items_filter: boolean = false): boolean {
         return ((!this.internal && this.shuffled) || (use_unshuffled_items_filter && this.viewable_if_unshuffled && !this.skipped)) && !this.holds_shop_refill;
     }
 
-    set_visited(with_tricks: boolean = false) {
+    set_visited(with_tricks: boolean = false, age: string = '') {
         if (with_tricks) {
             this.visited_with_other_tricks = true;
+            if (age === 'child') {
+                this.child_visited_with_other_tricks = true;
+            } else if (age === 'adult') {
+                this.adult_visited_with_other_tricks = true;
+            } else if (age === 'both') {
+                this.child_visited_with_other_tricks = true;
+                this.adult_visited_with_other_tricks = true;
+            }
         } else {
             this.visited = true;
+            if (age === 'child') {
+                this.child_visited = true;
+            } else if (age === 'adult') {
+                this.adult_visited = true;
+            } else if (age === 'both') {
+                this.child_visited = true;
+                this.adult_visited = true;
+            }
         }
     }
 }

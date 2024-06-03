@@ -1,7 +1,7 @@
 import { GraphEntrance, GraphGameVersions, GraphItem, GraphLocation, GraphPlugin, GraphSetting, GraphWorld, GraphSettingType, GraphEntrancePool, GraphSettingsOptions, GraphSettingsLayout, GraphRegion, GraphHintGoal } from '../GraphPlugin.js';
 
 import SettingsList from './SettingsList.js';
-import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList, PlandoEntranceTarget, PlandoItem, PlandoCheckedLocationList, PlandoMWCheckedLocationList, PlandoHintList, PlandoMWHintList, PlandoHint } from "./World.js";
+import World, { PlandoLocationList, PlandoMWLocationList, PlandoEntranceList, PlandoMWEntranceList, PlandoEntranceTarget, PlandoItem, PlandoCheckedLocationList, PlandoMWCheckedLocationList, PlandoCheckedEntranceList, PlandoMWCheckedEntranceList, PlandoHintList, PlandoMWHintList, PlandoHint, PlandoHintTextList, PlandoMWHintTextList } from "./World.js";
 import EntranceList from './EntranceList.js';
 import { Item, ItemFactory, ItemInfo, _ItemInfo } from "./Item.js";
 import OotrVersion from './OotrVersion.js';
@@ -14,7 +14,7 @@ import ItemList from './ItemList.js';
 import { SettingsDictionary } from './SettingsList.js';
 import { display_names } from './DisplayNames.js';
 import { global_settings_overrides, setting_options_include_value, settings_to_never_reset_to_default } from './SettingsList.js';
-import { Hint, HintAreas, HintGoal } from './Hints.js';
+import { Hint, HintAreas } from './Hints.js';
 import { RegionGroup } from './RegionGroup.js';
 import HintArea from './HintArea.js';
 
@@ -26,9 +26,20 @@ interface OotrPlando {
     songs: { [song_name: string]: string },
     entrances: PlandoEntranceList | PlandoMWEntranceList,
     locations: PlandoLocationList | PlandoMWLocationList,
+    ':hint_text': PlandoHintTextList | PlandoMWHintTextList,
     ':checked': PlandoCheckedLocationList | PlandoMWCheckedLocationList,
+    ':checked_entrances': PlandoCheckedEntranceList | PlandoMWCheckedEntranceList,
     ':tracked_hints': PlandoHintList | PlandoMWHintList,
 };
+
+interface OotrPlandoHints {
+    [gossip_stone_name: string]: {
+        text: string,
+        colors: string[],
+        hinted_locations?: string[],
+        hinted_items?: string[],
+    }
+}
 
 const dungeonToEntranceMap: {[dungeonName: string]: string} = {
     "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
@@ -293,8 +304,12 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (Object.keys(this.settings_list).includes('locations')) {
             this.set_items(this.settings_list.locations, checked_locations);
         }
+        let checked_entrances: PlandoCheckedEntranceList | PlandoMWCheckedEntranceList = [];
+        if (Object.keys(this.settings_list).includes(':checked_entrances')) {
+            checked_entrances = this.settings_list[':checked_entrances'];
+        }
         if (Object.keys(this.settings_list).includes('entrances')) {
-            this.set_entrances(this.settings_list.entrances);
+            this.set_entrances(this.settings_list.entrances, checked_entrances);
         }
         this.finalize_world(true);
         this.reset_disabled_location_choices();
@@ -449,20 +464,31 @@ export class OotrGraphPlugin extends GraphPlugin {
         } else {
             this.set_items(null, checked_locations);
         }
+        let checked_entrances: PlandoCheckedEntranceList | PlandoMWCheckedEntranceList = [];
+        if (Object.keys(plando).includes(':checked_entrances')) {
+            checked_entrances = plando[':checked_entrances'];
+        }
         if (Object.keys(plando).includes('entrances')) {
-            this.set_entrances(plando.entrances);
+            this.set_entrances(plando.entrances, checked_entrances);
         } else {
-            this.set_entrances(null);
+            this.set_entrances(null, checked_entrances);
         }
         // Reset hints
         for (let world of this.worlds) {
             let hint_locations = world.get_locations().filter(l => l.is_hint);
             for (let hint_location of hint_locations) {
                 if (hint_location.hint !== null) {
-                    this.unhint(hint_location);
+                    this.unhint(hint_location, true);
                 }
+                hint_location.hint_text = '';
             }
         }
+        // :tracked_hints is mutually exclusive with gossip_stones.
+        // :tracked_hints is created by this library and saved in exports.
+        // gossip_stones is from the base randomizer and discarded by this
+        // library after initial import.
+        let sim_mode = this.worlds[0].settings.graphplugin_simulator_mode;
+        if (sim_mode === undefined) sim_mode = false;
         if (Object.keys(plando).includes(':tracked_hints')) {
             let hints = plando[':tracked_hints'] as PlandoHintList;
             for (let [hint_location_name, hint_data] of Object.entries(hints)) {
@@ -475,6 +501,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     let hint_location = this.worlds[0].get_location(hint_location_name);
                     let item: Item;
+                    let item2: Item;
                     let area: RegionGroup;
                     switch(hint_data.type) {
                         case 'location':
@@ -487,24 +514,45 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 item = this.worlds[0].get_item(hint_data.item.item)
                                 if (!!hint_data.item.price) item.price = hint_data.item.price;
                             }
-                            this.hint_location(hint_location, location, item);
+                            this.hint_location(hint_location, location, item, sim_mode || hint_location.checked);
+                            break;
+                        case 'dual':
+                            if (hint_data.location === undefined) throw `Can't import dual hint with undefined first location: ${hint_location_name}`;
+                            if (hint_data.item === undefined) throw `Can't import dual hint with undefined first item: ${hint_location_name}`;
+                            if (hint_data.location2 === undefined) throw `Can't import dual hint with undefined second location: ${hint_location_name}`;
+                            if (hint_data.item2 === undefined) throw `Can't import dual hint with undefined second item: ${hint_location_name}`;
+                            let location1 = this.worlds[0].get_location(hint_data.location);
+                            if (typeof hint_data.item === 'string') {
+                                item = this.worlds[0].get_item(hint_data.item)
+                            } else {
+                                item = this.worlds[0].get_item(hint_data.item.item)
+                                if (!!hint_data.item.price) item.price = hint_data.item.price;
+                            }
+                            let location2 = this.worlds[0].get_location(hint_data.location2);
+                            if (typeof hint_data.item2 === 'string') {
+                                item2 = this.worlds[0].get_item(hint_data.item2)
+                            } else {
+                                item2 = this.worlds[0].get_item(hint_data.item2.item)
+                                if (!!hint_data.item2.price) item2.price = hint_data.item2.price;
+                            }
+                            this.hint_dual_locations(hint_location, location1, item, location2, item2, sim_mode || hint_location.checked);
                             break;
                         case 'entrance':
                             if (hint_data.entrance === undefined) throw `Can't import entrance hint with undefined entrance: ${hint_location_name}`;
                             let source = this.worlds[0].get_entrance(`${hint_data.entrance.source.from} -> ${hint_data.entrance.source.region}`);
                             let target = this.worlds[0].get_entrance(`${hint_data.entrance.target.from} -> ${hint_data.entrance.target.region}`);
-                            this.hint_entrance(hint_location, source, target);
+                            this.hint_entrance(hint_location, source, target, sim_mode || hint_location.checked);
                             break;
                         case 'woth':
                             if (hint_data.area === undefined) throw `Can't import woth hint with undefined region: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            this.hint_required_area(hint_location, area);
+                            this.hint_required_area(hint_location, area, sim_mode || hint_location.checked);
                             break;
                         case 'goal':
                             if (hint_data.area === undefined) throw `Can't import goal hint with undefined region: ${hint_location_name}`;
                             if (hint_data.goal === undefined) throw `Can't import goal hint with undefined goal: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            let goal = new HintGoal();
+                            let goal = new GraphHintGoal();
                             if (!!hint_data.goal.item) {
                                 if (typeof hint_data.goal.item === 'string') {
                                     item = this.worlds[0].get_item(hint_data.goal.item)
@@ -516,12 +564,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                             }
                             if (!!hint_data.goal.location) goal.location = this.worlds[0].get_location(hint_data.goal.location);
                             goal.item_count = hint_data.goal.item_count;
-                            this.hint_area_required_for_goal(hint_location, area, goal);
+                            this.hint_area_required_for_goal(hint_location, area, goal, sim_mode || hint_location.checked);
                             break;
                         case 'foolish':
                             if (hint_data.area === undefined) throw `Can't import foolish hint with undefined region: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            this.hint_unrequired_area(hint_location, area);
+                            this.hint_unrequired_area(hint_location, area, sim_mode || hint_location.checked);
+                            break;
+                        case 'important_check':
+                            if (hint_data.area === undefined) throw `Can't import important check hint with undefined region: ${hint_location_name}`;
+                            if (hint_data.num_major_items === undefined) throw `Can't import important check hint with undefined major item count: ${hint_location_name}`;
+                            area = this.worlds[0].get_region_group(hint_data.area);
+                            this.hint_area_num_items(hint_location, area, hint_data.num_major_items, sim_mode || hint_location.checked);
                             break;
                         case 'misc':
                             if (hint_data.area === undefined) throw `Can't import misc hint with undefined region: ${hint_location_name}`;
@@ -533,11 +587,207 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 item = this.worlds[0].get_item(hint_data.item.item)
                                 if (!!hint_data.item.price) item.price = hint_data.item.price;
                             }
-                            this.hint_item_in_area(hint_location, area, item);
+                            this.hint_item_in_area(hint_location, area, item, sim_mode || hint_location.checked);
                             break;
                         default:
                             throw `Unknown hint type in import data: ${hint_data.type}`;
                     }
+                }
+            }
+        }
+        // Cached hint text from plando import
+        if (Object.keys(plando).includes(':hint_text')) {
+            let hints = plando[':hint_text'] as PlandoHintTextList;
+            for (let [location_name, hint] of Object.entries(hints)) {
+                let hint_location = this.worlds[0].get_location(location_name);
+                hint_location.hint_text = hint;
+            }
+        }
+        // Hint text from plando import. The gossip_stones key
+        // is not preserved on export because I don't want to
+        // reimplement the entire randomizer hint framework. Take
+        // only the hint text, and only use it for sim mode, where
+        // the user can manually interpret the hint text to the format
+        // understood by this library.
+        let hint_stone_to_location_map: {[stone_name: string]: string} = {
+            'DMC (Bombable Wall)':              'DMC Gossip Stone',
+            'DMT (Biggoron)':                   'DMT Gossip Stone',
+            'Colossus (Spirit Temple)':         'Colossus Gossip Stone',
+            'Dodongos Cavern (Bombable Wall)':  'Dodongos Cavern Gossip Stone',
+            'GV (Waterfall)':                   'GV Gossip Stone',
+            'GC (Maze)':                        'GC Maze Gossip Stone',
+            'GC (Medigoron)':                   'GC Medigoron Gossip Stone',
+            'Graveyard (Shadow Temple)':        'Graveyard Gossip Stone',
+            'HC (Malon)':                       'HC Malon Gossip Stone',
+            'HC (Rock Wall)':                   'HC Rock Wall Gossip Stone',
+            'HC (Storms Grotto)':               'HC Storms Grotto Gossip Stone',
+            'KF (Deku Tree Left)':              'KF Deku Tree Gossip Stone (Left)',
+            'KF (Deku Tree Right)':             'KF Deku Tree Gossip Stone (Right)',
+            'KF (Outside Storms)':              'KF Gossip Stone',
+            'LH (Lab)':                         'LH Lab Gossip Stone',
+            'LH (Southeast Corner)':            'LH Gossip Stone (Southeast)',
+            'LH (Southwest Corner)':            'LH Gossip Stone (Southwest)',
+            'LW (Bridge)':                      'LW Gossip Stone',
+            'SFM (Maze Lower)':                 'SFM Maze Gossip Stone (Lower)',
+            'SFM (Maze Upper)':                 'SFM Maze Gossip Stone (Upper)',
+            'SFM (Saria)':                      'SFM Saria Gossip Stone',
+            'ToT (Left)':                       'ToT Gossip Stone (Left)',
+            'ToT (Left-Center)':                'ToT Gossip Stone (Left-Center)',
+            'ToT (Right)':                      'ToT Gossip Stone (Right)',
+            'ToT (Right-Center)':               'ToT Gossip Stone (Right-Center)',
+            'ZD (Mweep)':                       'ZD Gossip Stone',
+            'ZF (Fairy)':                       'ZF Fairy Gossip Stone',
+            'ZF (Jabu)':                        'ZF Jabu Gossip Stone',
+            'ZR (Near Grottos)':                'ZR Near Grottos Gossip Stone',
+            'ZR (Near Domain)':                 'ZR Near Domain Gossip Stone',
+            'HF (Cow Grotto)':                  'HF Cow Grotto Gossip Stone',
+            'HF (Near Market Grotto)':          'HF Near Market Grotto Gossip Stone',
+            'HF (Southeast Grotto)':            'HF Southeast Grotto Gossip Stone',
+            'HF (Open Grotto)':                 'HF Open Grotto Gossip Stone',
+            'Kak (Open Grotto)':                'Kak Open Grotto Gossip Stone',
+            'ZR (Open Grotto)':                 'ZR Open Grotto Gossip Stone',
+            'KF (Storms Grotto)':               'KF Storms Grotto Gossip Stone',
+            'LW (Near Shortcuts Grotto)':       'LW Near Shortcuts Grotto Gossip Stone',
+            'DMT (Storms Grotto)':              'DMT Storms Grotto Gossip Stone',
+            'DMC (Upper Grotto)':               'DMC Upper Grotto Gossip Stone',
+        };
+        const path_locations: {[path_name: string]: string} = {
+            'queen gohma': 'Queen Gohma',
+            'king dodongo': 'King Dodongo',
+            'barinade': 'Barinade',
+            'phantom ganon': 'Phantom Ganon',
+            'volvagia': 'Volvagia',
+            'morpha': 'Morpha',
+            'bongo bongo': 'Bongo Bongo',
+            'twinrova': 'Twinrova',
+            'the tower': 'Ganons Tower Boss Key Chest',
+            'the hero': 'Ganon',
+        }
+        
+        const path_items: {[path_name: string]: string} = {
+            'gold': 'Triforce Piece',
+            'time': 'Song of Time',
+            'evil\'s bane': 'Light Arrows',
+            'skulls': 'Gold Skulltula Token',
+            'hearts': 'Heart Container',
+            'the key': 'Boss Key (Ganons Castle)',
+            'kokiri emerald': 'Kokiri Emerald',
+            'goron ruby': 'Goron Ruby',
+            'zora sapphire': 'Zora Sapphire',
+            'forest medallion': 'Forest Medallion',
+            'fire medallion': 'Fire Medallion',
+            'water medallion': 'Water Medallion',
+            'spirit medallion': 'Spirit Medallion',
+            'shadow medallion': 'Shadow Medallion',
+            'light medallion': 'Light Medallion',
+        }
+        if (Object.keys(plando).includes('gossip_stones')) {
+            let gossip_hints: OotrPlandoHints = plando['gossip_stones'];
+            for (let [stone_name, hint] of Object.entries(gossip_hints)) {
+                if (Object.keys(hint_stone_to_location_map).includes(stone_name)) {
+                    let hint_location = this.worlds[0].get_location(hint_stone_to_location_map[stone_name]);
+                    // Try to parse the hint text from the base randomizer.
+                    // If we fail, also save the text to the location and let
+                    // the user decide how to interpret it via the hinting
+                    // functions on this class.
+                    if (!!hint.hinted_locations && !!hint.hinted_items) {
+                        let hinted_group: RegionGroup | null = null;
+                        let color_split = hint.text.split('#').filter(t => t.length > 0);
+                        // Check for woth/path first
+                        if (hint.text.includes('on the way of the hero')) {
+                            if (color_split.length > 1) {
+                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                            }
+                            if (!!hinted_group) this.hint_required_area(hint_location, hinted_group, true);
+                        // older builds did not have color on the #time# path
+                        } else if (hint.text.includes('on the path of time')) {
+                            try {
+                                if (color_split.length > 1) {
+                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                }
+                                let goal = new GraphHintGoal();
+                                goal.item_count = 1;
+                                goal.item = this.worlds[0].get_item(path_items['time']);
+                                if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                            } catch (e) {
+                                console.log(`Trouble parsing spoiler gossip stone hint: path hint path could not be read for text ${hint.text}`);
+                                if (e instanceof Error) {
+                                    console.log(e.message);
+                                }
+                            }
+                        } else if (hint.text.includes('on the path')) {
+                            try {
+                                if (color_split.length > 1) {
+                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                }
+                                let goal = new GraphHintGoal();
+                                goal.item_count = 1;
+                                let path = color_split[3];
+                                if (Object.keys(path_locations).includes(path.toLowerCase())) {
+                                    goal.location = this.worlds[0].get_location(path_locations[path.toLowerCase()]);
+                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                                }
+                                if (Object.keys(path_items).includes(path.toLowerCase())) {
+                                    goal.item = this.worlds[0].get_item(path_items[path.toLowerCase()]);
+                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                                }
+                            } catch (e) {
+                                console.log(`Trouble parsing spoiler gossip stone hint: path hint path could not be read for text ${hint.text}`);
+                                if (e instanceof Error) {
+                                    console.log(e.message);
+                                }
+                            }
+                        } else {
+                            // Check if hinted location is a region
+                            if (color_split.length > 1) {
+                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                if (hinted_group === null) hinted_group = this.extract_region_from_hint(stone_name, color_split, 3);
+                            }
+                            if (!!hinted_group) {
+                                let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
+                                this.hint_item_in_area(hint_location, hinted_group, hinted_item, true);
+                            // no match, must be location or dual hint
+                            } else if (hint.hinted_locations.length === 2) {
+                                let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
+                                let hinted_location = this.worlds[0].get_location(hint.hinted_locations[0]);
+                                let hinted_item2 = this.worlds[0].get_item(hint.hinted_items[1]);
+                                let hinted_location2 = this.worlds[0].get_location(hint.hinted_locations[1]);
+                                this.hint_dual_locations(hint_location, hinted_location, hinted_item, hinted_location2, hinted_item2, true);
+                            } else {
+                                let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
+                                let hinted_location = this.worlds[0].get_location(hint.hinted_locations[0]);
+                                this.hint_location(hint_location, hinted_location, hinted_item, true);
+                            }
+                        }
+                        
+                    // colors key filters out junk hints
+                    } else if (!!hint.colors) {
+                        // Have to filter for non-empty strings because important_check hints
+                        // double up on ##region color## markers...
+                        let color_split = hint.text.split('#').filter(t => t.length > 0);
+                        let hinted_group: RegionGroup | null = null;
+                        if (color_split.length > 1) {
+                            hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                        }
+                        if (!!hinted_group) {
+                            if (hint.text.includes('a foolish choice')) {
+                                this.hint_unrequired_area(hint_location, hinted_group, true);
+                            } else if (hint.text.includes('major items')) {
+                                try {
+                                    let num_majors = parseInt(color_split[3]);
+                                    if (num_majors === undefined || num_majors === null) throw(`Could not parse integer from ${color_split[3]}`);
+                                    this.hint_area_num_items(hint_location, hinted_group, num_majors, true);
+                                } catch (e) {
+                                    console.log(`Trouble parsing spoiler gossip stone hint: important_check hint major items count is not a number in text ${hint.text}`);
+                                    if (e instanceof Error) {
+                                        console.log(e.message);
+                                    }
+                                }
+                            }
+                        }
+                        // consider adding entrance hint detection, which needs the whole entrance hint table...
+                    }
+                    hint_location.hint_text = hint.text;
                 }
             }
         }
@@ -559,7 +809,9 @@ export class OotrGraphPlugin extends GraphPlugin {
             songs: {},
             entrances: {},
             locations: {},
+            ':hint_text': {},
             ':checked': [],
+            ':checked_entrances': [],
             ':tracked_hints': {},
         };
         if (this.settings_list.settings.world_count === 1) {
@@ -609,75 +861,113 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (location.checked && Array.isArray(plando[':checked'])) plando[':checked'].push(location.name);
 
                     // Hints are implemented as locations
-                    if (location.is_hint && !!location.hint) {
-                        let plando_hint: PlandoHint = { type: 'undefined' };
-                        switch (location.hint.type) {
-                            case 'location':
-                                if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
-                                if (location.hint.location.item === null) throw `Can't save location hint with undefined item ${location.name}`;
-                                let location_item: PlandoItem | string;
-                                if (!!(location.hint.location.item?.price)) {
-                                    location_item = { item: location.hint.location.item.name, price: location.hint.location.item.price };
-                                } else {
-                                    location_item = location.hint.location.item.name;
-                                }
-                                plando_hint = {
-                                    type: 'location',
-                                    location: location.hint.location?.name,
-                                    item: location_item,
-                                }
-                                break;
-                            case 'entrance':
-                                if (location.hint.entrance === undefined || location.hint.entrance === null) throw `Can't save entrance hint with undefined source entrance ${location.name}`;
-                                if (location.hint.entrance?.replaces === null || location.hint.entrance.original_connection === null || location.hint.entrance.connected_region === null) throw `Can't save entrance hint with undefined target entrance ${location.name}`;
-                                plando_hint = {
-                                    type: 'entrance',
-                                    entrance: {
-                                        source: { region: location.hint.entrance.original_connection.name, from: location.hint.entrance.parent_region.name },
-                                        target: { region: location.hint.entrance.connected_region?.name, from: location.hint.entrance.replaces.name },
+                    if (location.is_hint) {
+                        if (!!location.hint) {
+                            let plando_hint: PlandoHint = { type: 'undefined' };
+                            let location_item: PlandoItem | string;
+                            switch (location.hint.type) {
+                                case 'location':
+                                    if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
+                                    if (location.hint.item === null) throw `Can't save location hint with undefined item ${location.name}`;
+                                    if (!!(location.hint.item.price)) {
+                                        location_item = { item: location.hint.item.name, price: location.hint.item.price };
+                                    } else {
+                                        location_item = location.hint.item.name;
                                     }
-                                }
-                                break;
-                            case 'woth':
-                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save woth hint with undefined region ${location.name}`;
-                                plando_hint = {
-                                    type: 'woth',
-                                    area: location.hint.area.name,
-                                }
-                                break;
-                            case 'goal':
-                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save goal hint with undefined region ${location.name}`;
-                                if (location.hint.goal === undefined || location.hint.goal === null) throw `Can't save goal hint with undefined goal ${location.name}`;
-                                plando_hint = {
-                                    type: 'goal',
-                                    area: location.hint.area.name,
-                                    goal: {
-                                        location: location.hint.goal.location?.name,
-                                        item: location.hint.goal.item?.name,
-                                        item_count: location.hint.goal.item_count,
+                                    plando_hint = {
+                                        type: 'location',
+                                        location: location.hint.location.name,
+                                        item: location_item,
                                     }
-                                }
-                                break;
-                            case 'foolish':
-                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save foolish hint with undefined region ${location.name}`;
-                                plando_hint = {
-                                    type: 'foolish',
-                                    area: location.hint.area.name,
-                                }
-                                break;
-                            case 'misc':
-                                if (location.hint.area === undefined || location.hint.area === null) throw `Can't save misc hint with undefined region ${location.name}`;
-                                if (location.hint.item === undefined || location.hint.item === null) throw `Can't save misc hint with undefined item ${location.name}`;
-                                plando_hint = {
-                                    type: 'misc',
-                                    area: location.hint.area.name,
-                                    item: location.hint.item.name,
-                                }
-                                break;
-                            default:
-                                throw `Unknown hint type encountered while exporting: ${location.hint.type}`;
+                                    break;
+                                case 'dual':
+                                    if (location.hint.location === undefined || location.hint.location === null) throw `Can't save dual hint with undefined first location ${location.name}`;
+                                    if (location.hint.item === null) throw `Can't save dual hint with undefined first item ${location.name}`;
+                                    if (location.hint.location2 === undefined || location.hint.location2 === null) throw `Can't save dual hint with undefined second location ${location.name}`;
+                                    if (location.hint.item2 === null) throw `Can't save dual hint with undefined second item ${location.name}`;
+                                    if (!!(location.hint.item.price)) {
+                                        location_item = { item: location.hint.item.name, price: location.hint.item.price };
+                                    } else {
+                                        location_item = location.hint.item.name;
+                                    }
+                                    let location_item2: PlandoItem | string;
+                                    if (!!(location.hint.item2.price)) {
+                                        location_item2 = { item: location.hint.item2.name, price: location.hint.item2.price };
+                                    } else {
+                                        location_item2 = location.hint.item2.name;
+                                    }
+                                    plando_hint = {
+                                        type: 'dual',
+                                        location: location.hint.location?.name,
+                                        item: location_item,
+                                        location2: location.hint.location2.name,
+                                        item2: location_item2,
+                                    }
+                                    break;
+                                case 'entrance':
+                                    if (location.hint.entrance === undefined || location.hint.entrance === null || location.hint.entrance.original_connection === null) throw `Can't save entrance hint with undefined source entrance ${location.name}`;
+                                    if (location.hint.target === null || location.hint.target.original_connection === null) throw `Can't save entrance hint with undefined target entrance ${location.name}`;
+                                    plando_hint = {
+                                        type: 'entrance',
+                                        entrance: {
+                                            source: { region: location.hint.entrance.original_connection.name, from: location.hint.entrance.parent_region.name },
+                                            target: { region: location.hint.target.original_connection.name, from: location.hint.target.parent_region.name },
+                                        }
+                                    }
+                                    break;
+                                case 'woth':
+                                    if (location.hint.area === undefined || location.hint.area === null) throw `Can't save woth hint with undefined region ${location.name}`;
+                                    plando_hint = {
+                                        type: 'woth',
+                                        area: location.hint.area.name,
+                                    }
+                                    break;
+                                case 'goal':
+                                    if (location.hint.area === undefined || location.hint.area === null) throw `Can't save goal hint with undefined region ${location.name}`;
+                                    if (location.hint.goal === undefined || location.hint.goal === null) throw `Can't save goal hint with undefined goal ${location.name}`;
+                                    plando_hint = {
+                                        type: 'goal',
+                                        area: location.hint.area.name,
+                                        goal: {
+                                            location: location.hint.goal.location?.name,
+                                            item: location.hint.goal.item?.name,
+                                            item_count: location.hint.goal.item_count,
+                                        }
+                                    }
+                                    break;
+                                case 'foolish':
+                                    if (location.hint.area === undefined || location.hint.area === null) throw `Can't save foolish hint with undefined region ${location.name}`;
+                                    plando_hint = {
+                                        type: 'foolish',
+                                        area: location.hint.area.name,
+                                    }
+                                    break;
+                                case 'important_check':
+                                    if (location.hint.area === undefined || location.hint.area === null) throw `Can't save important check hint with undefined region ${location.name}`;
+                                    if (location.hint.num_major_items === undefined || location.hint.num_major_items === null) throw `Can't save important check hint with undefined major item count ${location.name}`;
+                                    plando_hint = {
+                                        type: 'important_check',
+                                        area: location.hint.area.name,
+                                        num_major_items: location.hint.num_major_items,
+                                    }
+                                    break;
+                                case 'misc':
+                                    if (location.hint.area === undefined || location.hint.area === null) throw `Can't save misc hint with undefined region ${location.name}`;
+                                    if (location.hint.item === undefined || location.hint.item === null) throw `Can't save misc hint with undefined item ${location.name}`;
+                                    plando_hint = {
+                                        type: 'misc',
+                                        area: location.hint.area.name,
+                                        item: location.hint.item.name,
+                                    }
+                                    break;
+                                default:
+                                    throw `Unknown hint type encountered while exporting: ${location.hint.type}`;
+                            }
+                            plando[':tracked_hints'][location.name] = plando_hint;
                         }
-                        plando[':tracked_hints'][location.name] = plando_hint;
+                        if (location.hint_text !== '') {
+                            plando[':hint_text'][location.name] = location.hint_text;
+                        }
                     }
                 }
                 let fixed_hints = {
@@ -698,6 +988,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     'Grave'
                 ];
                 for (let entrance of entrances) {
+                    if (entrance.checked && Array.isArray(plando[':checked_entrances'])) plando[':checked_entrances'].push(entrance.name);
                     if ((!(entrance.coupled) || entrance.primary || entrance.type === 'Overworld')) {
                         if (entrance.shuffled && !!(entrance.replaces) && !!(entrance.replaces.type) && !!(entrance.connected_region)) {
                             let target: PlandoEntranceTarget | string;
@@ -734,64 +1025,6 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
         }
     }
-
-    get_search_modes(): string[] {
-        return [
-            'Collected Items as Starting Items',
-            'Collected Items',
-            'Known Items',
-        ];
-    }
-
-    /*set_search_mode(mode: string): void {
-        switch(mode) {
-            case 'Collected Items as Starting Items':
-                this.collect_as_starting_items = true;
-                this.collect_checked_only = true;
-                break;
-            case 'Collected Items':
-                this.collect_as_starting_items = false;
-                this.collect_checked_only = true;
-                break;
-            case 'Known Items':
-            default:
-                this.collect_as_starting_items = false;
-                this.collect_checked_only = false;
-                break;
-        }
-        this.reset_searches();
-        this.set_viewable_region_groups();
-    }
-
-    set_region_search_mode(mode: string): void {
-        switch(mode) {
-            case 'Reachable with All Tricks':
-                this.visit_all_entrances = false;
-                this.visit_all_connected_entrances = false;
-                this.visit_all_trick_entrances = true;
-                break;
-            case 'Connected':
-                this.visit_all_entrances = false;
-                this.visit_all_connected_entrances = true;
-                this.visit_all_trick_entrances = true;
-                break;
-            case 'Always Visible':
-                this.visit_all_entrances = true;
-                this.visit_all_connected_entrances = true;
-                this.visit_all_trick_entrances = true;
-                break;
-            case 'Logically Reachable':
-            default:
-                this.visit_all_entrances = false;
-                this.visit_all_connected_entrances = false;
-                this.visit_all_trick_entrances = false;
-                break;
-        }
-        // reset first to clear out world states
-        this.reset_searches();
-        this.create_searches();
-        this.set_viewable_region_groups();
-    }*/
 
     get_game_versions(): GraphGameVersions {
         let ootr: GraphGameVersions = {
@@ -843,6 +1076,21 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (location.world === null) throw `Cannot check location ${location.name} with a null parent world`;
         let l = this.worlds[location.world.id].get_location(location.name);
         l.checked = false;
+        this.reset_searches();
+        this.set_viewable_region_groups();
+    }
+
+    check_entrance(entrance: GraphEntrance): void {
+        if (entrance.world === null) throw `Cannot check entrance ${entrance.name} with a null parent world`;
+        let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
+        e.checked = true;
+        this.set_viewable_region_groups();
+    }
+
+    uncheck_entrance(entrance: GraphEntrance): void {
+        if (entrance.world === null) throw `Cannot check entrance ${entrance.name} with a null parent world`;
+        let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
+        e.checked = false;
         this.reset_searches();
         this.set_viewable_region_groups();
     }
@@ -1206,8 +1454,12 @@ export class OotrGraphPlugin extends GraphPlugin {
             if (Object.keys(world_fill).includes(':checked')) {
                 checked_locations = world_fill[':checked'];
             }
+            let checked_entrances: PlandoCheckedEntranceList | PlandoMWCheckedEntranceList = [];
+            if (Object.keys(world_fill).includes(':checked_entrances')) {
+                checked_entrances = world_fill[':checked_entrances'];
+            }
             this.set_items(world_fill.locations, checked_locations);
-            this.set_entrances(world_fill.entrances);
+            this.set_entrances(world_fill.entrances, checked_entrances);
             this.set_blue_warps(world);
             this.set_shop_rules(world);
             world.state.collect_starting_items();
@@ -1325,70 +1577,161 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.set_viewable_region_groups();
     }
 
-    hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void {
+    // Used for sim mode to modify the world when finding the hint, but
+    // keeping the hint cached on the hint location until checked
+    unhide_hint(hint_location: GraphLocation) {
+        if (!!hint_location.hint) {
+            let hint = hint_location.hint;
+            switch (hint_location.hint.type) {
+                case 'location':
+                    if (!!hint.location && !!hint.item)
+                        this.hint_location(hint_location, hint.location, hint.item);
+                    break;
+                case 'dual':
+                    if (!!hint.location && !!hint.item && !!hint.location2 && !!hint.item2)
+                        this.hint_dual_locations(hint_location, hint.location, hint.item, hint.location2, hint.item2);
+                    break;
+                case 'entrance':
+                    if (!!hint.entrance && !!hint.entrance.replaces)
+                        this.hint_entrance(hint_location, hint.entrance, hint.entrance.replaces);
+                    break;
+                case 'woth':
+                    if (!!hint.area)
+                        this.hint_required_area(hint_location, hint.area);
+                    break;
+                case 'goal':
+                    if (!!hint.area && !!hint.goal)
+                        this.hint_area_required_for_goal(hint_location, hint.area, hint.goal);
+                    break;
+                case 'foolish':
+                    if (!!hint.area)
+                        this.hint_unrequired_area(hint_location, hint.area);
+                    break;
+                case 'misc':
+                    if (!!hint.area && !!hint.item)
+                        this.hint_item_in_area(hint_location, hint.area, hint.item);
+                    break;
+                case 'important_check':
+                    if (!!hint.area && hint.num_major_items !== null)
+                        this.hint_area_num_items(hint_location, hint.area, hint.num_major_items);
+                    break;
+            }
+        }
+    }
+
+    hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem, initially_hidden: boolean = false): void {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        this.set_location_item(hinted_location, item);
-        let hint = new Hint('location')
+        if (!initially_hidden) {
+            this.set_location_item(hinted_location, item);
+            hinted_location.hinted = true;
+        }
+        let hint = new Hint('location');
         hint.location = hinted_location;
         hint.item = item;
         hint_location.hint = hint;
     }
 
-    hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void {
+    hint_dual_locations(hint_location: GraphLocation, hinted_location1: GraphLocation, item1: GraphItem, hinted_location2: GraphLocation, item2: GraphItem, initially_hidden: boolean = false): void {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        this.set_entrance(hinted_entrance, replaced_entrance);
-        let hint = new Hint('entrance');
-        hint.entrance = hinted_entrance;
+        if (!initially_hidden) {
+            this.set_location_item(hinted_location1, item1);
+            hinted_location1.hinted = true;
+            this.set_location_item(hinted_location2, item2);
+            hinted_location2.hinted = true;
+        }
+        let hint = new Hint('dual');
+        hint.location = hinted_location1;
+        hint.item = item1;
+        hint.location2 = hinted_location2;
+        hint.item2 = item2;
         hint_location.hint = hint;
     }
 
-    hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void {
+    hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance, initially_hidden: boolean = false): void {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        hinted_area.is_required = true;
+        if (!initially_hidden) {
+            this.set_entrance(hinted_entrance, replaced_entrance);
+            hinted_entrance.hinted = true;
+            if (!!(hinted_entrance.reverse) && !!(replaced_entrance.reverse) && !!(hinted_entrance.reverse.original_connection) && hinted_entrance.coupled) {
+                replaced_entrance.reverse.hinted = true;
+            }
+        }
+        let hint = new Hint('entrance');
+        hint.entrance = hinted_entrance;
+        hint.target = replaced_entrance;
+        hint_location.hint = hint;
+    }
+
+    hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion, initially_hidden: boolean = false): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
+        if (!initially_hidden) {
+            hinted_area.is_required = true;
+        }
         let hint = new Hint('woth');
         hint.area = hinted_area;
         hint_location.hint = hint;
     }
 
-    hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void {
+    hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal, initially_hidden: boolean = false): void {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        hinted_area.required_for.push(hinted_goal);
+        if (!initially_hidden && !(hinted_area.required_for.filter(g => g.equals(hinted_goal)).length > 0)) {
+            hinted_area.required_for.push(hinted_goal);
+        }
         let hint = new Hint('goal');
         hint.area = hinted_area;
         hint.goal = hinted_goal;
         hint_location.hint = hint;
     }
 
-    hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void {
+    hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion, initially_hidden: boolean = false): void {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        hinted_area.is_not_required = true;
+        if (!initially_hidden) {
+            hinted_area.is_not_required = true;
+        }
         let hint = new Hint('foolish');
         hint.area = hinted_area;
         hint_location.hint = hint;
     }
 
-    hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_item: GraphItem) {
+    hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_item: GraphItem, initially_hidden: boolean = false) {
         if (!!hint_location.hint) {
             this.unhint(hint_location);
         }
-        hinted_area.hinted_items.push(hinted_item);
-        let hint = new Hint('misc') // covers Ganondorf Light Arrow hint and Dampe Diary hint
+        if (!initially_hidden && !(hinted_area.hinted_items.map(i => i.name).includes(hinted_item.name))) {
+            hinted_area.hinted_items.push(hinted_item);
+        }
+        let hint = new Hint('misc'); // covers Ganondorf Light Arrow hint and Dampe Diary hint
         hint.area = hinted_area;
         hint.item = hinted_item;
         hint_location.hint = hint;
     }
 
-    unhint(hint_location: GraphLocation) {
+    hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number, initially_hidden: boolean = false): void {
+        if (!!hint_location.hint) {
+            this.unhint(hint_location);
+        }
+        if (!initially_hidden) {
+            hinted_area.num_major_items = num_major_items;
+        }
+        let hint = new Hint('important_check');
+        hint.area = hinted_area;
+        hint.num_major_items = num_major_items;
+        hint_location.hint = hint;
+    }
+
+    unhint(hint_location: GraphLocation, importing: boolean = false) {
         if (hint_location.world === null) throw `Can't unset hint location with unknown world: ${hint_location.name}`;
         let world = this.worlds[hint_location.world.id];
         let hint_copies = 0;
@@ -1398,9 +1741,12 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
         }
         if (hint_copies <= 1) {
-            if (hint_location.hint?.type === 'location' && !!hint_location.hint.location) {
+            if (hint_location.hint?.type === 'location' && !!hint_location.hint.location && !importing) {
                 this.set_location_item(hint_location.hint.location, null);
-            } else if (hint_location.hint?.type === 'entrance' && !!hint_location.hint.entrance) {
+            } else if (hint_location.hint?.type === 'dual' && !!hint_location.hint.location && !!hint_location.hint.location2 && !importing) {
+                this.set_location_item(hint_location.hint.location, null);
+                this.set_location_item(hint_location.hint.location2, null);
+            } else if (hint_location.hint?.type === 'entrance' && !!hint_location.hint.entrance && !importing) {
                 this.set_entrance(hint_location.hint.entrance, null);
             } else if (hint_location.hint?.type === 'woth' && !!hint_location.hint.area) {
                 hint_location.hint.area.is_required = false;
@@ -1417,6 +1763,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                 hinted_area.required_for = area_paths;
             } else if (hint_location.hint?.type === 'foolish' && !!hint_location.hint.area) {
                 hint_location.hint.area.is_not_required = false;
+            } else if (hint_location.hint?.type === 'important_check' && !!hint_location.hint.area) {
+                hint_location.hint.area.num_major_items = null;
             } else if (hint_location.hint?.type === 'misc' && !!hint_location.hint.item && !!hint_location.hint.area && hint_location.hint.area.hinted_items.length > 0) {
                 let area_items: GraphItem[] = [];
                 for (let hinted_item of hint_location.hint.area.hinted_items) {
@@ -1428,6 +1776,26 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
         }
         hint_location.hint = null;
+    }
+
+    extract_region_from_hint = (stone_name: string, color_split: string[], split_index: number) => {
+        let hinted_group: RegionGroup | null = null;
+        if (split_index < color_split.length) {
+            let hint_area = color_split[split_index];
+            //console.log(`Matching hint for ${stone_name} to region filter ${hint_area}`);
+            let matched_regions = this.worlds[0].regions.filter(r => r.hint()?.str === hint_area && !!r.parent_group);
+            //console.log(`Found ${matched_regions.length} regions`);
+            if (matched_regions.length > 0) {
+                //console.log(`Using surrogate region ${matched_regions[0].name} for parent group selection`);
+                hinted_group = matched_regions[0].parent_group;
+                /*if (!!hinted_group) {
+                    console.log(`Set region group to ${hinted_group.name}`);
+                } else {
+                    console.log(`Something went wrong, set hinted group to null`);
+                }*/
+            }
+        }
+        return hinted_group
     }
 
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): string {
@@ -1534,7 +1902,7 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     // Call when setting an item location to a dungeon reward
     // to update any previously unknown hints.
-    try_set_hinted_area_for_item(item_name: string, graph_world: GraphWorld, location: GraphLocation) {
+    try_set_hinted_area_for_item(item_name: string, graph_world: GraphWorld, location: GraphLocation, importing: boolean = false) {
         let world = this.worlds[graph_world.id]; // "casts" from GraphWorld to World
         if (Object.keys(world.fixed_item_area_hints).includes(item_name)) {
             // Clear previous item hint if necessary
@@ -1555,7 +1923,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else if (world.mixed_pools_bosses) {
                     reward_dungeon = rewardToBossMap[location.name];
                     let prev_boss = world.fixed_item_area_hints[item_name];
-                    if (!!prev_boss) {
+                    if (!!prev_boss && !importing) {
                         if (!(['????', 'FREE'].includes(prev_boss))) {
                             let boss_location = world.get_location(bossToRewardMap[prev_boss]);
                             this.set_location_item(boss_location, null);
@@ -1575,7 +1943,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         if (connected_dungeon_exit === null) throw `Could not update dungeon reward hint for disconnected boss region`;
                         reward_dungeon = entranceToDungeonMap[connected_dungeon_exit.name];
                     }
-                    if (!!prev_dungeon) {
+                    if (!!prev_dungeon && !importing) {
                         if (!(['????', 'FREE'].includes(prev_dungeon))) {
                             let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
                             world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
@@ -2013,6 +2381,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 loc.checked = filled_locations.includes(loc.name);
                 loc.user_item = null;
+                loc.hinted = false;
 
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
@@ -2196,6 +2565,10 @@ export class OotrGraphPlugin extends GraphPlugin {
                         world.skipped_items.push(loc.vanilla_item);
                     }
                 }
+                // unshuffled rewards only
+                if (!!loc.item) {
+                    this.try_set_hinted_area_for_item(loc.item.name, loc.world, loc, true);
+                }
             }
             // exit if we're only resetting vanilla items
             if (locations === null) return;
@@ -2227,6 +2600,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (typeof(item) !== 'string' && !!item.price) {
                         world_location.price = world_item.price;
                     }
+                    // shuffled rewards only
+                    this.try_set_hinted_area_for_item(world_location.item.name, world_location.world, world_location, true);
                 } else {
                     world_location.user_item = world_item;
                 }
@@ -2234,7 +2609,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         }
     }
 
-    set_entrances(entrances: PlandoEntranceList | PlandoMWEntranceList | null): void {
+    set_entrances(entrances: PlandoEntranceList | PlandoMWEntranceList | null, checked_entrances: PlandoCheckedEntranceList | PlandoMWCheckedEntranceList = []): void {
         let connected_entrances: PlandoEntranceList;
         let always_coupled_entrances = [
             'ChildBoss',
@@ -2264,6 +2639,16 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 entrance.use_target_alias = false;
                 entrance.user_connection = null;
+                entrance.hinted = false;
+
+                // user checked locations
+                let filled_entrances: PlandoCheckedEntranceList;
+                if (world.settings.world_count > 1 && !(Array.isArray(checked_entrances))) {
+                    filled_entrances = <PlandoCheckedEntranceList>(checked_entrances[`World ${world.id + 1}`]);
+                } else {
+                    filled_entrances = <PlandoCheckedEntranceList>checked_entrances;
+                }
+                entrance.checked = filled_entrances.includes(entrance.name);
                 // cache location counts for entrances with grouped alias names, such as Shop or House
                 let target_region = entrance.original_connection;
                 if (!!(target_region) && !!(entrance.target_alias)) {
@@ -2331,9 +2716,11 @@ export class OotrGraphPlugin extends GraphPlugin {
                 if (src.connected_region === null) {
                     src.connect(dest.original_connection);
                     src.replaces = dest;
+                    src.user_connection = dest;
                     if (!!(src.reverse) && !!(dest.reverse) && !!(src.reverse.original_connection) && src.coupled) {
                         dest.reverse.connect(src.reverse.original_connection);
                         dest.reverse.replaces = src.reverse;
+                        dest.reverse.user_connection = src.reverse;
                     }
                 } else {
                     // but still store user-specified connections in case shuffle settings are changed

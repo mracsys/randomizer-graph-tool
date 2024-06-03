@@ -172,6 +172,7 @@ export type SettingsDictionary = {
     starting_inventory?: string[],
     starting_equipment?: string[],
     starting_songs?: string[],
+    graphplugin_simulator_mode?: boolean,
 };
 
 export type SettingsPresets = {
@@ -404,7 +405,7 @@ class SettingsList {
             display_name: 'Region Visibility Mode',
             tab: this.setting_definitions['trials_random'].tab,
             section: this.setting_definitions['trials_random'].section,
-            order: 10002,
+            order: 10003,
             cosmetic: false,
             choices: {
                 'matching': 'Logically Reachable',
@@ -412,6 +413,19 @@ class SettingsList {
                 'connected': 'Connected',
                 'always': 'Always Visible',
             },
+            disables: [],
+            disabled: (settings) => { return false },
+        };
+        this.setting_definitions['graphplugin_simulator_mode'] = {
+            name: 'graphplugin_simulator_mode',
+            default: false,
+            disabled_default: false,
+            type: 'bool',
+            display_name: 'Simulator Mode',
+            tab: '',
+            section: '',
+            order: 10004,
+            cosmetic: false,
             disables: [],
             disabled: (settings) => { return false },
         };

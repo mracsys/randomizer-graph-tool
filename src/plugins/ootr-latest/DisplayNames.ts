@@ -121,7 +121,8 @@ export const display_names: DisplayNames = {
         ],
         "Market": [
             "Market",
-            "Market Back Alley"
+            "Market Back Alley",
+            "Market Dog Lady House",
         ],
         "Market Entrance": [
             "Market Entrance"
