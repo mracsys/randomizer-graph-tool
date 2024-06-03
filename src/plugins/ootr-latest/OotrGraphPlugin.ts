@@ -2468,6 +2468,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                             world.push_vanilla_item(loc);
                         }
                     }
+                } else if (loc.type === 'GossipStone') {
+                    if (Object.keys(world.settings).includes('shuffle_gossipstones')) {
+                        if (!(world.settings.shuffle_gossipstones)) {
+                            world.push_vanilla_item(loc);
+                        }
+                    }
+                } else if (loc.type === 'Wonderitem') {
+                    if (Object.keys(world.settings).includes('shuffle_wonderitems')) {
+                        if (!(world.settings.shuffle_wonderitems)) {
+                            world.push_vanilla_item(loc);
+                        }
+                    }
                 } else  if (loc.type === 'Beehive' && !(world.settings.shuffle_beehives)) {
                     world.push_vanilla_item(loc);
                 } else  if (loc.vanilla_item.name === 'Kokiri Sword' && !(world.settings.shuffle_kokiri_sword)) {
