@@ -1517,7 +1517,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.disabled_settings = [];
     }
 
-    set_location_item(location: GraphLocation, item: GraphItem | null, price: number = -1): void {
+    set_location_item(location: GraphLocation, item: GraphItem | null, price: number = -1, not_clearing_old_hint: boolean = true): void {
         if (location.world !== null) {
             let l: Location = this.worlds[location.world.id].get_location(location.name);
             if (!!item) {
@@ -1542,10 +1542,11 @@ export class OotrGraphPlugin extends GraphPlugin {
                 this.try_hint_reward(l, false);
             } else {
                 if (!!l.item) {
-                    if (Object.keys(location.world.fixed_item_area_hints).includes(l.item.name)) {
+                    if (Object.keys(location.world.fixed_item_area_hints).includes(l.item.name) && not_clearing_old_hint) {
                         location.world.fixed_item_area_hints[l.item.name] = {
                             hint: '????',
                             hinted: false,
+                            hint_locations: [],
                         };
                     }
                 }
@@ -1906,20 +1907,20 @@ export class OotrGraphPlugin extends GraphPlugin {
                 world.fixed_item_area_hints[item_name].hint = reward_boss;
                 if (!(['????', 'FREE'].includes(reward_boss))) {
                     let boss_location = world.get_location(bossToRewardMap[reward_boss]);
-                    this.set_location_item(boss_location, reward_item);
+                    this.set_location_item(boss_location, reward_item, undefined, false);
                 }
                 if (!(['????', 'FREE'].includes(prev_boss))) {
                     let boss_location = world.get_location(bossToRewardMap[prev_boss]);
-                    this.set_location_item(boss_location, null);
+                    this.set_location_item(boss_location, null, undefined, false);
                 }
                 if (reward_boss === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
-                    this.set_location_item(boss_location, reward_item);
+                    this.set_location_item(boss_location, reward_item, undefined, false);
                     world.fixed_item_area_hints[item_name].hinted = true;
                 }
                 if (prev_boss === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
-                    this.set_location_item(boss_location, null);
+                    this.set_location_item(boss_location, null, undefined, false);
                 }
                 this.reset_searches();
             } else {
@@ -1927,6 +1928,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 item_dungeon_targets.push('????');
                 item_dungeon_targets.push('FREE');
                 let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
+                console.log(`New dungeon: ${reward_dungeon}, Old dungeon: ${prev_dungeon}`);
                 world.fixed_item_area_hints[item_name].hint = reward_dungeon;
                 if (!(['????', 'FREE'].includes(reward_dungeon))) {
                     let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[reward_dungeon]);
@@ -1938,12 +1940,12 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 if (reward_dungeon === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
-                    this.set_location_item(boss_location, reward_item);
+                    this.set_location_item(boss_location, reward_item, undefined, false);
                     world.fixed_item_area_hints[item_name].hinted = true;
                 }
                 if (prev_dungeon === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
-                    this.set_location_item(boss_location, null);
+                    this.set_location_item(boss_location, null, undefined, false);
                 }
                 this.reset_searches();
             }
@@ -1988,11 +1990,11 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (!!prev_boss && !importing) {
                         if (!(['????', 'FREE'].includes(prev_boss))) {
                             let boss_location = world.get_location(bossToRewardMap[prev_boss]);
-                            this.set_location_item(boss_location, null);
+                            this.set_location_item(boss_location, null, undefined, false);
                         }
                         if (prev_boss === 'FREE') {
                             let boss_location = world.get_location("Links Pocket");
-                            this.set_location_item(boss_location, null);
+                            this.set_location_item(boss_location, null, undefined, false);
                         }
                     }
                 } else {
@@ -2012,7 +2014,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                         if (prev_dungeon === 'FREE') {
                             let boss_location = world.get_location("Links Pocket");
-                            this.set_location_item(boss_location, null);
+                            this.set_location_item(boss_location, null, undefined, false);
                         }
                     }
                 }
@@ -2091,21 +2093,23 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     try_hint_reward(l: GraphLocation, unhint: boolean = false) {
-        if (!!l.item && !!l.world && !unhint) {
-            let world = this.worlds[l.world.id];
-            if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
-                world.fixed_item_area_hints[l.item.name].hint_locations.push(l.name);
-            }
-        } else if (!!l.item && !!l.world) {
-            let world = this.worlds[l.world.id];
-            if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
-                let new_locations: string[] = [];
-                for (let hl of world.fixed_item_area_hints[l.item.name].hint_locations) {
-                    if (hl != l.name) {
-                        new_locations.push(hl);
-                    }
+        if (l.name !== 'Links Pocket') {
+            if (!!l.item && !!l.world && !unhint) {
+                let world = this.worlds[l.world.id];
+                if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
+                    world.fixed_item_area_hints[l.item.name].hint_locations.push(l.name);
                 }
-                world.fixed_item_area_hints[l.item.name].hint_locations = new_locations;
+            } else if (!!l.item && !!l.world) {
+                let world = this.worlds[l.world.id];
+                if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
+                    let new_locations: string[] = [];
+                    for (let hl of world.fixed_item_area_hints[l.item.name].hint_locations) {
+                        if (hl != l.name) {
+                            new_locations.push(hl);
+                        }
+                    }
+                    world.fixed_item_area_hints[l.item.name].hint_locations = new_locations;
+                }
             }
         }
     }

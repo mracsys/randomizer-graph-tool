@@ -114,6 +114,7 @@ export interface GraphWorld {
         [item_name: string]: {
             hint: string,
             hinted: boolean,
+            hint_locations: string[],
         }
     },
     get_entrance(entrance: GraphEntrance | string): GraphEntrance,

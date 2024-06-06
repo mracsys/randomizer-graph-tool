@@ -1039,7 +1039,7 @@ class World implements GraphWorld {
                     this.fixed_item_area_hints[reward_item.name].hinted ||
                     boss_reward_location.checked;
                 if (boss_reward_location.item === null) {
-                    this.parent_graph.set_location_item(boss_reward_location, reward_item);
+                    this.parent_graph.set_location_item(boss_reward_location, reward_item, undefined, false);
                     if (Object.keys(this.pending_reward_assignments).includes(e.name)) {
                         delete this.pending_reward_assignments[e.name];
                     }
@@ -1064,7 +1064,7 @@ class World implements GraphWorld {
                 let boss_reward_location = this.get_location(entranceToBossRewardMap[boss_entrance_name]);
                 if (!!boss_reward_location.item) {
                     this.pending_reward_assignments[e.name] = { hint: boss_reward_location.item.name, hinted: false, hint_locations: [], };
-                    this.parent_graph.set_location_item(boss_reward_location, null);
+                    this.parent_graph.set_location_item(boss_reward_location, null, undefined, false);
                 }
             }
         }
