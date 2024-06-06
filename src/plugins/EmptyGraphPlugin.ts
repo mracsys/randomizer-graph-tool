@@ -70,5 +70,5 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void { return };
     hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void { return };
     unhint(hint_location: GraphLocation): void { return };
-    cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string { return '' };
+    cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): {hint: string, hinted: boolean} { return {hint: '', hinted: false} };
 }

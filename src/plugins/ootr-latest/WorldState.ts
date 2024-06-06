@@ -202,6 +202,14 @@ class WorldState {
                 cache[item_name] = 1;
             }
         }
+        // Collect compasses and maps for sim hinting purposes
+        if (item.name.includes('Compass') || item.name.includes('Map')) {
+            if (!!cache[item.name]) {
+                cache[item.name] += 1;
+            } else {
+                cache[item.name] = 1;
+            }
+        }
     }
 
     collect_list(items: Item[], add_to_progression: boolean = true, add_to_inventory: boolean = true) {

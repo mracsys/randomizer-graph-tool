@@ -65,6 +65,10 @@ export class RegionGroup implements GraphRegion {
             for (let entrance of region.entrances) {
                 if (!!entrance.type) {
                     this.entrances.push(entrance);
+                    // Set reverse interior source groups
+                    if (entrance.source_group === null && !!entrance.parent_region.parent_group) {
+                        entrance.source_group = entrance.parent_region.parent_group;
+                    }
                 }
             }
         }

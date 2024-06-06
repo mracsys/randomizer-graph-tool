@@ -17,6 +17,7 @@ import { global_settings_overrides, setting_options_include_value, settings_to_n
 import { Hint, HintAreas } from './Hints.js';
 import { RegionGroup } from './RegionGroup.js';
 import HintArea from './HintArea.js';
+import WorldState from './WorldState.js';
 
 interface OotrPlando {
     ':version': string,
@@ -41,6 +42,49 @@ interface OotrPlandoHints {
     }
 }
 
+const child_rewards = [
+    'Kokiri Emerald',
+    'Goron Ruby',
+    'Zora Sapphire',
+];
+const adult_rewards = [
+    'Forest Medallion',
+    'Fire Medallion',
+    'Water Medallion',
+    'Spirit Medallion',
+    'Shadow Medallion',
+    'Light Medallion',
+];
+const dungeonToCompassMap: {[dungeonName: string]: string} = {
+    "DEKU": "Compass (Deku Tree)",
+    "DCVN": "Compass (Dodongos Cavern)",
+    "JABU": "Compass (Jabu Jabus Belly)",
+    "FRST": "Compass (Forest Temple)",
+    "FIRE": "Compass (Fire Temple)",
+    "WATR": "Compass (Water Temple)",
+    "SPRT": "Compass (Spirit Temple)",
+    "SHDW": "Compass (Shadow Temple)",
+}
+const itemToCompassMap: {[dungeonName: string]: string} = {
+    "Kokiri Emerald": "Compass (Deku Tree)",
+    "Goron Ruby": "Compass (Dodongos Cavern)",
+    "Zora Sapphire": "Compass (Jabu Jabus Belly)",
+    "Forest Medallion": "Compass (Forest Temple)",
+    "Fire Medallion": "Compass (Fire Temple)",
+    "Water Medallion": "Compass (Water Temple)",
+    "Spirit Medallion": "Compass (Spirit Temple)",
+    "Shadow Medallion": "Compass (Shadow Temple)",
+}
+const compassToItemMap: {[dungeonName: string]: string} = {
+    "Compass (Deku Tree)": "Kokiri Emerald",
+    "Compass (Dodongos Cavern)": "Goron Ruby",
+    "Compass (Jabu Jabus Belly)": "Zora Sapphire",
+    "Compass (Forest Temple)": "Forest Medallion",
+    "Compass (Fire Temple)": "Fire Medallion",
+    "Compass (Water Temple)": "Water Medallion",
+    "Compass (Spirit Temple)": "Spirit Medallion",
+    "Compass (Shadow Temple)": "Shadow Medallion",
+}
 const dungeonToEntranceMap: {[dungeonName: string]: string} = {
     "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
     "DCVN": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
@@ -424,7 +468,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['mq_dungeons_specific'], mq_dungeons, {update_vanilla_items: false, from_import: true});
+            this.change_setting(world, graph_settings['mq_dungeons_specific'], mq_dungeons, {update_vanilla_items: false, from_import: true});
             let active_trials: string[] = [];
             if (Object.keys(plando).includes('trials')) {
                 for (let [trial, active] of Object.entries(plando.trials)) {
@@ -433,11 +477,11 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                 }
             }
-            this.change_setting(this.worlds[0], graph_settings['graphplugin_trials_specific'], active_trials, {update_vanilla_items: false, from_import: true});
+            this.change_setting(world, graph_settings['graphplugin_trials_specific'], active_trials, {update_vanilla_items: false, from_import: true});
             if (Object.keys(plando).includes('songs')) {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], plando.songs, {update_vanilla_items: false, from_import: true});
+                this.change_setting(world, graph_settings['graphplugin_song_melodies'], plando.songs, {update_vanilla_items: false, from_import: true});
             } else {
-                this.change_setting(this.worlds[0], graph_settings['graphplugin_song_melodies'], {}, {update_vanilla_items: false, from_import: true});
+                this.change_setting(world, graph_settings['graphplugin_song_melodies'], {}, {update_vanilla_items: false, from_import: true});
             }
         }
 
@@ -696,14 +740,14 @@ export class OotrGraphPlugin extends GraphPlugin {
                         // Check for woth/path first
                         if (hint.text.includes('on the way of the hero')) {
                             if (color_split.length > 1) {
-                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                             }
                             if (!!hinted_group) this.hint_required_area(hint_location, hinted_group, true);
                         // older builds did not have color on the #time# path
                         } else if (hint.text.includes('on the path of time')) {
                             try {
                                 if (color_split.length > 1) {
-                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                                 }
                                 let goal = new GraphHintGoal();
                                 goal.item_count = 1;
@@ -718,7 +762,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         } else if (hint.text.includes('on the path')) {
                             try {
                                 if (color_split.length > 1) {
-                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                                    hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                                 }
                                 let goal = new GraphHintGoal();
                                 goal.item_count = 1;
@@ -740,8 +784,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                         } else {
                             // Check if hinted location is a region
                             if (color_split.length > 1) {
-                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
-                                if (hinted_group === null) hinted_group = this.extract_region_from_hint(stone_name, color_split, 3);
+                                hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
+                                if (hinted_group === null) hinted_group = this.extract_region_from_hint(stone_name, color_split, 3, this.worlds[0]);
                             }
                             if (!!hinted_group) {
                                 let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
@@ -767,7 +811,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         let color_split = hint.text.split('#').filter(t => t.length > 0);
                         let hinted_group: RegionGroup | null = null;
                         if (color_split.length > 1) {
-                            hinted_group = this.extract_region_from_hint(stone_name, color_split, 1);
+                            hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                         }
                         if (!!hinted_group) {
                             if (hint.text.includes('a foolish choice')) {
@@ -970,11 +1014,10 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                     }
                 }
-                let fixed_hints = {
+                plando[':tracked_hints']['temple_of_time_altar'] = {
                     type: 'fixed',
                     fixed_areas: Object.assign({}, this.worlds[0].fixed_item_area_hints),
-                }
-                plando[':tracked_hints']['temple_of_time_altar'] = fixed_hints;
+                };
                 plando[':tracked_hints']['pending_location_assignments'] = {
                     type: 'fixed',
                     fixed_areas: Object.assign({}, this.worlds[0].pending_reward_assignments),
@@ -1495,10 +1538,19 @@ export class OotrGraphPlugin extends GraphPlugin {
                     i.price = location.price;
                 }
                 l.user_item = i;
+                this.try_hint_compass(l, false);
+                this.try_hint_reward(l, false);
             } else {
-                if (!!l.item && Object.keys(location.world.fixed_item_area_hints).includes(l.item.name)) {
-                    location.world.fixed_item_area_hints[l.item.name] = '????';
+                if (!!l.item) {
+                    if (Object.keys(location.world.fixed_item_area_hints).includes(l.item.name)) {
+                        location.world.fixed_item_area_hints[l.item.name] = {
+                            hint: '????',
+                            hinted: false,
+                        };
+                    }
                 }
+                this.try_hint_compass(l, true);
+                this.try_hint_reward(l, true);
                 l.item = null;
                 l.price = null;
                 l.user_item = null;
@@ -1778,12 +1830,12 @@ export class OotrGraphPlugin extends GraphPlugin {
         hint_location.hint = null;
     }
 
-    extract_region_from_hint = (stone_name: string, color_split: string[], split_index: number) => {
+    extract_region_from_hint = (stone_name: string, color_split: string[], split_index: number, world: World) => {
         let hinted_group: RegionGroup | null = null;
         if (split_index < color_split.length) {
             let hint_area = color_split[split_index];
             //console.log(`Matching hint for ${stone_name} to region filter ${hint_area}`);
-            let matched_regions = this.worlds[0].regions.filter(r => r.hint()?.str === hint_area && !!r.parent_group);
+            let matched_regions = world.regions.filter(r => r.hint()?.str === hint_area && !!r.parent_group);
             //console.log(`Found ${matched_regions.length} regions`);
             if (matched_regions.length > 0) {
                 //console.log(`Using surrogate region ${matched_regions[0].name} for parent group selection`);
@@ -1798,18 +1850,19 @@ export class OotrGraphPlugin extends GraphPlugin {
         return hinted_group
     }
 
-    cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): string {
+    cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): {hint: string, hinted: boolean} {
         let cycle_areas = (item_name: string, world: World, forward: boolean, targets: string[]) => {
-            let area_index = targets.indexOf(world.fixed_item_area_hints[item_name]);
+            let area_index = targets.indexOf(world.fixed_item_area_hints[item_name].hint);
             let prev_index = area_index;
-            if (area_index === -1) throw `Unable to find fixed item area ${world.fixed_item_area_hints[item_name]}`;
+            if (area_index === -1) throw `Unable to find fixed item area ${world.fixed_item_area_hints[item_name].hint}`;
+            let hinted_reward_areas = Object.values(world.fixed_item_area_hints).map(h => h.hint);
             if (forward) {
                 if (area_index >= targets.length - 1) {
                     area_index = 0;
                 } else {
                     area_index++;
                 }
-                while(Object.values(world.fixed_item_area_hints).includes(targets[area_index]) && targets[area_index] !== '????') {
+                while(Object.values(hinted_reward_areas).includes(targets[area_index]) && targets[area_index] !== '????') {
                     if (area_index === prev_index) {
                         throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
                     }
@@ -1825,7 +1878,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     area_index--;
                 }
-                while(Object.values(world.fixed_item_area_hints).includes(targets[area_index]) && targets[area_index] !== '????') {
+                while(Object.values(hinted_reward_areas).includes(targets[area_index]) && targets[area_index] !== '????') {
                     if (area_index === prev_index) {
                         throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
                     }
@@ -1845,13 +1898,12 @@ export class OotrGraphPlugin extends GraphPlugin {
                 let prev_area: string;
                 let item_area_targets = Object.values(HintAreas).map(a => a.abbreviation);
                 item_area_targets.push('????');
-                [world.fixed_item_area_hints[item_name], prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
+                [world.fixed_item_area_hints[item_name].hint, prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
             } else if (world.mixed_pools_bosses) {
-                let item_boss_targets = Object.keys(bossToRewardMap);
+                let item_boss_targets = Object.values(HintAreas).map(a => a.abbreviation);
                 item_boss_targets.push('????');
-                item_boss_targets.push('FREE');
                 let [reward_boss, prev_boss] = cycle_areas(item_name, world, forward, item_boss_targets);
-                world.fixed_item_area_hints[item_name] = reward_boss;
+                world.fixed_item_area_hints[item_name].hint = reward_boss;
                 if (!(['????', 'FREE'].includes(reward_boss))) {
                     let boss_location = world.get_location(bossToRewardMap[reward_boss]);
                     this.set_location_item(boss_location, reward_item);
@@ -1863,6 +1915,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 if (reward_boss === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
                     this.set_location_item(boss_location, reward_item);
+                    world.fixed_item_area_hints[item_name].hinted = true;
                 }
                 if (prev_boss === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
@@ -1874,7 +1927,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 item_dungeon_targets.push('????');
                 item_dungeon_targets.push('FREE');
                 let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
-                world.fixed_item_area_hints[item_name] = reward_dungeon;
+                world.fixed_item_area_hints[item_name].hint = reward_dungeon;
                 if (!(['????', 'FREE'].includes(reward_dungeon))) {
                     let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[reward_dungeon]);
                     world.add_hinted_dungeon_reward(dungeon_boss_entrance, reward_item);
@@ -1886,6 +1939,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 if (reward_dungeon === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
                     this.set_location_item(boss_location, reward_item);
+                    world.fixed_item_area_hints[item_name].hinted = true;
                 }
                 if (prev_dungeon === 'FREE') {
                     let boss_location = world.get_location("Links Pocket");
@@ -1895,7 +1949,11 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
             this.set_viewable_region_groups();
         } else {
-            world.fixed_item_area_hints[item_name] = '????';
+            world.fixed_item_area_hints[item_name] = {
+                hint: '????',
+                hinted: false,
+                hint_locations: [],
+            }
         }
         return world.fixed_item_area_hints[item_name];
     }
@@ -1907,7 +1965,11 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (Object.keys(world.fixed_item_area_hints).includes(item_name)) {
             // Clear previous item hint if necessary
             if (!!location.item && location.item.name !== item_name && Object.keys(world.fixed_item_area_hints).includes(location.item.name)) {
-                world.fixed_item_area_hints[location.item.name] = '????';
+                world.fixed_item_area_hints[location.item.name] = {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                }
             }
             let reward_dungeon: string;
             try {
@@ -1922,7 +1984,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     reward_dungeon = parent_region.abbreviation;
                 } else if (world.mixed_pools_bosses) {
                     reward_dungeon = rewardToBossMap[location.name];
-                    let prev_boss = world.fixed_item_area_hints[item_name];
+                    let prev_boss = world.fixed_item_area_hints[item_name].hint;
                     if (!!prev_boss && !importing) {
                         if (!(['????', 'FREE'].includes(prev_boss))) {
                             let boss_location = world.get_location(bossToRewardMap[prev_boss]);
@@ -1934,7 +1996,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                     }
                 } else {
-                    let prev_dungeon = world.fixed_item_area_hints[item_name];
+                    let prev_dungeon = world.fixed_item_area_hints[item_name].hint;
                     if (location.name === 'Links Pocket') {
                         reward_dungeon = 'FREE';
                     } else {
@@ -1960,9 +2022,92 @@ export class OotrGraphPlugin extends GraphPlugin {
                 console.log(e);
                 reward_dungeon = '????';
             }
-            world.fixed_item_area_hints[item_name] = reward_dungeon;
+            world.fixed_item_area_hints[item_name].hint = reward_dungeon;
         }
         // No need to reset searches as this is handled in set_location_item
+    }
+
+    try_hint_compass(l: GraphLocation, unhint: boolean = false) {
+        if (!!l.item && !!l.world && !unhint) {
+            if (l.item.name.includes('Compass')) {
+                let world = this.worlds[l.world.id];
+                let tricked_state = this.all_tricks_search.state_list[world.id];
+                if (tricked_state === null || tricked_state === undefined) tricked_state = new WorldState(world);
+                let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+                if (compass_hint) {
+                    if ((!!(world.settings.shuffle_dungeon_rewards) &&
+                    !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) ||
+                    world.mixed_pools_bosses) {
+                        if (Object.keys(compassToItemMap).includes(l.item.name)) {
+                            let reward_item = compassToItemMap[l.item.name];
+                            world.fixed_item_area_hints[reward_item].hint_locations.push(l.name);
+                        }
+                    } else {
+                        for (let hint_data of Object.values(world.fixed_item_area_hints)) {
+                            if (Object.keys(dungeonToCompassMap).includes(hint_data.hint) && dungeonToCompassMap[hint_data.hint] === l.item.name) {
+                                hint_data.hint_locations.push(l.name);
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (!!l.item && !!l.world) {
+            if (l.item.name.includes('Compass')) {
+                let world = this.worlds[l.world.id];
+                let tricked_state = this.all_tricks_search.state_list[world.id];
+                if (tricked_state === null || tricked_state === undefined) tricked_state = new WorldState(world);
+                let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+                if (compass_hint) {
+                    if ((!!(world.settings.shuffle_dungeon_rewards) &&
+                    !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) ||
+                    world.mixed_pools_bosses) {
+                        if (Object.keys(compassToItemMap).includes(l.item.name)) {
+                            let reward_item = compassToItemMap[l.item.name];
+                            let new_locations: string[] = [];
+                            for (let hl of world.fixed_item_area_hints[reward_item].hint_locations) {
+                                if (hl !== l.name) {
+                                    new_locations.push(hl);
+                                }
+                            }
+                            world.fixed_item_area_hints[reward_item].hint_locations = new_locations;
+                        }
+                    } else {
+                        for (let hint_data of Object.values(world.fixed_item_area_hints)) {
+                            if (Object.keys(dungeonToCompassMap).includes(hint_data.hint) && dungeonToCompassMap[hint_data.hint] === l.item.name) {
+                                hint_data.hint_locations.push(l.name);
+                                let new_locations: string[] = [];
+                                for (let hl of hint_data.hint_locations) {
+                                    if (hl !== l.name) {
+                                        new_locations.push(hl);
+                                    }
+                                }
+                                hint_data.hint_locations = new_locations;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    try_hint_reward(l: GraphLocation, unhint: boolean = false) {
+        if (!!l.item && !!l.world && !unhint) {
+            let world = this.worlds[l.world.id];
+            if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
+                world.fixed_item_area_hints[l.item.name].hint_locations.push(l.name);
+            }
+        } else if (!!l.item && !!l.world) {
+            let world = this.worlds[l.world.id];
+            if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
+                let new_locations: string[] = [];
+                for (let hl of world.fixed_item_area_hints[l.item.name].hint_locations) {
+                    if (hl != l.name) {
+                        new_locations.push(hl);
+                    }
+                }
+                world.fixed_item_area_hints[l.item.name].hint_locations = new_locations;
+            }
+        }
     }
 
     get_full_exit_pool(world: World): GraphEntrancePool {
@@ -2366,6 +2511,12 @@ export class OotrGraphPlugin extends GraphPlugin {
         ];
         for (let world of this.worlds) {
             world.skipped_items = [];
+            let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+            let misc_hints = world.settings.misc_hints === undefined ? ['altar', 'ganondorf', 'warp_songs_and_owls'] : world.settings.misc_hints;
+            let sim_mode = world.settings.graphplugin_simulator_mode === undefined ? false : world.settings.graphplugin_simulator_mode;
+            for (let hint_data of Object.values(world.fixed_item_area_hints)) {
+                hint_data.hint_locations = [];
+            }
             // vanilla item fill based on settings
             for (let loc of world.get_locations()) {
                 // reset location item in case shuffle settings changed
@@ -2382,6 +2533,17 @@ export class OotrGraphPlugin extends GraphPlugin {
                 loc.checked = filled_locations.includes(loc.name);
                 loc.user_item = null;
                 loc.hinted = false;
+
+                if (sim_mode && loc.name === 'ToT Child Altar Hint' && misc_hints.includes('altar') && !compass_hint) {
+                    for (let item_name of child_rewards) {
+                        world.fixed_item_area_hints[item_name].hint_locations.push(loc.name);
+                    }
+                }
+                if (sim_mode && loc.name === 'ToT Adult Altar Hint' && misc_hints.includes('altar') && !compass_hint) {
+                    for (let item_name of adult_rewards) {
+                        world.fixed_item_area_hints[item_name].hint_locations.push(loc.name);
+                    }
+                }
 
                 if (!!(loc.vanilla_item) && !!(loc.parent_region)) {
                     loc.vanilla_item.world = loc.parent_region.world;
@@ -2580,6 +2742,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                 // unshuffled rewards only
                 if (!!loc.item) {
                     this.try_set_hinted_area_for_item(loc.item.name, loc.world, loc, true);
+                    this.try_hint_compass(loc);
+                    this.try_hint_reward(loc);
                 }
             }
             // exit if we're only resetting vanilla items
@@ -2614,6 +2778,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                     // shuffled rewards only
                     this.try_set_hinted_area_for_item(world_location.item.name, world_location.world, world_location, true);
+                    this.try_hint_compass(world_location);
+                    this.try_hint_reward(world_location);
                 } else {
                     world_location.user_item = world_item;
                 }

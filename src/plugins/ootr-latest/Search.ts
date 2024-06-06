@@ -388,6 +388,28 @@ class Search {
                 }
             }
         }
+        // Update hinted dungeon rewards from checked altar and compass hints
+        // Only applicable to sim mode as normal tracking will update reward
+        // locations when the user discovers them. Sim mode has the reward
+        // locations filled before the user finds them.
+        for (let state of this.state_list) {
+            let sim_mode = state.world.settings.graphplugin_simulator_mode === undefined ? false : state.world.settings.graphplugin_simulator_mode;
+            if (sim_mode) {
+                for (let hint_data of Object.values(state.world.fixed_item_area_hints)) {
+                    if (hint_data.hint === 'FREE') {
+                        hint_data.hinted = true;
+                    } else {
+                        hint_data.hinted = false;
+                        for (let hint_location of hint_data.hint_locations) {
+                            let hl = state.world.get_location(hint_location);
+                            if (hl.checked) {
+                                hint_data.hinted = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // changes to the world may have changed earlier spheres,

@@ -173,6 +173,9 @@ export type SettingsDictionary = {
     starting_equipment?: string[],
     starting_songs?: string[],
     graphplugin_simulator_mode?: boolean,
+    enhance_map_compass?: boolean,
+    misc_hints?: string[],
+    shuffle_mapcompass?: string,
 };
 
 export type SettingsPresets = {

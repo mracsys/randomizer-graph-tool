@@ -89,7 +89,11 @@ export type PlandoHint = {
     },
     num_major_items?: number,
     fixed_areas?: {
-        [item_name: string]: string,
+        [item_name: string]: {
+            hint: string,
+            hinted: boolean,
+            hint_locations: string[],
+        }
     },
 }
 
@@ -141,8 +145,20 @@ class World implements GraphWorld {
 
     public state: WorldState;
 
-    public fixed_item_area_hints: {[item_name: string]: string} = {}
-    public pending_reward_assignments: {[entrance_name: string]: string} = {}
+    public fixed_item_area_hints: {
+        [item_name: string]: {
+            hint: string,
+            hinted: boolean,
+            hint_locations: string[],
+        }
+    } = {}
+    public pending_reward_assignments: {
+        [entrance_name: string]: {
+            hint: string,
+            hinted: boolean,
+            hint_locations: string[],
+        }
+    } = {}
 
     public viewable_unshuffled_items: string[] = [];
     public explicitly_collected_unshuffled_items: string[] = [
@@ -386,40 +402,148 @@ class World implements GraphWorld {
         if (!!this.settings.shuffle_dungeon_rewards && this.settings.shuffle_dungeon_rewards === 'vanilla') {
             if (!!this.settings.mix_entrance_pools && this.settings.mix_entrance_pools?.includes('Boss')) {
                 this.fixed_item_area_hints = {
-                    'Kokiri Emerald': 'GOMA',
-                    'Goron Ruby': 'KING',
-                    'Zora Sapphire': 'BARI',
-                    'Forest Medallion': 'PHGA',
-                    'Fire Medallion': 'VOLV',
-                    'Water Medallion': 'MOR',
-                    'Spirit Medallion': 'TWIN',
-                    'Shadow Medallion': 'BNGO',
-                    'Light Medallion': 'FREE',
+                    'Kokiri Emerald': {
+                        hint: 'GOMA',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Goron Ruby': {
+                        hint: 'KING',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Zora Sapphire': {
+                        hint: 'BARI',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Forest Medallion': {
+                        hint: 'PHGA',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Fire Medallion': {
+                        hint: 'VOLV',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Water Medallion': {
+                        hint: 'MOR',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Spirit Medallion': {
+                        hint: 'TWIN',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Shadow Medallion': {
+                        hint: 'BNGO',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Light Medallion': {
+                        hint: 'FREE',
+                        hinted: true,
+                        hint_locations: [],
+                    },
                 }
             } else {
                 this.fixed_item_area_hints = {
-                    'Kokiri Emerald': 'DEKU',
-                    'Goron Ruby': 'DCVN',
-                    'Zora Sapphire': 'JABU',
-                    'Forest Medallion': 'FRST',
-                    'Fire Medallion': 'FIRE',
-                    'Water Medallion': 'WATR',
-                    'Spirit Medallion': 'SPRT',
-                    'Shadow Medallion': 'SHDW',
-                    'Light Medallion': 'FREE',
+                    'Kokiri Emerald': {
+                        hint: 'DEKU',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Goron Ruby': {
+                        hint: 'DCVN',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Zora Sapphire': {
+                        hint: 'JABU',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Forest Medallion': {
+                        hint: 'FRST',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Fire Medallion': {
+                        hint: 'FIRE',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Water Medallion': {
+                        hint: 'WATR',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Spirit Medallion': {
+                        hint: 'SPRT',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Shadow Medallion': {
+                        hint: 'SHDW',
+                        hinted: true,
+                        hint_locations: [],
+                    },
+                    'Light Medallion': {
+                        hint: 'FREE',
+                        hinted: true,
+                        hint_locations: [],
+                    }
                 }
             }
         } else {
             this.fixed_item_area_hints = {
-                'Kokiri Emerald': '????',
-                'Goron Ruby': '????',
-                'Zora Sapphire': '????',
-                'Forest Medallion': '????',
-                'Fire Medallion': '????',
-                'Water Medallion': '????',
-                'Spirit Medallion': '????',
-                'Shadow Medallion': '????',
-                'Light Medallion': '????',
+                'Kokiri Emerald': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Goron Ruby': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Zora Sapphire': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Forest Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Fire Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Water Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Spirit Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Shadow Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                },
+                'Light Medallion': {
+                    hint: '????',
+                    hinted: false,
+                    hint_locations: [],
+                }
             }
         }
     }
@@ -623,6 +747,21 @@ class World implements GraphWorld {
             if (!!(region.parent_group) && !group_copied) {
                 this.region_groups.push(region.parent_group);
                 group_copied = true;
+                // Set up reverse entrance metadeta. Can't be run
+                // during dungeon group creation as base metadata for
+                // the entrances doesn't exist yet.
+                for (let sub_region of region.parent_group.sub_regions) {
+                    for (let entrance of sub_region.entrances) {
+                        if (!!entrance.type && entrance.source_group === null && !!entrance.parent_region.parent_group) {
+                            entrance.source_group = entrance.parent_region.parent_group;
+                        }
+                    }
+                    for (let exit of sub_region.exits) {
+                        if (!!exit.type && exit.source_group === null && !!exit.parent_region.parent_group) {
+                            exit.source_group = exit.parent_region.parent_group;
+                        }
+                    }
+                }
             }
             // connect outside interface entrances to world
             // and disconnect connections from the other variant
@@ -883,7 +1022,7 @@ class World implements GraphWorld {
         let reward_item: Item;
         if (hinted_item === null) {
             if (Object.keys(this.pending_reward_assignments).includes(e.name)) {
-                reward_item = this.get_item(this.pending_reward_assignments[e.name]);
+                reward_item = this.get_item(this.pending_reward_assignments[e.name].hint);
             } else {
                 return;
             }
@@ -896,6 +1035,9 @@ class World implements GraphWorld {
                 ['vanilla', 'reward'].includes(this.settings.shuffle_dungeon_rewards))) {
                 let boss_entrance_name = !!e.replaces ? e.replaces.name : e.name;
                 let boss_reward_location = this.get_location(entranceToBossRewardMap[boss_entrance_name]);
+                this.fixed_item_area_hints[reward_item.name].hinted = 
+                    this.fixed_item_area_hints[reward_item.name].hinted ||
+                    boss_reward_location.checked;
                 if (boss_reward_location.item === null) {
                     this.parent_graph.set_location_item(boss_reward_location, reward_item);
                     if (Object.keys(this.pending_reward_assignments).includes(e.name)) {
@@ -904,7 +1046,11 @@ class World implements GraphWorld {
                 }
             }
         } else {
-            this.pending_reward_assignments[e.name] = reward_item.name;
+            this.pending_reward_assignments[e.name] = {
+                hint: reward_item.name,
+                hinted: false,
+                hint_locations: [],
+            };
         }
     }
 
@@ -917,7 +1063,7 @@ class World implements GraphWorld {
                 let boss_entrance_name = !!e.replaces ? e.replaces.name : e.name;
                 let boss_reward_location = this.get_location(entranceToBossRewardMap[boss_entrance_name]);
                 if (!!boss_reward_location.item) {
-                    this.pending_reward_assignments[e.name] = boss_reward_location.item.name;
+                    this.pending_reward_assignments[e.name] = { hint: boss_reward_location.item.name, hinted: false, hint_locations: [], };
                     this.parent_graph.set_location_item(boss_reward_location, null);
                 }
             }
@@ -1138,11 +1284,16 @@ class World implements GraphWorld {
         if (this.settings.dungeon_shortcuts === undefined) throw `Could not check dungeon shortcut settings, undefined for world ${this.id}`;
         let region = this.get_region(region_name);
         if (region === null) throw `Could not find region ${region_name} in world while checking for dungeon shortcuts`;
-        let dungeon_hintarea = HintArea.at(region);
-        if (dungeon_hintarea === null) throw `Could not find associated dungeon for ${region_name}`;
-        let dungeon_name = dungeon_hintarea.dungeon_name;
-        if (dungeon_name === null) throw `Could not find associated dungeon name for ${region_name}`;
-        return this.settings.dungeon_shortcuts.includes(dungeon_name);
+        try {
+            let dungeon_hintarea = HintArea.at(region);
+            if (dungeon_hintarea === null) throw `Could not find associated dungeon for ${region_name}`;
+            let dungeon_name = dungeon_hintarea.dungeon_name;
+            if (dungeon_name === null) throw `Could not find associated dungeon name for ${region_name}`;
+            return this.settings.dungeon_shortcuts.includes(dungeon_name);
+        } catch {
+            // handle King Dodongo's Boss Room disconnected or connected to non-blue-warp-dungeon region
+            return false;
+        }
     }
 
     collect_skipped_locations(): void {

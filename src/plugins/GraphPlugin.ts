@@ -110,7 +110,12 @@ export interface GraphWorld {
     regions: GraphRegion[];
     region_groups: GraphRegion[];
     readonly settings: GraphSettingsConfiguration,
-    fixed_item_area_hints: {[item_name: string]: string},
+    fixed_item_area_hints: {
+        [item_name: string]: {
+            hint: string,
+            hinted: boolean,
+        }
+    },
     get_entrance(entrance: GraphEntrance | string): GraphEntrance,
     get_location(location: GraphLocation | string): GraphLocation,
     get_entrances(): GraphEntrance[],
@@ -276,7 +281,7 @@ export abstract class GraphPlugin {
     abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void;
     abstract hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void;
     abstract unhint(hint_location: GraphLocation): void;
-    abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): string;
+    abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): {hint: string, hinted: boolean};
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
         if (Object.keys(this.entrance_cache).length === 0) {

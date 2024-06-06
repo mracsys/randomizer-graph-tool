@@ -2326,6 +2326,8 @@ export const display_names: DisplayNames = {
 
         "Dampe Diary Hint": "Dampe Diary",
         "Ganondorf Hint": "Ganondorf",
+        "ToT Child Altar Hint": "Child Altar Hint",
+        "ToT Adult Altar Hint": "Adult Altar Hint",
     },
     "entrance_aliases": {
         "Child Spawn -> KF Links House": "Child Spawn",
