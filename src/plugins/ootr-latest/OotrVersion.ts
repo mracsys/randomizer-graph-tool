@@ -42,7 +42,7 @@ class OotrVersion implements GameVersion {
         const main_versions = versions[0].split('.');
         this.major = parseInt(main_versions[0]);
         this.minor = parseInt(main_versions[1]);
-        this.patch = parseInt(main_versions[2]);
+        this.patch = !!parseInt(main_versions[2]) ? parseInt(main_versions[2]) : 0;
         if (versions.length > 1) {
             if (!(['f.LUM', 'Stable', 'Dev'].includes(versions[1]))) {
                 const branch_versions = versions[1].split('-');
