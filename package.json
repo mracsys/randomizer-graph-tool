@@ -44,9 +44,8 @@
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
     "clean": "rm -rf ./lib",
     "debug": "yarn run clean && yarn run build:dev",
-    "build": "yarn run clean && yarn run build:esm && yarn run build:cjs",
+    "build": "yarn run clean && yarn run build:esm",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",
-    "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
     "build:dev": "tsc -p ./configs/tsconfig.dev.json",
     "semantic-release": "semantic-release",
     "prepack": "yarn run build"

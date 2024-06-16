@@ -5,6 +5,7 @@ import World from './World.js';
 import WorldState from './WorldState.js';
 import { Location } from './Location.js';
 import { RegionGroup } from './RegionGroup.js';
+import { Boulder } from './Boulders.js';
 
 type Spot = Entrance | Location;
 type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -23,6 +24,7 @@ class Entrance implements GraphEntrance {
         public access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
         public static_access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
         public access_rules: AccessRule[] = [],
+        public boulders: Boulder[] = [],
         public reverse: Entrance | null = null,
         public alternate: Entrance | null = null,
         public replaces: Entrance | null = null,
@@ -54,6 +56,7 @@ class Entrance implements GraphEntrance {
         public target_group: RegionGroup | null = null,
         public user_connection: Entrance | null = null,
         public hinted: boolean = false,
+        public savewarp_fallback_name: string = '',
     ) {
         this.world = this.parent_region.world;
         this.alias = this.name;
@@ -199,6 +202,7 @@ class Entrance implements GraphEntrance {
         this.is_warp = other_entrance.is_warp;
         this.coupled = other_entrance.coupled;
         this.type_alias = other_entrance.type_alias;
+        this.savewarp_fallback_name = other_entrance.savewarp_fallback_name;
         // Object reference is updated when swapping dungeons
         this.target_group = other_entrance.target_group;
     }

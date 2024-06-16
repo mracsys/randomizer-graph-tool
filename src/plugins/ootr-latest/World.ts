@@ -1,4 +1,4 @@
-import { GraphEntrance, GraphSettingType, GraphWorld } from "../GraphPlugin.js";
+import { GraphBoulder, GraphEntrance, GraphSettingType, GraphWorld } from "../GraphPlugin.js";
 
 import { Item, ItemFactory, MakeEventItem } from "./Item.js";
 import { Location, LocationFactory } from "./Location.js";
@@ -12,10 +12,13 @@ import { HintAreas } from './Hints.js';
 import HintArea from "./HintArea.js";
 import OotrVersion from "./OotrVersion.js";
 import { OotrGraphPlugin, entranceToBossRewardMap } from "./OotrGraphPlugin.js";
-import SettingsList from "./SettingsList.js";
+import SettingsList, { global_settings_overrides } from "./SettingsList.js";
 import type { SettingsDictionary } from "./SettingsList.js";
 import { RegionGroup } from "./RegionGroup.js";
 import { display_names } from './DisplayNames.js';
+import type { AccessRule } from "./RuleParser.js";
+import { Boulder, BOULDER_TYPE, boulder_list, mq_dungeon_boulders, vanilla_dungeon_boulders } from "./Boulders.js";
+import { empty_reward_location_names } from "./LocationList.js";
 
 type Dictionary<T> = {
     [key: string]: T,
@@ -36,6 +39,9 @@ export type PlandoMWEntranceList = {
 export type PlandoLocationList = {
     [location_name: string]: PlandoItem | string,
 };
+export type PlandoMWLocationList = {
+    [world_key: string]: PlandoLocationList,
+}
 export type PlandoMWCheckedLocationList = {
     [world_key: string]: PlandoCheckedLocationList,
 };
@@ -50,9 +56,6 @@ export type PlandoItem = {
     model?: string,
     player?: number,
 }
-export type PlandoMWLocationList = {
-    [world_key: string]: PlandoLocationList,
-}
 export type PlandoHintTextList = {
     [hint_location_name: string]: string,
 }
@@ -64,6 +67,16 @@ export type PlandoHintList = {
 }
 export type PlandoMWHintList = {
     [world_key: string]: PlandoHintList,
+}
+export type PlandoBoulderList = {
+    [boulder_name: string]: string,
+}
+export type PlandoMWBoulderList = {
+    [world_key: string]: PlandoBoulderList,
+}
+export type PlandoCheckedBoulderList = string[];
+export type PlandoMWCheckedBoulderList = {
+    [world_key: string]: PlandoCheckedBoulderList,
 }
 export type PlandoHint = {
     type: string,
@@ -131,17 +144,32 @@ class World implements GraphWorld {
     public shuffle_interior_entrances: boolean = false;
     public shuffle_special_dungeon_entrances: boolean = false;
     public shuffle_dungeon_entrances: boolean = false;
+    public gerudo_valley_river_exit_shuffled: boolean = false;
+    public dungeon_back_access: boolean = false;
+    public spawn_positions: boolean = false;
     public spawn_shuffle: boolean = false;
+    public owl_drops_shuffled: boolean = false;
+    public warp_songs_shuffled: boolean = false;
     public entrance_shuffle: boolean = false;
+    public one_ways: boolean = false;
+    public full_one_ways: boolean = false;
+    public mix_entrance_pools: Set<string> = new Set();
+    public original_savewarp_targets: SavewarpConnection[] = [];
     public mixed_pools_bosses: boolean = false;
     public ensure_tod_access: boolean = false;
     public disable_trade_revert: boolean = false;
     public skip_child_zelda: boolean = false;
-    public triforce_goal: number = 0;
+    public triforce_goal_per_world: number = 0;
+    public shuffle_ganon_bosskey: string = 'vanilla';
+    public selected_adult_trade_item: string = '';
+    public adult_trade_starting_item: string = '';
 
     public shuffled_entrance_types: string[] = [];
 
     public skipped_items: Item[] = [];
+
+    public boulders: Boulder[];
+    public boulder_cache: {[boulder_name: string]: Boulder};
 
     public state: WorldState;
 
@@ -203,11 +231,7 @@ class World implements GraphWorld {
         // Since this library is meant to be deterministic, always disable these alternate
         // toggles instead to keep the specific setting valid.
         settings.override_settings({
-            settings: {
-                trials_random: false,
-                chicken_count_random: false,
-                big_poe_count_random: false,
-            }
+            settings: global_settings_overrides,
         })
         this.settings = settings.settings;
         this.disabled_settings = {};
@@ -250,7 +274,13 @@ class World implements GraphWorld {
                 trials_settings = settings.trials;
             }
             for (let [trial, enabled] of Object.entries(trials_settings)) {
-                this.skipped_trials[trial] = enabled == 'inactive';
+                if (enabled == 'inactive') {
+                    this.skipped_trials[trial] = true;
+                } else {
+                    this.skipped_trials[trial] = false;
+                    // sync plugin setting
+                    this.settings.graphplugin_trials_specific.push(trial);
+                }
             }
         } else {
             // If there is no trials plando section provided, assume trials
@@ -291,8 +321,15 @@ class World implements GraphWorld {
             } else {
                 dungeon_settings = settings.dungeons;
             }
+            if (this.settings.mq_dungeons_specific === undefined) this.settings.mq_dungeons_specific = [];
             for (let [dungeon, dtype] of Object.entries(dungeon_settings)) {
-                this.dungeon_mq[dungeon] = dtype === 'mq';
+                if (dtype === 'mq') {
+                    this.dungeon_mq[dungeon] = true;
+                } else {
+                    this.dungeon_mq[dungeon] = false;
+                    // sync plugin setting
+                    this.settings.mq_dungeons_specific.push(dungeon);
+                }
             }
         } else {
             // There is a randomizer setting for specific MQ dungeons, but
@@ -307,7 +344,9 @@ class World implements GraphWorld {
 
         // assume all notes are required for all songs if melodies
         // are shuffled and a given song melody isn't known
-        if (this.settings.ocarina_songs) {
+        if (this.settings.ocarina_songs === false
+        || this.settings.ocarina_songs === 'off'
+        || (Array.isArray(this.settings.ocarina_songs) && this.settings.ocarina_songs.length === 0)) {
             this.song_notes = {
                 "Zeldas Lullaby": "<^>vA",
                 "Eponas Song": "<^>vA",
@@ -334,6 +373,9 @@ class World implements GraphWorld {
             }
         }
 
+        this.boulders = [];
+        this.boulder_cache = {};
+        this.initialize_boulders();
         this.update_internal_settings();
         this.initialize_fixed_item_area_hints();
 
@@ -355,202 +397,232 @@ class World implements GraphWorld {
         if (!!(this.settings.spawn_positions)) {
             this.spawn_shuffle = this.settings.spawn_positions.length > 0;
         }
-        this.entrance_shuffle = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_grotto_entrances || this.shuffle_dungeon_entrances
-            || <boolean>this.settings.shuffle_overworld_entrances || <boolean>this.settings.shuffle_gerudo_valley_river_exit || <boolean>this.settings.owl_drops
-            || <boolean>this.settings.warp_songs || this.spawn_shuffle || (this.settings.shuffle_bosses !== 'off');
-        if (Object.keys(this.settings).includes('mix_entrance_pools') && Array.isArray(this.settings['mix_entrance_pools'])) {
-            this.mixed_pools_bosses = this.settings.mix_entrance_pools.includes('Boss');
-        } else {
-            this.mixed_pools_bosses = false;
+        if (!!this.settings.shuffle_child_spawn && !!this.settings.shuffle_adult_spawn) {
+            this.spawn_positions = ['balanced', 'full'].includes(this.settings.shuffle_child_spawn) ||
+                                    ['balanced', 'full'].includes(this.settings.shuffle_adult_spawn);
         }
-        this.ensure_tod_access = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_overworld_entrances || this.spawn_shuffle;
+        if (typeof this.settings.shuffle_gerudo_valley_river_exit === 'boolean') {
+            this.gerudo_valley_river_exit_shuffled = this.settings.shuffle_gerudo_valley_river_exit;
+        } else if (typeof this.settings.shuffle_gerudo_valley_river_exit === 'string') {
+            this.gerudo_valley_river_exit_shuffled = this.settings.shuffle_gerudo_valley_river_exit !== 'off';
+        }
+        if (typeof this.settings.owl_drops === 'boolean') {
+            this.owl_drops_shuffled = this.settings.owl_drops;
+        } else if (typeof this.settings.owl_drops === 'string') {
+            this.owl_drops_shuffled = this.settings.owl_drops !== 'off';
+        }
+        if (typeof this.settings.warp_songs === 'boolean') {
+            this.warp_songs_shuffled = this.settings.warp_songs;
+        } else if (typeof this.settings.warp_songs === 'string') {
+            this.warp_songs_shuffled = this.settings.warp_songs !== 'off';
+        }
+        this.entrance_shuffle = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_grotto_entrances || this.shuffle_dungeon_entrances
+            || <boolean>this.settings.shuffle_overworld_entrances || this.gerudo_valley_river_exit_shuffled || this.owl_drops_shuffled
+            || this.warp_songs_shuffled || this.spawn_shuffle || this.spawn_positions || (this.settings.shuffle_bosses !== 'off')
+            || (!!this.settings.blue_warps && !(['vanilla', 'dungeon'].includes(this.settings.blue_warps)));
+        this.ensure_tod_access = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_overworld_entrances || this.spawn_shuffle || this.spawn_positions;
         this.disable_trade_revert = this.shuffle_interior_entrances || <boolean>this.settings.shuffle_overworld_entrances || <boolean>this.settings.adult_trade_shuffle;
         this.skip_child_zelda = false;
         if (!!(this.settings.shuffle_child_trade) && !!(this.settings.starting_items)) {
             this.skip_child_zelda = !(this.settings.shuffle_child_trade.includes('Zeldas Letter')) && 'Zeldas Letter' in this.settings.starting_items;
         }
 
-        if (this.settings.open_forest === 'closed' && 
+        if (typeof this.settings.open_forest === 'string' && this.settings.open_forest === 'closed' && 
             (this.shuffle_special_interior_entrances || this.settings.shuffle_hideout_entrances || this.settings.shuffle_overworld_entrances
-            || this.settings.warp_songs || this.settings.spawn_positions)) {
+            || this.warp_songs_shuffled || this.settings.spawn_positions)) {
             this.settings.open_forest = 'closed_deku';
         }
 
-        this.triforce_goal = 0;
-        if (!!(this.settings.world_count) && !!(this.settings.triforce_goal_per_world)) {
-            this.triforce_goal = this.settings.triforce_goal_per_world * this.settings.world_count;
+        this.triforce_goal_per_world = 0;
+        if (!!(this.settings.triforce_goal_per_world)) {
+            this.triforce_goal_per_world = this.settings.triforce_goal_per_world;
+            if (!!this.settings.triforce_hunt_mode) {
+                if (this.settings.triforce_hunt_mode === 'ice_percent') {
+                    this.triforce_goal_per_world = 1;
+                } else if (this.settings.triforce_hunt_mode === 'blitz') {
+                    this.triforce_goal_per_world = 3;
+                }
+            }
         }
+        // Upstream rando tweaks the setting directly, but other settings can disable it
+        // and override the override back to vanilla when it shouldn't.
+        // Search algorithm gives priority to world properties over world.settings props.
         if (this.settings.triforce_hunt) {
-            this.settings.shuffle_ganon_bosskey = 'triforce';
+            this.shuffle_ganon_bosskey = 'triforce';
+        } else if (!!this.settings.shuffle_ganon_bosskey) {
+            this.shuffle_ganon_bosskey = this.settings.shuffle_ganon_bosskey;
         }
 
         this.shuffled_entrance_types = [];
         if (this.shuffle_dungeon_entrances) this.shuffled_entrance_types.push('Dungeon');
         if (this.shuffle_special_dungeon_entrances) this.shuffled_entrance_types.push('DungeonSpecial');
-        if (this.settings.shuffle_bosses !== 'off') this.shuffled_entrance_types.push('ChildBoss', 'AdultBoss');
+        if (this.settings.shuffle_bosses !== 'off') {
+            this.shuffled_entrance_types.push('ChildBoss', 'AdultBoss');
+            if (Object.keys(this.settings).includes('shuffle_ganon_tower') && this.settings.shuffle_ganon_tower) {
+                this.shuffled_entrance_types.push('SpecialBoss');
+            }
+        }
         if (this.shuffle_interior_entrances) this.shuffled_entrance_types.push('Interior');
         if (this.shuffle_special_interior_entrances) this.shuffled_entrance_types.push('SpecialInterior');
-        if (this.settings.shuffle_hideout_entrances) this.shuffled_entrance_types.push('Hideout');
+        if (typeof this.settings.shuffle_hideout_entrances === 'boolean') {
+            if (this.settings.shuffle_hideout_entrances) this.shuffled_entrance_types.push('Hideout');
+        } else if (typeof this.settings.shuffle_hideout_entrances === 'string') {
+            if (this.settings.shuffle_hideout_entrances !== 'off') this.shuffled_entrance_types.push('Hideout');
+        }
         if (this.settings.shuffle_grotto_entrances) this.shuffled_entrance_types.push('Grotto', 'Grave');
         if (this.settings.shuffle_overworld_entrances) this.shuffled_entrance_types.push('Overworld');
-        if (this.settings.shuffle_gerudo_valley_river_exit) this.shuffled_entrance_types.push('OverworldOneWay');
-        if (this.settings.owl_drops) this.shuffled_entrance_types.push('OwlDrop');
-        if (this.settings.warp_songs) this.shuffled_entrance_types.push('WarpSong');
+        if (this.gerudo_valley_river_exit_shuffled) this.shuffled_entrance_types.push('OverworldOneWay');
+        if (this.owl_drops_shuffled) this.shuffled_entrance_types.push('OwlDrop');
+        if (this.warp_songs_shuffled) this.shuffled_entrance_types.push('WarpSong');
+        if (!!this.settings.shuffle_child_spawn && this.settings.shuffle_child_spawn !== 'off') this.shuffled_entrance_types.push('ChildSpawn');
+        if (!!this.settings.shuffle_adult_spawn && this.settings.shuffle_adult_spawn !== 'off') this.shuffled_entrance_types.push('AdultSpawn');
+        if (!!this.settings.blue_warps && !(['off', 'vanilla'].includes(this.settings.blue_warps))) this.shuffled_entrance_types.push('BlueWarp');
+
+        this.one_ways = (
+            (!!this.settings.blue_warps && ['balanced', 'full'].includes(this.settings.blue_warps))
+            || this.gerudo_valley_river_exit_shuffled
+            || this.owl_drops_shuffled
+            || this.warp_songs_shuffled
+            || this.spawn_positions
+        )
+        this.full_one_ways = (
+            (!!this.settings.blue_warps && ['full'].includes(this.settings.blue_warps))
+            || (typeof this.settings.shuffle_gerudo_valley_river_exit === 'string' && ['full'].includes(this.settings.shuffle_gerudo_valley_river_exit))
+            || (typeof this.settings.owl_drops === 'string' && ['full'].includes(this.settings.owl_drops))
+            || (typeof this.settings.warp_songs === 'string' && ['full'].includes(this.settings.warp_songs))
+            || (typeof this.settings.shuffle_child_spawn === 'string' && ['full'].includes(this.settings.shuffle_child_spawn))
+            || (typeof this.settings.shuffle_adult_spawn === 'string' && ['full'].includes(this.settings.shuffle_adult_spawn))
+        )
+        let shuffle_grottos = !!this.settings.shuffle_grotto_entrances ? this.settings.shuffle_grotto_entrances : false;
+        let shuffle_overworld = !!this.settings.shuffle_overworld_entrances ? this.settings.shuffle_overworld_entrances : false;
+        let mixed_pool_rules: {[pool_type: string]: boolean} = {
+            'Interior': this.shuffle_interior_entrances,
+            'GrottoGrave': shuffle_grottos,
+            'Dungeon': this.shuffle_dungeon_entrances,
+            'Overworld': shuffle_overworld,
+            'Boss': this.settings.shuffle_bosses === 'full',
+        };
+        this.mix_entrance_pools = new Set();
+        if (!!this.settings.mix_entrance_pools && Array.isArray(this.settings.mix_entrance_pools)) {
+            for (let pool of this.settings.mix_entrance_pools) {
+                if (mixed_pool_rules[pool]) this.mix_entrance_pools.add(pool);
+            }
+        }
+        if (this.mix_entrance_pools.size === 1) this.mix_entrance_pools = new Set();
+        this.mixed_pools_bosses = this.mix_entrance_pools.has('Boss');
+        this.dungeon_back_access = (!!this.settings.dungeon_back_access && this.settings.dungeon_back_access === true) && (
+            this.full_one_ways || (
+                this.mixed_pools_bosses && (
+                    (!!this.settings.decouple_entrances && this.settings.decouple_entrances)
+                    || this.mix_entrance_pools.has('Overworld')
+                    || (
+                        this.mix_entrance_pools.has('GrottoGrave')
+                        && this.one_ways
+                    )
+                    || (
+                        this.mix_entrance_pools.has('Interior')
+                        && (
+                            this.one_ways
+                            || this.shuffle_special_interior_entrances
+                            || typeof this.settings.shuffle_hideout_entrances === 'string' && this.settings.shuffle_hideout_entrances !== 'off'
+                        )
+                    )
+                )
+            )
+        );
+        if (!!this.settings.starting_items && typeof this.settings.starting_items === 'object') {
+            this.set_adult_trade_starting_item(Object.keys(this.settings.starting_items));
+        } else if (!!this.settings.starting_inventory && typeof this.settings.starting_inventory === 'object') {
+            this.set_adult_trade_starting_item(Object.keys(this.settings.starting_inventory));
+        }
     }
 
     initialize_fixed_item_area_hints(): void {
-        if (!!this.settings.shuffle_dungeon_rewards && this.settings.shuffle_dungeon_rewards === 'vanilla') {
-            if (!!this.settings.mix_entrance_pools && this.settings.mix_entrance_pools?.includes('Boss')) {
-                this.fixed_item_area_hints = {
-                    'Kokiri Emerald': {
-                        hint: 'GOMA',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Goron Ruby': {
-                        hint: 'KING',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Zora Sapphire': {
-                        hint: 'BARI',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Forest Medallion': {
-                        hint: 'PHGA',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Fire Medallion': {
-                        hint: 'VOLV',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Water Medallion': {
-                        hint: 'MOR',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Spirit Medallion': {
-                        hint: 'TWIN',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Shadow Medallion': {
-                        hint: 'BNGO',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Light Medallion': {
-                        hint: 'FREE',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                }
-            } else {
-                this.fixed_item_area_hints = {
-                    'Kokiri Emerald': {
-                        hint: 'DEKU',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Goron Ruby': {
-                        hint: 'DCVN',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Zora Sapphire': {
-                        hint: 'JABU',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Forest Medallion': {
-                        hint: 'FRST',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Fire Medallion': {
-                        hint: 'FIRE',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Water Medallion': {
-                        hint: 'WATR',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Spirit Medallion': {
-                        hint: 'SPRT',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Shadow Medallion': {
-                        hint: 'SHDW',
-                        hinted: true,
-                        hint_locations: [],
-                    },
-                    'Light Medallion': {
-                        hint: 'FREE',
-                        hinted: true,
-                        hint_locations: [],
-                    }
-                }
+        const create_fixed_item_area_hint = (hint: string, always_known: boolean) => {
+            return {
+                hint: hint,
+                hinted: always_known,
+                hint_locations: [],
+            }
+        }
+        if (!!this.settings.shuffle_dungeon_rewards && this.settings.shuffle_dungeon_rewards === 'vanilla' && !this.mixed_pools_bosses) {
+            this.fixed_item_area_hints = {
+                'Kokiri Emerald':   create_fixed_item_area_hint('DEKU', true),
+                'Goron Ruby':       create_fixed_item_area_hint('DCVN', true),
+                'Zora Sapphire':    create_fixed_item_area_hint('JABU', true),
+                'Forest Medallion': create_fixed_item_area_hint('FRST', true),
+                'Fire Medallion':   create_fixed_item_area_hint('FIRE', true),
+                'Water Medallion':  create_fixed_item_area_hint('WATR', true),
+                'Spirit Medallion': create_fixed_item_area_hint('SPRT', true),
+                'Shadow Medallion': create_fixed_item_area_hint('SHDW', true),
+                'Light Medallion':  create_fixed_item_area_hint('FREE', true),
             }
         } else {
             this.fixed_item_area_hints = {
-                'Kokiri Emerald': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Goron Ruby': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Zora Sapphire': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Forest Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Fire Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Water Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Spirit Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Shadow Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                },
-                'Light Medallion': {
-                    hint: '????',
-                    hinted: false,
-                    hint_locations: [],
-                }
+                'Kokiri Emerald':   create_fixed_item_area_hint('????', false),
+                'Goron Ruby':       create_fixed_item_area_hint('????', false),
+                'Zora Sapphire':    create_fixed_item_area_hint('????', false),
+                'Forest Medallion': create_fixed_item_area_hint('????', false),
+                'Fire Medallion':   create_fixed_item_area_hint('????', false),
+                'Water Medallion':  create_fixed_item_area_hint('????', false),
+                'Spirit Medallion': create_fixed_item_area_hint('????', false),
+                'Shadow Medallion': create_fixed_item_area_hint('????', false),
+                'Light Medallion':  create_fixed_item_area_hint('????', false),
             }
+        }
+    }
+
+    initialize_boulders(): void {
+        // default boulder types
+        this.boulders = [];
+        this.boulder_cache = {};
+        for (let [boulder_name, boulder_type] of Object.entries(boulder_list)) {
+            let boulder = new Boulder(boulder_name, boulder_type, this);
+            this.boulder_cache[boulder_name] = boulder;
+            this.boulders.push(boulder);
+        }
+        for (let dungeon of Object.values(vanilla_dungeon_boulders)) {
+            for (let [boulder_name, boulder_type] of Object.entries(dungeon)) {
+                let boulder = new Boulder(boulder_name, boulder_type, this);
+                this.boulder_cache[boulder_name] = boulder;
+                this.boulders.push(boulder);
+            }
+        }
+        for (let dungeon of Object.values(mq_dungeon_boulders)) {
+            for (let [boulder_name, boulder_type] of Object.entries(dungeon)) {
+                let boulder = new Boulder(boulder_name, boulder_type, this);
+                this.boulder_cache[boulder_name] = boulder;
+                this.boulders.push(boulder);
+            }
+        }
+    }
+
+    set_adult_trade_starting_item(starting_items: string[]): void {
+        this.adult_trade_starting_item = '';
+        if (this.settings.adult_trade_shuffle === true) return;
+        const adult_trade_items = [
+            "Pocket Egg",
+            "Pocket Cucco",
+            "Cojiro",
+            "Odd Mushroom",
+            "Odd Potion",
+            "Poachers Saw",
+            "Broken Sword",
+            "Prescription",
+            "Eyeball Frog",
+            "Eyedrops",
+            "Claim Check",
+        ];
+        let adult_trade_starting_items = starting_items.filter(i => adult_trade_items.includes(i))
+            .map(i => adult_trade_items.indexOf(i));
+        if (adult_trade_starting_items.length > 0 && adult_trade_starting_items.some(i => i >= 0)) {
+            this.adult_trade_starting_item = adult_trade_items[Math.max(...adult_trade_starting_items)];
         }
     }
 
     // not a true copy!!!
     // world settings are independent
-    // regions/entrances/locations are still shared
+    // regions/entrances/locations/boulders are still shared
     // primary use case is Search variants with different settings/starting conditions
     copy(): World {
         let w = new World(this.id, this.parent_graph.settings_list.copy(), this.version, this.parent_graph);
@@ -574,8 +646,12 @@ class World implements GraphWorld {
         w.skipped_trials = this.skipped_trials;
         w.dungeon_mq = this.dungeon_mq;
         w.song_notes = this.song_notes;
+        w.boulders = this.boulders;
+        w.original_savewarp_targets = this.original_savewarp_targets;
         w.state = this.state.copy();
         w.state.world = w;
+        w.adult_trade_starting_item = this.adult_trade_starting_item;
+        w.selected_adult_trade_item = this.selected_adult_trade_item;
         w.update_internal_settings();
         w.collect_checked_only = this.collect_checked_only;
         w.collect_as_starting_items = this.collect_as_starting_items;
@@ -597,6 +673,9 @@ class World implements GraphWorld {
         // }
     }
 
+    load_global_rules() {
+    }
+
     load_regions_from_json(file_path: string, is_dungeon_variant: boolean = false): SavewarpConnection[] {
         let world_folder;
         if (this.settings.logic_rules === 'glitched') {
@@ -607,8 +686,17 @@ class World implements GraphWorld {
         let region_json = read_json(world_folder + '/' + file_path, this.parent_graph.file_cache);
         let savewarps_to_connect: SavewarpConnection[] = [];
         if (this.parent_graph.debug) console.log(`parsing ${file_path}`);
+        let area_regions: Region[] = [];
         for (const region of region_json) {
+            let is_new_region = true;
             let new_region = new Region(region.region_name, this);
+            // Handle duplicate region names. Assumes no conflicts in region
+            // metadata or event/location/exit rules
+            if (area_regions.filter(r => r.name === new_region.name).length > 0) {
+                new_region = area_regions.filter(r => r.name === new_region.name)[0];
+                is_new_region = false;
+                console.log(`Found duplicate region definition ${new_region.name}, appending new data`);
+            }
             if (!!region.scene) {
                 new_region.scene = region.scene;
             }
@@ -622,7 +710,11 @@ class World implements GraphWorld {
                 new_region.dungeon = region.dungeon;
             }
             if (!!region.is_boss_room) {
-                new_region.is_boss_room = region.is_boss_room.toLowerCase() === "true"; // should probably fix this in upstream...
+                if (typeof region.is_boss_room === 'string') {
+                    new_region.is_boss_room = region.is_boss_room.toLowerCase() === "true"; // fixed post 8.1
+                } else {
+                    new_region.is_boss_room = region.is_boss_room;
+                }
             }
             if (!!region.time_passes) {
                 new_region.time_passes = region.time_passes;
@@ -631,46 +723,72 @@ class World implements GraphWorld {
             if (new_region.name === 'Ganons Castle Grounds') {
                 new_region.provides_time = TimeOfDay.DAMPE;
             }
+            if (new_region.name === 'Root') {
+                // internal locations to save empty dungeon rewards
+                // instead of forcing users to set specific dungeon
+                // location items. These are set by the fixed_item_area_hints
+                // update functions.
+                for (let l of empty_reward_location_names) {
+                    let new_location = LocationFactory(l, this)[0];
+                    new_location.parent_region = new_region;
+                    new_location.rule_string = 'true';
+                    new_region.locations.push(new_location);
+                }
+            }
             if (!!region.locations) {
                 for (const [location, rule] of Object.entries(region.locations)) {
-                    let new_location = LocationFactory(location, this)[0];
-                    new_location.parent_region = new_region;
-                    new_location.rule_string = replace_python_booleans(rule);
-                    if (this.settings.logic_rules !== 'none') {
-                        if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
-                        this.parser.parse_spot_rule(new_location);
+                    if (new_region.locations.filter(l => l.name === location).length > 0) {
+                        console.log(`Skipping duplicate location definition ${location} in region ${new_region.name}`);
+                    } else {
+                        let new_location = LocationFactory(location, this)[0];
+                        new_location.parent_region = new_region;
+                        new_location.rule_string = replace_python_booleans(rule);
+                        if (this.settings.logic_rules !== 'none') {
+                            if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
+                            this.parser.parse_spot_rule(new_location);
+                        }
+                        new_region.locations.push(new_location);
                     }
-                    new_region.locations.push(new_location);
                 }
             }
             if (!!region.events) {
                 for (const [event, rule] of Object.entries(region.events)) {
                     let lname = `${event} from ${new_region.name}`;
-                    let new_location = new Location(lname, 'Event', new_region, false, this);
-                    new_location.rule_string = replace_python_booleans(rule);
-                    if (this.settings.logic_rules !== 'none') {
-                        if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
-                        this.parser.parse_spot_rule(new_location);
-                    }
-                    if (!(new_location.never)) {
-                        new_location.world = this;
-                        new_region.locations.push(new_location);
-                        MakeEventItem(event, new_location);
+                    if (new_region.locations.filter(l => l.name === lname).length > 0) {
+                        console.log(`Skipping duplicate event definition ${lname} in region ${new_region.name}`);
+                    } else {
+                        let new_location = new Location(lname, 'Event', new_region, false, this);
+                        new_location.rule_string = replace_python_booleans(rule);
+                        if (this.settings.logic_rules !== 'none') {
+                            if (this.parent_graph.debug) console.log(`parsing ${new_location.name}`);
+                            this.parser.parse_spot_rule(new_location);
+                        }
+                        if (!(new_location.never)) {
+                            new_location.world = this;
+                            new_region.locations.push(new_location);
+                            MakeEventItem(event, new_location);
+                        }
                     }
                 }
             }
             if (!!region.exits) {
                 for (const [exit, rule] of Object.entries(region.exits)) {
-                    let new_exit = new Entrance(`${new_region.name} -> ${exit}`, new_region, this);
-                    new_exit.original_connection_name = exit;
-                    new_exit.rule_string = replace_python_booleans(rule);
-                    if (this.settings.logic_rules !== 'none') {
-                        if (this.parent_graph.debug) console.log(`parsing ${new_exit.name}`);
-                        this.parser.parse_spot_rule(new_exit);
+                    let exit_name = `${new_region.name} -> ${exit}`;
+                    if (new_region.exits.filter(e => e.name === exit_name).length > 0) {
+                        console.log(`Skipping duplicate exit definition ${exit_name} in region ${new_region.name}`);
+                    } else {
+                        let new_exit = new Entrance(exit_name, new_region, this);
+                        new_exit.original_connection_name = exit;
+                        new_exit.rule_string = replace_python_booleans(rule);
+                        if (this.settings.logic_rules !== 'none') {
+                            if (this.parent_graph.debug) console.log(`parsing ${new_exit.name}`);
+                            this.parser.parse_spot_rule(new_exit);
+                        }
+                        new_region.exits.push(new_exit);
                     }
-                    new_region.exits.push(new_exit);
                 }
-                if (new_region.name === 'Ganons Castle Tower' && this.settings.logic_rules !== 'glitched'
+                if (is_new_region && this.version.branch !== 'Fenhl'
+                    && new_region.name === 'Ganons Castle Tower' && this.settings.logic_rules !== 'glitched'
                     && !(Object.keys(region.exits).includes('Ganons Castle Main'))
                     && !(Object.keys(region.exits).includes('Ganons Castle Lobby'))) {
                     let new_exit = new Entrance(`${new_region.name} -> Ganons Castle Main`, new_region, this);
@@ -684,18 +802,34 @@ class World implements GraphWorld {
                 }
             }
             if (!!region.savewarp) {
-                let savewarp_target = region.savewarp.split(' -> ')[1];
-                let new_exit = new Entrance(`${new_region.name} -> ${savewarp_target}`, new_region, this);
-                new_exit.original_connection_name = savewarp_target;
-                new_exit.one_way = true;
-                new_region.exits.push(new_exit);
-                new_region.savewarp = new_exit;
-                savewarps_to_connect.push([new_exit, region.savewarp]);
+                // Filter useless extra savewarp that only exists in MQ Water
+                if (region.region_name !== 'Water Temple Before Boss Lower') {
+                    let savewarp_target = region.savewarp.split(' -> ')[1];
+                    let exit_name = `${new_region.name} -> ${savewarp_target}`;
+                    let new_exit = new Entrance(exit_name, new_region, this);
+                    new_exit.original_connection_name = savewarp_target;
+                    new_exit.one_way = true;
+                    if (new_region.exits.filter(e => e.name === exit_name).length > 0) {
+                        console.log(`Skipping duplicate exit definition ${exit_name} in region ${new_region.name} savewarps`);
+                        new_exit = new_region.exits.filter(e => e.name === exit_name)[0];
+                    } else {
+                        new_region.exits.push(new_exit);
+                    }
+                    if (savewarps_to_connect.filter(e => e[0].name === exit_name).length > 0) {
+                        console.log(`Skipping duplicate savewarp definition ${exit_name} in region ${new_region.name}`);
+                    } else {
+                        new_region.savewarp = new_exit;
+                        savewarps_to_connect.push([new_exit, region.savewarp]);
+                    }
+                }
             }
-            if (is_dungeon_variant) {
-                this.dungeons[this.dungeon_variant].push(new_region);
-            } else {
-                this.regions.push(new_region);
+            if (is_new_region) {
+                if (is_dungeon_variant) {
+                    this.dungeons[this.dungeon_variant].push(new_region);
+                } else {
+                    this.regions.push(new_region);
+                }
+                area_regions.push(new_region);
             }
         }
         return savewarps_to_connect;
@@ -769,8 +903,8 @@ class World implements GraphWorld {
                 if (!!(exit.alternate)) {
                     if (!!(exit.alternate.reverse)) {
                         exit.bind_two_way(exit.alternate.reverse);
-                        if (!!(exit.reverse)) {
-                            exit.reverse.original_connection = region;
+                        if (!!(exit.reverse) && !!exit.reverse.original_connection_name) {
+                            exit.reverse.original_connection = this.get_region(exit.reverse.original_connection_name, dungeon_variant_name);
                         }
                     }
                     if (!!(exit.alternate.connected_region)) {
@@ -808,10 +942,14 @@ class World implements GraphWorld {
                 if (!!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
                     let alt_region = exit.disconnect();
                     let alt_connection_name: string;
-                    if (dungeon_variant_name === 'Ganons Castle' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
-                        alt_connection_name = 'Ganons Castle Lobby';
-                    } else if (dungeon_variant_name === 'Ganons Castle MQ' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
-                        alt_connection_name = 'Ganons Castle Main';
+                    if (this.version.branch !== 'Fenhl'
+                        && dungeon_variant_name === 'Ganons Castle'
+                        && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                            alt_connection_name = 'Ganons Castle Lobby';
+                    } else if (this.parent_graph.ootr_version.branch !== 'Fenhl'
+                        && dungeon_variant_name === 'Ganons Castle MQ'
+                        && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                            alt_connection_name = 'Ganons Castle Main';
                     } else {
                         alt_connection_name = alt_region.name;
                     }
@@ -821,10 +959,14 @@ class World implements GraphWorld {
                     // no need to update original connection property as these entrances aren't shuffled,
                     // but done anyway just in case since the target region group is important
                     let original_connection_name: string;
-                    if (dungeon_variant_name === 'Ganons Castle' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
-                        original_connection_name = 'Ganons Castle Lobby';
-                    } else if (dungeon_variant_name === 'Ganons Castle MQ' && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
-                        original_connection_name = 'Ganons Castle Main';
+                    if (this.version.branch !== 'Fenhl'
+                        && dungeon_variant_name === 'Ganons Castle'
+                        && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                            original_connection_name = 'Ganons Castle Lobby';
+                    } else if (this.version.branch !== 'Fenhl'
+                        && dungeon_variant_name === 'Ganons Castle MQ'
+                        && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
+                            original_connection_name = 'Ganons Castle Main';
                     } else {
                         original_connection_name = exit.original_connection.name;
                     }
@@ -898,12 +1040,15 @@ class World implements GraphWorld {
                     // For now, hard code Ganon's Castle<->Tower handling since Tower isn't shuffled and connects
                     // to different Castle regions in Vanilla and MQ.
                     // Similar problem for Spirit Temple<->Colossus Hands.
+                    // Ganon's Castle is handled properly on Fenhl's branch where Tower can be shuffled.
                     let alt_region: Region;
                     let exit_name = exit.name;
-                    if (region.dungeon === 'Ganons Castle' && target_region.name === 'Ganons Castle Tower') {
-                        let region_override = this.dungeon_mq[region.dungeon] ? 'Ganons Castle Lobby' : 'Ganons Castle Main';
-                        alt_region = this.get_region(region_override, dungeon_variant_name);
-                        exit_name = `${alt_region.name} -> ${target_region.name}`;
+                    if (this.version.branch !== 'Fenhl'
+                        && region.dungeon === 'Ganons Castle'
+                        && target_region.name === 'Ganons Castle Tower') {
+                            let region_override = this.dungeon_mq[region.dungeon] ? 'Ganons Castle Lobby' : 'Ganons Castle Main';
+                            alt_region = this.get_region(region_override, dungeon_variant_name);
+                            exit_name = `${alt_region.name} -> ${target_region.name}`;
                     } else if (region.dungeon === 'Spirit Temple' && target_region.name === 'Desert Colossus Hands') {
                         let region_override = this.dungeon_mq[region.dungeon] ? 'Spirit Temple Central Chamber' : 'Spirit Temple Shared';
                         alt_region = this.get_region(region_override, dungeon_variant_name);
@@ -1186,6 +1331,17 @@ class World implements GraphWorld {
         }
     }
 
+    get_boulder(boulder: Boulder | string): Boulder {
+        if (boulder instanceof Boulder) {
+            return boulder;
+        }
+        if (boulder in this.boulder_cache) {
+            return this.boulder_cache[boulder];
+        } else {
+            throw(`No such boulder ${boulder}`);
+        }
+    }
+
     push_item(location: Location | string, item: Item, manual: boolean = false) {
         if (!(location instanceof Location)) {
             location = this.get_location(location);
@@ -1296,6 +1452,37 @@ class World implements GraphWorld {
         }
     }
 
+    keyring(dungeon_name: string): boolean {
+        if ([
+            'Forest Temple',
+            'Fire Temple',
+            'Water Temple',
+            'Shadow Temple',
+            'Spirit Temple',
+            'Bottom of the Well',
+            'Gerudo Training Ground',
+            'Ganons Castle'
+        ].includes(dungeon_name)) {
+            return !!this.settings.key_rings && this.settings.key_rings?.includes(dungeon_name) && this.settings.shuffle_smallkeys != 'vanilla';
+        } else if (dungeon_name === 'Thieves Hideout') {
+            return !!this.settings.key_rings && !!this.settings.key_rings && this.settings.key_rings?.includes(dungeon_name)
+            && !!this.settings.gerudo_fortress && this.settings.gerudo_fortress !== 'fast'
+            && !!this.settings.shuffle_hideoutkeys && this.settings.shuffle_hideoutkeys !== 'vanilla';
+        } else if (dungeon_name === 'Treasure Chest Game') {
+            return !!this.settings.key_rings && this.settings.key_rings?.includes(dungeon_name) && this.settings.shuffle_tcgkeys !== 'vanilla';
+        } else {
+            throw `Attempted to check keyring for unknown dungeon ${dungeon_name}`;
+        }
+    }
+
+    keyring_give_bk(dungeon_name: string): boolean {
+        return (
+            ['Forest Temple', 'Fire Temple', 'Water Temple', 'Shadow Temple', 'Spirit Temple'].includes(dungeon_name)
+            && !!this.settings.keyring_give_bk
+            && this.keyring(dungeon_name)
+        );
+    }
+
     collect_skipped_locations(): void {
         this.clear_skipped_locations();
         for (let item of this.skipped_items) {
@@ -1303,9 +1490,22 @@ class World implements GraphWorld {
         }
         // Don't use skip_location in order to keep Link's Pocket
         // non-internal, allowing it to show up in trackers.
-        let pocket = this.get_location('Links Pocket');
-        this.skipped_locations.push(pocket);
-        pocket.skipped = true;
+        let starting_reward = true;
+        let pocket: Location;
+        if (this.version.branch === 'Fenhl') {
+            pocket = this.get_location('ToT Reward from Rauru');
+            if (!this.settings.skip_reward_from_rauru) starting_reward = false;
+        } else {
+            pocket = this.get_location('Links Pocket');
+        }
+        if (starting_reward) {
+            this.skipped_locations.push(pocket);
+            pocket.skipped = true;
+        }
+        // Free rewards from empty dungeons
+        for (let l_name of empty_reward_location_names) {
+            this.skip_location(l_name);
+        }
         if (!(this.settings.shuffle_gerudo_card) && this.settings.gerudo_fortress === 'open') {
             this.state.collect(ItemFactory('Gerudo Membership Card', this)[0]);
             this.skip_location('Hideout Gerudo Membership Card');
@@ -1347,7 +1547,9 @@ class World implements GraphWorld {
                 this.state.collect(ItemFactory('Small Key (Shadow Temple)', this)[0]);
             }
         }
-        if (!(this.keysanity) && !(this.dungeon_mq['Fire Temple'])) {
+        if (!(this.keysanity) && !(this.dungeon_mq['Fire Temple'])
+        && (!(Object.keys(this.settings).includes('shuffle_base_item_pool'))
+        || (this.settings.shuffle_base_item_pool || this.settings.shuffle_smallkeys !== 'vanilla'))) {
             // The extra Fire Temple key is never visible to the player in-game, so
             // don't add to the player inventory used for tracker displays.
             this.state.collect(ItemFactory('Small Key (Fire Temple)', this)[0], true, false);
@@ -1394,7 +1596,6 @@ class World implements GraphWorld {
             'Skullwalltula Soul',
             'Flare Dancer Soul',
             'Dead hand Soul',
-            'Shell blade Soul',
             'Like-like Soul',
             'Spike Enemy Soul',
             'Anubis Soul',
@@ -1408,6 +1609,12 @@ class World implements GraphWorld {
             'Jabu Jabu Tentacle Soul',
             'Dark Link Soul',
         ];
+        // This soul got renamed at some point
+        if (this.parent_graph.ootr_version.lt('8.0.0')) {
+            enemy_souls_core.push('Shell blade Soul');
+        } else {
+            enemy_souls_core.push('Shell Blade Soul');
+        }
         if (Object.keys(this.settings).includes('shuffle_enemy_spawns')) {
             if (this.settings.shuffle_enemy_spawns === 'bosses') {
                 for (let soul of enemy_souls_core) {

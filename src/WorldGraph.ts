@@ -18,6 +18,7 @@ import {
     GraphItemDictionary,
     GraphHint,
     GraphHintGoal,
+    GraphBoulder,
 } from "./plugins/GraphPlugin.js";
 import EmptyGraphPlugin from "./plugins/EmptyGraphPlugin.js";
 import OotrGraphPlugin from './plugins/ootr-latest/OotrGraphPlugin.js';
@@ -108,4 +109,5 @@ export {
     GraphItemDictionary,
     GraphHint,
     GraphHintGoal,
+    GraphBoulder,
 };

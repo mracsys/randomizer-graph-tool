@@ -6,6 +6,7 @@ import { Location } from "./Location.js";
 import World from './World.js';
 import { RegionGroup } from "./RegionGroup.js";
 import { Item } from "./Item.js";
+import { Boulder } from "./Boulders.js";
 
 export const TimeOfDay = {
     NONE: 0,
@@ -29,6 +30,7 @@ export class Region implements GraphRegion {
         public entrances: Entrance[] = [],
         public exits: Entrance[] = [],
         public locations: Location[] = [],
+        public boulders: Boulder[] = [],
         public dungeon: string | null = null,
         public hint_name: string | null = null,
         public alt_hint_name: string | null = null,

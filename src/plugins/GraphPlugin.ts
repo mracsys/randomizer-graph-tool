@@ -11,6 +11,7 @@ export interface GraphLocation {
     parent_region: GraphRegion | null;
     hint_area(): string | null;
     world: GraphWorld | null;
+    boulders: GraphBoulder[];
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
@@ -58,6 +59,7 @@ export interface GraphEntrance {
     reverse: GraphEntrance | null,
     replaces: GraphEntrance | null,
     world: GraphWorld;
+    boulders: GraphBoulder[],
     sphere: number;
     visited: boolean;
     visited_with_other_tricks: boolean;
@@ -82,6 +84,7 @@ export interface GraphRegion {
     exits: GraphEntrance[];
     entrances: GraphEntrance[];
     locations: GraphLocation[];
+    boulders: GraphBoulder[];
     world: GraphWorld;
     is_required: boolean;
     required_for: GraphHintGoal[];
@@ -89,6 +92,16 @@ export interface GraphRegion {
     hinted_items: GraphItem[];
     num_major_items: number | null;
     viewable: boolean;
+}
+
+export interface GraphBoulder {
+    name: string,
+    alias: string,
+    type: number,
+    checked: boolean,
+    hinted: boolean,
+    shuffled: boolean,
+    world: GraphWorld,
 }
 
 export interface GraphHint {
@@ -110,6 +123,7 @@ export interface GraphWorld {
     regions: GraphRegion[];
     region_groups: GraphRegion[];
     readonly settings: GraphSettingsConfiguration,
+    boulders: GraphBoulder[];
     fixed_item_area_hints: {
         [item_name: string]: {
             hint: string,
@@ -122,6 +136,7 @@ export interface GraphWorld {
     get_entrances(): GraphEntrance[],
     get_locations(): GraphLocation[],
     get_item(item: GraphItem | string): GraphItem,
+    get_boulder(boulder: GraphBoulder | string): GraphBoulder,
 }
 
 export type GraphGameVersions = {
@@ -246,6 +261,8 @@ export abstract class GraphPlugin {
     abstract uncheck_location(location: GraphLocation): void;
     abstract check_entrance(entrance: GraphEntrance): void;
     abstract uncheck_entrance(entrance: GraphEntrance): void;
+    abstract check_boulder(boulder: GraphBoulder): void;
+    abstract uncheck_boulder(boulder: GraphBoulder): void;
     abstract collect_locations(): void;
     abstract collect_spheres(): void;
     abstract get_accessible_entrances(): GraphEntrance[];
@@ -267,6 +284,7 @@ export abstract class GraphPlugin {
     abstract get_full_entrance_pool(world: GraphWorld): GraphEntrancePool;
     abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
     abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
+    abstract set_boulder_type(boulder: GraphBoulder, type: number | null): void;
 
     // Item factory can create items that are not shuffled in the world, use with caution!
     abstract get_item(world: GraphWorld, item_name: string): GraphItem;

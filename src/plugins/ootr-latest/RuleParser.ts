@@ -15,6 +15,7 @@ import ExternalFileCache from "./OotrFileCache.js";
 import World from "./World.js";
 import OotrVersion from "./OotrVersion.js";
 import { Region } from "./Region.js";
+import { boulder_rules } from "./Boulders.js";
 
 export type Spot = Entrance | Location;
 export type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
@@ -53,6 +54,12 @@ function getProperty<T>(obj: DynamicProps<T>, key: string): T {
     return obj[key];
 }
 
+const convenience_functions = [
+    'here(',
+    'at(',
+    'at_night',
+]
+
 export default class RuleParser {
     public world: World;
     public version: OotrVersion;
@@ -81,6 +88,9 @@ export default class RuleParser {
     public wallet3: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
     public is_adult: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
     public has_bottle: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public can_blast_or_smash: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public Blue_Fire: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
+    public guarantee_hint: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true;
     private escaped_items: {[escaped_name: string]: string};
     private event_name: RegExp;
     private rule_aliases: {
@@ -182,7 +192,7 @@ export default class RuleParser {
 
     visit(self: RuleParser, rule_string: string): string {
         if (self.debug) console.log(`start transforming rule ${rule_string}`);
-        if (!(rule_string in self.subrule_cache) || rule_string.includes('here(') || rule_string.includes('at(')) {
+        if (!(rule_string in self.subrule_cache) || convenience_functions.some(f => rule_string.includes(f))) {
             let transformed_code = transform(rule_string, {
                 sourceType: 'script',
                 plugins: self.logicVisitor
@@ -204,7 +214,7 @@ export default class RuleParser {
     // back to AST, then extracting the changed expression.
     visit_AST(self: RuleParser, ast: babeltypes.Node): babeltypes.Expression {
         let ast_code = new CodeGenerator(ast, {}, '').generate().code;
-        if (!(ast_code in self.subrule_ast_cache) || ast_code.includes('here(') || ast_code.includes('at(')) {
+        if (!(ast_code in self.subrule_ast_cache) || convenience_functions.some(f => ast_code.includes(f))) {
             let file = self.make_file(babeltypes, ast);
             let transformed_code: babel.BabelFileResult = transformFromAst(file, undefined, {
                 sourceType: 'script',
@@ -227,7 +237,12 @@ export default class RuleParser {
     }
 
     visit_Name(self: RuleParser, t: typeof babeltypes, path: babel.NodePath<babeltypes.Identifier>) {
-        if (Object.getOwnPropertyNames(RuleParser.prototype).includes(path.node.name)) {
+        if (path.node.name.startsWith('BOULDER_TYPE')) {
+            path.replaceWith(
+                t.numericLiteral(boulder_rules[path.node.name])
+            );
+            path.skip();
+        } else if (Object.getOwnPropertyNames(RuleParser.prototype).includes(path.node.name)) {
             //here, at, tod tests
             let dynamic_class: DynamicProps<any> = self;
             let event_func = getProperty(dynamic_class, path.node.name);
@@ -709,14 +724,20 @@ export default class RuleParser {
         if (!Object.getOwnPropertyNames(WorldState.prototype).includes(name)) {
             throw `Parse error: No such function State.${name}`;
         }
-        // kwargs aren't currently used inside the logic files,
-        // only at the top level when assembling the final
-        // access rule
+        // kwargs are currently only used for boulder shuffle,
+        // but they don't introduce new keywords, just pass through
+        // age from the original access rule call
+        let default_kwargs = Object.keys(kwarg_defaults).map(kwarg =>
+            t.objectProperty(
+                t.identifier(kwarg),
+                t.identifier(kwarg)
+        ));
+        let new_args = [...args, t.objectExpression(default_kwargs)];
         return t.callExpression(
             t.memberExpression(
                 t.identifier('worldState'),
                 t.identifier(name)),
-            args
+            new_args
         );
     }
 
@@ -839,7 +860,7 @@ export default class RuleParser {
         let self = this;
         if (!!(this.current_spot)) this.current_spot.transformed_rule = rule_str;
         if (this.debug) console.log(`done transforming rule`);
-        if (!(rule_str in self.rule_cache)) {
+        if (!(rule_str in self.rule_cache) || convenience_functions.some(f => rule_str.includes(f))) {
             let t = babeltypes;
             let proto = parse(access_proto);
             let params;
@@ -995,5 +1016,8 @@ export default class RuleParser {
         this.wallet3 = this.parse_rule('(Progressive_Wallet, 3)');
         this.is_adult = this.parse_rule('is_adult');
         this.has_bottle = this.parse_rule('has_bottle');
+        this.can_blast_or_smash = this.parse_rule('can_blast_or_smash');
+        this.Blue_Fire = this.parse_rule('Blue_Fire');
+        this.guarantee_hint = this.parse_rule('guarantee_hint');
     }
 }

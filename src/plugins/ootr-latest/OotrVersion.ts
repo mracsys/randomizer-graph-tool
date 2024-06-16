@@ -12,7 +12,12 @@ class OotrVersion implements GameVersion {
     public patch: number;
     public branch: string;
     public supp: number;
+    public is_release_tag: boolean;
     public file_list: string[];
+
+    // Main branch uses consistent tags, no need for commit IDs
+    // Note that stable builds prefix versions with a "v", such as v8.1
+    // Dev builds on main branch do not have a prefix.
 
     static devr_version_commit_ids: VersionCommitMap = {
         '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
@@ -21,22 +26,32 @@ class OotrVersion implements GameVersion {
     }
     static devrob_version_commit_ids: VersionCommitMap = {
         '7.1.198 Rob-49': 'd3fcfa72c833a2e6fb2dffcab3461394aa6765c8',
+        '8.1.29 Rob-104': '2f40c346f4053b5d66732b0f2e407e4b8dc33f6e',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
-        '7.1.118 fenhl-19': '321290e9feec5ffc2d7a0be51f64911305f0bd2a',
+        '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',
     }
     constructor(ootr_version: string, generate_files: boolean = true) {
         this.version = ootr_version;
         const versions = ootr_version.split(' ');
+        this.is_release_tag = false;
+        if (versions[0][0] === 'v') {
+            versions[0] = versions[0].replace('v', '');
+            this.is_release_tag = true;
+        }
         const main_versions = versions[0].split('.');
         this.major = parseInt(main_versions[0]);
         this.minor = parseInt(main_versions[1]);
         this.patch = parseInt(main_versions[2]);
         if (versions.length > 1) {
-            if (versions[1] !== 'f.LUM') {
+            if (!(['f.LUM', 'Stable', 'Dev'].includes(versions[1]))) {
                 const branch_versions = versions[1].split('-');
                 this.branch = branch_versions[0];
                 this.supp = parseInt(branch_versions[1]);
+            } else if (versions[1] === 'Stable') {
+                this.branch = '';
+                this.supp = 0;
+                this.is_release_tag = true;
             } else {
                 this.branch = '';
                 this.supp = 0;
@@ -96,6 +111,8 @@ class OotrVersion implements GameVersion {
     to_string(semverStr: boolean = false): string {
         if (this.branch !== '' && !semverStr) {
             return `${this.major}.${this.minor}.${this.patch} ${this.branch}-${this.supp}`;
+        } else if (this.is_release_tag) {
+            return `v${this.major}.${this.minor}.${this.patch}`;
         } else {
             return `${this.major}.${this.minor}.${this.patch}`;
         }
@@ -109,7 +126,7 @@ class OotrVersion implements GameVersion {
                 return `https://raw.githubusercontent.com/Roman971/OoT-Randomizer/${OotrVersion.devr_version_commit_ids[this.to_string()]}`;
             case 'Rob':
                 return `https://raw.githubusercontent.com/rrealmuto/OoT-Randomizer/${OotrVersion.devrob_version_commit_ids[this.to_string()]}`;
-            case 'fenhl':
+            case 'Fenhl':
                 return `https://raw.githubusercontent.com/fenhl/OoT-Randomizer/${OotrVersion.devfenhl_version_commit_ids[this.to_string()]}`;
             default:
                 throw(`Unsupported branch for remote file retrieval: ${this.to_string()}`);
@@ -139,15 +156,15 @@ class OotrVersion implements GameVersion {
                     throw(`Unsupported version for local file retrieval (minimum 7.1.198 Rob-49): ${this.to_string()}`);
                 }
                 break;
-            case 'fenhl':
-                if (this.gte('7.1.118 fenhl-19')) {
-                    return './ootr-local-fenhl-118';
+            case 'Fenhl':
+                if (this.gte('8.1.45 Fenhl-3')) {
+                    return './ootr-local-fenhl-8-1-45-3';
                 } else {
-                    throw(`Unsupported version for local file retrieval (minimum 7.1.118 fenhl-19): ${this.to_string()}`);
+                    throw(`Unsupported version for local file retrieval (minimum 8.1.45 Fenhl-3): ${this.to_string()}`);
                 }
                 break;
             default:
-                throw(`Unsupported branch for local file retrieval (supported: f.LUM, Rob, R, fenhl): ${this.to_string()}`);
+                throw(`Unsupported branch for local file retrieval (supported: f.LUM, Rob, R, Fenhl): ${this.to_string()}`);
                 break;
         }
     }
@@ -238,11 +255,11 @@ class OotrVersion implements GameVersion {
                 }
                 file_list.push('SettingsList.py');
                 break;
-            case 'fenhl':
-                if (this.gte('7.1.199 fenhl-1')) {
+            case 'Fenhl':
+                if (this.gte('8.1.45 Fenhl-3')) {
                     file_list.push('SettingsListTricks.py');
                 } else {
-                    throw('OOTR versions prior to 7.1.199 fenhl-1 not implemented');
+                    throw('OOTR versions prior to 8.1.45 Fenhl-3 not implemented');
                 }
                 file_list.push('SettingsList.py');
                 break;

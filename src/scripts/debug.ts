@@ -9,32 +9,57 @@ import Entrance from '../plugins/ootr-latest/Entrance.js';
 import World from '../plugins/ootr-latest/World.js';
 import { non_required_items } from '../plugins/ootr-latest/ItemList.js';
 import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
+import { locationFilter } from '../plugins/ootr-latest/Utils.js';
 
 // local paths to RSL script and OOTR for generating/validating world searches
 var rsl = '/home/mracsys/git/plando-random-settings';
 var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
-//test_preset();
-//test_collecting_checked_locations();
-//test_reimport_export();
-//test_search_empty_world();
-//test_search_invalidation();
-//test_dungeon_region_group_swap();
-//test_entrance_linking();
-//test_region_viewability();
-test_entrance_pools();
-//test_import(true);
-//test_spoiler(false, true);
-//test_remote_files();
-//test_random_settings(4, true);
-//test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
-//add_entrance_spheres_to_tests();
-//test_undisabling_settings();
-//test_settings_change();
-//test_trick_visited_entrances();
-//test_skipped_locations();
-//test_race_mode_inventory();
-//test_region_visibility();
+async_wrapper();
+
+async function async_wrapper() {
+    try {
+        //test_preset();
+        //test_collecting_checked_locations();
+        //test_reimport_export();
+        //test_search_empty_world();
+        //test_search_invalidation();
+        //test_dungeon_region_group_swap();
+        //test_entrance_linking();
+        //test_region_viewability();
+        //test_entrance_pools();
+        test_import(true);
+        //test_spoiler(false, true);
+        //test_remote_files();
+        //test_random_settings(100, true);
+        //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
+        //add_entrance_spheres_to_tests();
+        //test_undisabling_settings();
+        //test_settings_change();
+        //test_trick_visited_entrances();
+        //test_skipped_locations();
+        //test_race_mode_inventory();
+        //test_region_visibility();
+        //await test_v8_settings_import();
+    } catch (e) {
+        console.log(e);
+        if (e instanceof Error) {
+            console.log(e.name, e.message, e.stack);
+        }
+    }
+}
+
+async function test_v8_settings_import() {
+    let version = '8.1.45 Fenhl-3';
+    let local_files = 'tests/ootr-local-fenhl-8-1-45-3';
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    //graph.set_search_mode('Collected Items');
+    let graph_settings = graph.get_settings_options();
+    graph.change_setting(graph.worlds[0], graph_settings['graphplugin_world_search_mode'], 'collected');
+    graph.load_settings_preset('S7 Tournament');
+    graph.collect_locations();
+}
 
 async function test_preset() {
     let version = '7.1.195 R-1';
@@ -371,13 +396,12 @@ async function test_oneway_entrance_pools() {
 
 async function test_import(debug: boolean = false) {
     let result_files = [
-        'python_plando_WZAQVC07KZ.json',
-        
+        'python_plando_XUQEP4H68Z.json',
     ];
-    let variant = 'realrob'
+    let variant = 'fenhl'
     let initialized = false;
 
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '7.1.195 R-1', {files: {}});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.45 Fenhl-3', {files: {}});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files:string;
@@ -414,7 +438,8 @@ async function test_spoiler(convert: boolean = false, debug: boolean = false) {
     // python_plando_U3CJUBQAKH
     // python_plando_VNTW9E7QFO
     // python_plando_YQQVR7YQ0G
-    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds/roman', 'python_plando_GFIAE99KK9.json'), {sphere_dir: './tests/spoilers/roman'});
+    // python_plando_BUYD0FSB96
+    let [plando, graph, data, success] = await test_settings(resolve('./tests/seeds/fenhl', 'python_plando_SWQFS5C8L4.json'), {sphere_dir: './tests/spoilers/fenhl'});
     if (convert) save_python_output_as_unit_test(plando, graph, data, success);
     if (debug) save_python_output_as_unit_test(plando, graph, data, false);
 }
@@ -496,32 +521,45 @@ async function test_random_settings(max_seeds: number = 1, legacy_sphere_gen: bo
     for (let i = 0; i < max_seeds; i++) {
         console.log(`Testing seed ${i + 1} of ${max_seeds}`);
         console.log('Running python search');
+        let data, plando;
+        let attempts = 0;
         while (true) {
+            console.log(`Generating random plando (attempt ${attempts})`)
             let rsl_output = spawnSync('python3', [resolve(rsl, 'RandomSettingsGenerator.py'), '--test_javascript'], { cwd: rsl, encoding: 'utf8', maxBuffer: 10240 * 1024 });
             // restart script if reroll limit exceeded
-            if (rsl_output.status === 0) {
-                break;
+            if (rsl_output.status !== 0) {
+                attempts++;
+                continue;
             }
-        }
-        files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
-        if (files.length < 1) {
-            throw('Generator Error: no spoiler to load');
-        } else if (files.length > 1) {
-            throw('Generator Error: more than one spoiler to load');
-        }
-        let plando = JSON.parse(readFileSync(resolve(rsl, 'patches', files[0]), 'utf-8'));
-        plando[':collect'] = 'spheres';
-        delete plando.item_pool;
-        if (plando.settings.hint_dist === 'custom') {
-            delete plando.settings.hint_dist;
-        }
-        let data;
-        if (legacy_sphere_gen) {
-            let pythonGraph = spawnSync('python3', [resolve(rando, 'LogicAPI.py')], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
-            data = read_python_stdout(pythonGraph);
-        } else {
-            let seed_string = plando[':seed'];
-            data = JSON.parse(readFileSync(resolve(rsl, 'patches', `python_spheres_${seed_string}.json`), 'utf-8'));
+            files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
+            if (files.length < 1) {
+                throw('Generator Error: no spoiler to load');
+            } else if (files.length > 1) {
+                throw('Generator Error: more than one spoiler to load');
+            }
+            try {
+                console.log('Attempting to generate sphere data');
+                plando = JSON.parse(readFileSync(resolve(rsl, 'patches', files[0]), 'utf-8'));
+                plando[':collect'] = 'spheres';
+                delete plando.item_pool;
+                if (plando.settings.hint_dist === 'custom') {
+                    delete plando.settings.hint_dist;
+                }
+                console.log('Parsing sphere output');
+                if (legacy_sphere_gen) {
+                    let pythonGraph = spawnSync('python3', [resolve(rando, 'LogicAPI.py')], { input: JSON.stringify(plando), encoding: 'utf8', maxBuffer: 10240 * 1024 });
+                    data = read_python_stdout(pythonGraph);
+                } else {
+                    let seed_string = plando[':seed'];
+                    data = JSON.parse(readFileSync(resolve(rsl, 'patches', `python_spheres_${seed_string}.json`), 'utf-8'));
+                }
+                attempts = 0
+                break;
+            } catch (e) {
+                console.log(e);
+                unlinkSync(resolve(rsl, 'patches', files[0]));
+                attempts++;
+            }
         }
 
         console.log('Running JS search');
@@ -567,13 +605,21 @@ function get_plando_randomizer_version(plando: {[key: string]: any}): [string, s
             case '7.1.198 Rob-49':
                 local_files = 'tests/ootr-local-realrob-198';
                 break;
+            case '8.1.29 Rob-104':
+                local_files = 'tests/ootr-local-realrob-8-1-29-104';
+                break;
+            case '8.1.45 Fenhl-3':
+                local_files = 'tests/ootr-local-fenhl-8-1-45-3';
+                break;
             default:
                 throw(`Unknown version for local testing: ${version}`);
         }
     } else {
         // used by random settings generator for bulk plando generation
-        version = '7.1.195 R-1';
-        local_files = 'tests/ootr-local-roman-195';
+        version = '8.1.29 Rob-104';
+        local_files = 'tests/ootr-local-realrob-8-1-29-104';
+        //version = '8.1.45 Fenhl-3';
+        //local_files = 'tests/ootr-local-fenhl-8-1-45-3';
     }
     return [version, local_files];
 }
@@ -582,8 +628,8 @@ function save_python_output_as_unit_test(plando: {[key: string]: any}, graph: Gr
     let sorted_data = sort_spheres(data);
     if (success) {
         let seed_string = plando[':seed'];
-        writeFileSync(resolve('./tests/seeds/roman/', `python_plando_${seed_string}.json`), JSON.stringify(plando, null, 4), 'utf-8');
-        writeFileSync(resolve('./tests/spoilers/roman/', `python_spheres_${seed_string}.json`), JSON.stringify(sorted_data, null, 4), 'utf-8');
+        writeFileSync(resolve('./tests/seeds/realrob-8/', `python_plando_${seed_string}.json`), JSON.stringify(plando, null, 4), 'utf-8');
+        writeFileSync(resolve('./tests/spoilers/realrob-8/', `python_spheres_${seed_string}.json`), JSON.stringify(sorted_data, null, 4), 'utf-8');
     } else {
         writeFileSync('./python_plando.json', JSON.stringify(plando, null, 4), 'utf-8');
         writeFileSync('./python_spheres.json', JSON.stringify(sorted_data.spheres, null, 4), 'utf-8');
@@ -688,8 +734,10 @@ function read_python_stdout(pythonGraph: SpawnSyncReturns<string>): PythonData {
         var data = JSON.parse(pythonGraph.stdout);
     } catch (error) {
         if (pythonGraph.stderr !== '') {
+            console.log('Problem with spawned process return value');
             console.log(pythonGraph.stderr);
         } else {
+            console.log('Problem reading python stdout');
             console.log(pythonGraph.stdout.split('\n')[0]);
         }
         throw(error);
@@ -701,13 +749,13 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     let ldata = data.locations;
     console.log(`${graph.get_visited_locations().length} total visited JS locations`);
     console.log(`${Object.keys(ldata).filter((l) => ldata[l].visited).length} total visited python locations`);
-    console.log(`${graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint')) && (l.item === null || !non_required_items.includes(l.item.name))).length} visited non-event JS locations`);
+    console.log(`${graph.get_visited_locations().filter((l) => locationFilter(l) && !(l.type.startsWith('Hint'))).length} visited non-event JS locations`);
     console.log(`${Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event' && !(ldata[l].type.startsWith('Hint'))).length} visited non-event python locations`);
 
     // Filter out extra event items as they usually show up because in-place logic settings replacement is removed,
     // which causes some always/never events to no longer be always/never.
     // Testing enough seeds will hopefully show any actual locations affected by extra events.
-    let success = graph.get_visited_locations().filter((l) => l.type !== 'Event' && !(l.type.startsWith('Hint')) && (l.item === null || !non_required_items.includes(l.item.name))).length
+    let success = graph.get_visited_locations().filter((l) => locationFilter(l) && !(l.type.startsWith('Hint'))).length
                     === Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event' && !(ldata[l].type.startsWith('Hint'))).length;
     let locs = graph.get_visited_locations();
     let loc_names = locs.map((loc: GraphLocation): string => loc.name);
@@ -717,19 +765,19 @@ function compare_js_to_python(graph: GraphPlugin, data: PythonData) {
     for (const loc of locs) {
         if (Object.keys(ldata).includes(loc.name)) {
             if (!(ldata[loc.name].visited)) {
-                if (loc.item === null) {
+                if (loc.item === null && locationFilter(loc)) {
                     console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere}, invalid item`);
-                } else {
+                } else if (loc.item !== null && locationFilter(loc)) {
                     console.log(`Extra visited location ${loc.name}, sphere ${loc.sphere},${!!loc.item.player ? ' Player '.concat(loc.item.player.toString()) : ''} ${loc.item.name}`);
                 }
                 // See above note on why events get filtered.
-                if (loc.type !== 'Event' && (loc.item === null || !non_required_items.includes(loc.item.name))) {
+                if (locationFilter(loc)) {
                     success = false;
                 }
             } else if (ldata[loc.name].visited) {
                 //console.log(`Matching JS location ${loc.name}`);
             }
-        } else if (loc.type !== 'Event' && (loc.item === null || !non_required_items.includes(loc.item.name))) {
+        } else if (locationFilter(loc)) {
             // See above note on why events get filtered.
             console.log(`Non-existent JS location ${loc.name}`);
             success = false;

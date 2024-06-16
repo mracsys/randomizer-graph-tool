@@ -1,6 +1,10 @@
 import { ItemInfo, ItemFactory, Item } from "./Item.js";
 import World from './World.js';
 import Search from './Search.js';
+import { BOULDER_TYPE } from "./Boulders.js";
+import type { kwargs } from "./RuleParser.js";
+import { Location } from "./Location.js";
+import { get_scene_group, scene_list } from "./Scene.js";
 
 type Dictionary<T> = {
     [Key: string]: T;
@@ -43,32 +47,32 @@ class WorldState {
     }
 
     won_triforce_hunt(): boolean {
-        return this.has('Triforce Piece', this.world.triforce_goal);
+        return this.has('Triforce Piece', this.world.triforce_goal_per_world);
     }
 
     won_normal(): boolean {
         return this.has('Triforce');
     }
 
-    has(item: string, count=1): boolean {
+    has(item: string, count=1, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return !!this.prog_items[item] && this.prog_items[item] >= count;
     }
 
-    has_any_of(items: string[] | IterableIterator<string>): boolean {
+    has_any_of(items: string[] | IterableIterator<string>, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         for (const item of items) {
             if (!!this.prog_items[item] && this.prog_items[item]) return true;
         }
         return false;
     }
 
-    has_all_of(items: string[] | IterableIterator<string>): boolean {
+    has_all_of(items: string[] | IterableIterator<string>, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         for (const item of items) {
             if (!(!!this.prog_items[item] && this.prog_items[item])) return false;
         }
         return true;
     }
 
-    count_of(items: string[] | IterableIterator<string>): number {
+    count_of(items: string[] | IterableIterator<string>, { age = null, spot = null, tod = null }: kwargs = {}): number {
         let s = 0;
         for (const i of items) {
             s += !!this.prog_items[i] ? this.prog_items[i] : 0;
@@ -76,35 +80,35 @@ class WorldState {
         return s;
     }
 
-    item_count(item: string): number {
+    item_count(item: string, { age = null, spot = null, tod = null }: kwargs = {}): number {
         return this.prog_items[item];
     }
 
-    has_bottle(): boolean {
+    has_bottle({ age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.has_any_of(this.ItemInfo.bottles.values()) || this.has('Rutos Letter', 2);
     }
 
-    has_hearts(count: number): boolean {
+    has_hearts(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.heart_count() >= count;
     }
 
-    heart_count(): number {
+    heart_count({ age = null, spot = null, tod = null }: kwargs = {}): number {
         return (~~(this.item_count('Piece of Heart') / 4) + 3);
     }
 
-    has_medallions(count: number): boolean {
+    has_medallions(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.count_of(this.ItemInfo.medallions.values()) >= count;
     }
 
-    has_stones(count: number): boolean {
+    has_stones(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.count_of(this.ItemInfo.stones.values()) >= count;
     }
 
-    has_dungeon_rewards(count: number): boolean {
+    has_dungeon_rewards(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return (this.count_of(this.ItemInfo.medallions.values()) + this.count_of(this.ItemInfo.stones.values())) >= count;
     }
 
-    had_night_start(): boolean {
+    had_night_start({ age = null, spot = null, tod = null }: kwargs = {}): boolean {
         let stod = this.world.settings.starting_tod;
         // These are all not between 6:30 and 18:00
         if (stod === 'sunset' ||         // 18
@@ -117,7 +121,7 @@ class WorldState {
         }
     }
 
-    can_live_dmg(hearts: number): boolean {
+    can_live_dmg(hearts: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         let mult = this.world.settings.damage_multiplier;
         if (hearts*4 >= 3) {
             return mult != 'ohko' && mult != 'quadruple';
@@ -128,15 +132,15 @@ class WorldState {
         }
     }
 
-    guarantee_hint(): boolean {
-        return this.world.parser.parse_rule('guarantee_hint')(this, {});
+    guarantee_hint({ age = null, spot = null, tod = null }: kwargs = {}): boolean {
+        return this.world.parser.guarantee_hint(this, {});
     }
 
-    has_ocarina_buttons(count: number): boolean {
+    has_ocarina_buttons(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.count_of(this.ItemInfo.ocarina_buttons.values()) >= count;
     }
 
-    has_all_notes_for_song(song: string): boolean {
+    has_all_notes_for_song(song: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         if (song === 'Scarecrow Song') {
             return this.has_ocarina_buttons(2);
         }
@@ -257,12 +261,67 @@ class WorldState {
         }
     }
 
-    region_has_shortcuts(region_name: string): boolean {
+    region_has_shortcuts(region_name: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         return this.world.region_has_shortcuts(region_name);
     }
 
-    has_soul(enemy: string): boolean {
-        return (!(this.world.shuffle_enemy_spawns) || this.has(`${enemy} Soul`));
+    has_soul(enemy: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
+        if (this.world.settings.shuffle_enemy_spawns === 'regional') {
+            let scene: string | null = null;
+            let group: string = 'Unknown Group';
+            if (!!spot && spot instanceof Location && spot.scene !== 0xFF && spot.scene !== 62 && spot.scene !== null) {
+                scene = scene_list[spot.scene];
+            } else if (!!spot && spot instanceof Location && spot.scene === 62) {
+                scene = 'Grottos';
+            } else if (spot?.parent_region?.scene) {
+                scene = spot.parent_region.scene;
+            } else if (spot?.parent_region?.dungeon) {
+                scene = spot.parent_region.dungeon;
+            }
+            if (!!scene) {
+                let scene_group = get_scene_group(scene);
+                if (!!scene_group) group = scene_group;
+            }
+            return this.has(`${group} Souls`)
+        } else {
+            return (!(this.world.shuffle_enemy_spawns) || this.has(`${enemy} Soul`));
+        }
+    }
+
+    boulder_type(boulder: string, { age = null, spot = null, tod = null }: kwargs = {}): BOULDER_TYPE {
+        return this.world.boulder_cache[boulder].type;
+    }
+
+    can_pass_boulder(boulder: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
+        let type: BOULDER_TYPE = this.world.boulder_cache[boulder].type;
+        return this.can_pass_boulder_type(type, { age: age });
+    }
+
+    can_pass_boulder_type(boulder_type: BOULDER_TYPE, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
+        if (boulder_type == BOULDER_TYPE.BRONZE) {
+            // Check for hammer and adult
+            return age === 'adult' && this.has('Megaton Hammer');
+        } else if (boulder_type === BOULDER_TYPE.SILVER) {
+            // Check for adult+str2
+            return age === 'adult' && this.has('Progressive Strength Upgrade', 2);
+        } else if (boulder_type === BOULDER_TYPE.BROWN) {
+            // Check for adult+hammer or explosives
+            return this.world.parser.can_blast_or_smash(this, { age: age });
+        } else if (boulder_type === BOULDER_TYPE.RED_ICE) {
+            // Check for blue fire
+            return this.world.parser.Blue_Fire(this, { age: age });
+        }
+        // Should never get here
+        return false;
+    }
+
+    // Check if the current state can pass a particular boulder, restricted to a list of types
+    can_pass_boulder_types(boulder: string, types: BOULDER_TYPE[], { age = null, spot = null, tod = null }: kwargs = {}): boolean {
+        let this_boulder_type: BOULDER_TYPE = this.world.boulder_cache[boulder].type; // Get the boulder's type
+        if (types.includes(this_boulder_type)) { // Check if that type is in the list of allowed types
+            return this.can_pass_boulder_type(this_boulder_type, { age: age }); // Check ability to pass that type
+        }
+        return false;
     }
 }
 

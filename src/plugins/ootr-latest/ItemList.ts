@@ -53,7 +53,7 @@ export default class ItemList {
             case '':
             case 'R':
             case 'Rob':
-            case 'fenhl':
+            case 'Fenhl':
                 if (ootr_version.gte('7.1.117')) {
                     this.readItemList_7_1_117(file_cache);
                 } else {
@@ -81,10 +81,11 @@ export default class ItemList {
             }
             if (parsing_items) {
                 // I wish these tables would be static json files...
+                const hex_replacer = (match: string) => {return parseInt(match).toString()};
                 let temp_line = replace_python_tuples(line).split('#')[0].trim()
                     .replaceAll("'", '"')
                     .replaceAll('\\"', "'")             // I thought there was a change a while back to get rid of apostrophes in internal names...
-                    .replaceAll(/0x[\da-fA-F]+/g, '0')  // JSON doesn't support hex
+                    .replaceAll(/0x[\da-fA-F]+/g, hex_replacer)  // JSON doesn't support hex
                     .replaceAll(',]', ']')              // JSON doesn't support trailing commas
                     .replaceAll('float["Inf"]', '65535')// convert from python infinity to a large number, infinity doesn't matter for search
                     .replaceAll(/\bNone\b/g, 'null')    // convert from python None to null

@@ -15,7 +15,7 @@ describe('OOTR 7.1.143', () => {
         // 1348 non-event locations in OOTR 7.1.143, including the Gift from Sages pseudo-location.
         // Gift from Sages is filtered out by the plugin, so test for 1347.
         let full_graph = await OotrGraphPlugin.create_graph({}, test_version, _cache, false, false);
-        expect(full_graph.get_locations_for_world(full_graph.worlds[0]).length).toEqual(1347);
+        expect(full_graph.worlds[0].get_locations().filter(l => !l.internal).length).toEqual(1347);
     });
 
     test('all pre-generated seed sphere searches match the randomizer', async () => {

@@ -1,6 +1,6 @@
 import World from "../src/plugins/ootr-latest/World";
 import { ExternalFileCacheFactory, WorldGraphRemoteFactory, GraphEntrance, GraphLocation, GraphPlugin } from "../src/WorldGraph";
-import { non_required_items } from '../src/plugins/ootr-latest/ItemList.js';
+import { locationFilter } from "../src/plugins/ootr-latest/Utils.js";
 import { describe, expect, test, beforeAll } from "@jest/globals";
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'path';
@@ -59,7 +59,7 @@ describe('OOTR 7.1.195 R-1 world mutation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event' && (l.item === null || !non_required_items.includes(l.item.name))).length)
+        expect(graph.get_visited_locations().filter(locationFilter).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();
@@ -123,7 +123,71 @@ describe('OOTR 7.1.198 Rob-49 world mutation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event' && (l.item === null || !non_required_items.includes(l.item.name))).length)
+        expect(graph.get_visited_locations().filter(locationFilter).length)
+            .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
+
+        let locs = graph.get_visited_locations();
+        let world = <World>graph.worlds[0];
+        let ents = world.get_entrances();
+
+        // entrance spheres more impactful than locations, so check first
+        let edata = data.entrance_spheres;
+        if (!!edata) {
+            for (let [sphere, sphere_entrance] of Object.entries(edata)) {
+                let nsphere = parseInt(sphere);
+                for (let e of Object.keys(sphere_entrance)) {
+                    let ent = ents.filter((entrance: GraphEntrance): boolean => entrance.name === e)[0];
+                    expect(ent?.sphere).toEqual(nsphere);
+                }
+            }
+        }
+
+        let sdata = data.spheres;
+        for (let [sphere, sphere_locs] of Object.entries(sdata)) {
+            let nsphere = parseInt(sphere);
+            for (let l of Object.keys(sphere_locs)) {
+                // Subrule numbering between python and js can differ because js does not evaluate settings
+                // at compile time. The main randomizer does this to reduce rule complexity and increase
+                // search speed, leading to some events that are always true/false and thus not needed for the
+                // parent rule. Only check real locations being out of order.
+                if (ldata[l].type !== 'Event') {
+                    let loc = locs.filter((location: GraphLocation): boolean => location.name === l)[0];
+                    expect(loc?.sphere).toEqual(nsphere);
+                }
+            }
+        }
+    });
+});
+
+
+describe('OOTR 8.1.45 Fenhl-3 world mutation', () => {
+    let python_results = readdirSync(resolve('tests/spoilers/fenhl'));
+
+    let graph: GraphPlugin;
+    beforeAll(async () => {
+        let version = '8.1.45 Fenhl-3';
+        let local_files = 'tests/ootr-local-fenhl-8-1-45-3';
+        let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+        graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    });
+
+    test.each(python_results)('%s sphere searches match Fenhl\'s branch', async (result_file) => {
+        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers/fenhl', result_file), 'utf-8'));
+        let seed = result_file.split('_')[2];
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds/fenhl', `python_plando_${seed}`), { encoding: 'utf8'}));
+        graph.import(plando);
+        graph.collect_spheres();
+
+        let ldata = data.locations;            
+        // All locations visited by the randomizer should be visited by our graph
+        // In-place logic settings replacement is removed from the rule parser,
+        // which causes some always/never events to no longer be always/never, so
+        // they can show up as extra collected locations.
+        expect(graph.get_visited_locations().length)
+            .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
+        // Filter out extra event items to verify regular item locations match.
+        // Testing enough seeds will hopefully show any actual locations affected by extra events.
+        expect(graph.get_visited_locations().filter(locationFilter).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();

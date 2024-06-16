@@ -1,5 +1,6 @@
 import World from "../src/plugins/ootr-latest/World";
 import { ExternalFileCacheFactory, WorldGraphRemoteFactory, GraphEntrance, GraphLocation, GraphPlugin } from "../src/WorldGraph";
+import { locationFilter } from "../src/plugins/ootr-latest/Utils.js";
 import { describe, expect, test, beforeAll } from "@jest/globals";
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'path';
@@ -56,7 +57,7 @@ describe('OOTR 7.1.143 compilation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event').length)
+        expect(graph.get_visited_locations().filter(locationFilter).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();
@@ -117,7 +118,7 @@ describe('OOTR 7.1.143 world mutation', () => {
             .toBeGreaterThanOrEqual(Object.keys(ldata).filter((l) => ldata[l].visited).length);
         // Filter out extra event items to verify regular item locations match.
         // Testing enough seeds will hopefully show any actual locations affected by extra events.
-        expect(graph.get_visited_locations().filter((l) => l.type !== 'Event').length)
+        expect(graph.get_visited_locations().filter(locationFilter).length)
             .toEqual(Object.keys(ldata).filter((l) => ldata[l].visited && ldata[l].type !== 'Event').length)
 
         let locs = graph.get_visited_locations();
@@ -159,11 +160,9 @@ function get_plando_randomizer_version(plando: {[key: string]: any}): [string, s
     if (Object.keys(plando).includes(':version')) {
         version = plando[':version'];
         switch (version) {
-            case '7.1.117 f.LUM':
-                local_files = 'tests/ootr-local-117';
-                break;
             default:
                 local_files = 'tests/ootr-local-143';
+                break;
         }
     } else {
         version = '7.1.143';

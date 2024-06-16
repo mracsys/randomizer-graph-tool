@@ -6,6 +6,7 @@ import World from './World.js';
 import { Region } from "./Region.js";
 import { display_names } from './DisplayNames.js';
 import { Item } from "./Item.js";
+import { Boulder } from "./Boulders.js";
 
 export class RegionGroup implements GraphRegion {
     constructor(
@@ -15,6 +16,7 @@ export class RegionGroup implements GraphRegion {
         public entrances: Entrance[] = [],
         public exits: Entrance[] = [],
         public locations: Location[] = [],
+        public boulders: Boulder[] = [],
         public alias: string = '',
         public page: string = 'Overworld',
         public viewable: boolean = false,

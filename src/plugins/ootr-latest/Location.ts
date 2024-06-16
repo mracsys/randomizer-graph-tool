@@ -1,17 +1,13 @@
-import { GraphLocation, GraphRegion } from "../GraphPlugin.js";
+import { GraphLocation } from "../GraphPlugin.js";
 
 import { Region } from "./Region.js";
 import World from './World.js';
 import WorldState from './WorldState.js';
-import Entrance from './Entrance.js';
 import { Item, ItemFactory } from './Item.js';
 import { display_names } from './DisplayNames.js';
 import { Hint } from "./Hints.js";
-import HintArea from "./HintArea.js";
-
-type Spot = Entrance | Location;
-type kwargs = { age?: string | null, spot?: Spot | null, tod?: number | null };
-type AccessRule = (worldState: WorldState, { age, spot, tod }: kwargs) => boolean;
+import type { AccessRule, kwargs } from "./RuleParser.js";
+import { Boulder } from "./Boulders.js";
 
 const DisableType = {
     ENABLED: 0,
@@ -49,6 +45,7 @@ export class Location implements GraphLocation {
         public internal: boolean = false,
         public world: World,
         public vanilla_item_name: string | null = null,
+        public scene: number | null = null,
         public vanilla_item: Item | null = null,
         public item: Item | null = null,
         public staleness_count: number = 0,
@@ -58,6 +55,7 @@ export class Location implements GraphLocation {
         // original non-dynamic access rule from the logic files, referenced when resetting dynamic shop rules
         public static_access_rule: AccessRule = (worldState, { age = null, spot = null, tod = null } = {}) => true,
         public access_rules: AccessRule[] = [],
+        public boulders: Boulder[] = [],
         public locked: boolean = false,
         public price: number | null = null,
         public minor_only: boolean = false,
@@ -88,7 +86,7 @@ export class Location implements GraphLocation {
         public public_event: boolean = false,
     ) {
         this.vanilla_item = !!vanilla_item_name ? ItemFactory(vanilla_item_name, this.world)[0] : null;
-        if (this.type === "Event" || this.name === "Gift from Sages") {
+        if (this.type === "Event" || this.type === "GraphEvent" || this.name === "Gift from Sages") {
             this.internal = true;
             this.shuffled = false;
             if (viewable_events.includes(this.name)) this.public_event = true;
@@ -190,8 +188,8 @@ export function LocationFactory(locations: string | string[], world: World): Loc
             match_location = Object.keys(location_table).filter((k: string): boolean => k.toLowerCase() === location.toLowerCase())[0];
         }
         if (match_location) {
-            let [type, vanilla_item] = location_table[match_location];
-            ret.push(new Location(match_location, type, null, false, world, vanilla_item));
+            let [type, vanilla_item, scene] = location_table[match_location];
+            ret.push(new Location(match_location, type, null, false, world, vanilla_item, scene));
         } else {
             throw `Unknown location ${location}`;
         }

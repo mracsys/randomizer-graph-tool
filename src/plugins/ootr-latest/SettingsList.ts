@@ -1,5 +1,6 @@
 import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
+import { rsl_preset_template } from "./RSLPresetTemplate.js";
 import type { GraphSettingType, GraphSettingsLayout } from "../GraphPlugin.js";
 
 
@@ -141,6 +142,7 @@ export type Setting = {
     disables: Setting[],
     disabled(settings: SettingsDictionary): boolean,
     disabled_default: GraphSettingType,
+    custom_disabled_default?: boolean,
 };
 type SettingTypeDictionary = {
     [type_function: string]: Setting
@@ -151,6 +153,8 @@ export type SettingsDictionary = {
         [item_name: string]: number,
     },
     spawn_positions?: string[],
+    shuffle_child_spawn?: string,
+    shuffle_adult_spawn?: string,
     shuffle_child_trade?: string[],
     adult_trade_start?: string[],
     triforce_goal_per_world?: number,
@@ -163,7 +167,7 @@ export type SettingsDictionary = {
         [song_name: string]: string,
     },
     graphplugin_trials_specific: string[],
-    ocarina_songs?: boolean,
+    ocarina_songs?: string | string[] | boolean,
     mq_dungeons_specific?: string[],
     disabled_locations?: string[],
     shuffle_dungeon_rewards?: string,
@@ -176,6 +180,16 @@ export type SettingsDictionary = {
     enhance_map_compass?: boolean,
     misc_hints?: string[],
     shuffle_mapcompass?: string,
+    shuffle_boulders?: boolean,
+    shuffle_fishies?: boolean,
+    shuffle_empty_crates?: boolean,
+    shuffle_empty_pots?: boolean,
+    shuffle_grass?: boolean,
+    dungeon_back_access?: boolean,
+    blue_warps?: string,
+    shuffle_grotto_entrances?: boolean,
+    shuffle_overworld_entrances?: boolean,
+    decouple_entrances?: boolean,
 };
 
 export type SettingsPresets = {
@@ -199,6 +213,10 @@ export var global_settings_overrides: {[setting_name: string]: GraphSettingType}
     trials_random: false,
     chicken_count_random: false,
     big_poe_count_random: false,
+    logic_rules: 'glitchless', // remove if/when region variants for glitched/no logic supported
+    empty_dungeons_mode: 'none',
+    empty_dungeons_specific: [],
+    empty_dungeons_rewards: [],
 }
 
 class SettingsList {
@@ -244,7 +262,7 @@ class SettingsList {
             case '':
             case 'R':
             case 'Rob':
-            case 'fenhl':
+            case 'Fenhl':
                 if (ootr_version.gte('7.1.143')) {
                     this.readSettingsList_7_1_143(file_cache);
                 } else {
@@ -642,7 +660,7 @@ class SettingsList {
             if (!!(this.setting_definitions.allowed_tricks.choices) && Object.keys(this.setting_definitions.allowed_tricks.choices).includes(setting)) {
                 this.settings[setting] = false;
             // Only allow explicit override of tracker-specific settings
-            } else if (!(settings_to_never_reset_to_default.includes(setting))) {
+            } else if (!(settings_to_never_reset_to_default.includes(setting)) && setting in this.setting_definitions) {
                 this.settings[setting] = this.setting_definitions[setting].default;
             }
         }
@@ -723,9 +741,92 @@ class SettingsList {
                     }
                 }
             }
+            this.create_rsl_preset();
         } catch {
             console.log(`Could not parse presets_default.json: ${file_cache.files['data/presets_default.json']}`);
         }
+    }
+
+    create_rsl_preset() {
+        let rsl_preset = Object.assign({}, rsl_preset_template);
+        if (Object.keys(this.setting_definitions).includes('mix_entrance_pools')) {
+            rsl_preset.mix_entrance_pools = [];
+        }
+        if (Object.keys(this.setting_definitions).includes('decouple_entrances')) {
+            rsl_preset.decouple_entrances = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('fix_broken_actors')) {
+            delete rsl_preset.fix_broken_drops;
+            rsl_preset.fix_broken_actors = true;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_enemy_spawns')) {
+            rsl_preset.shuffle_enemy_spawns = 'off';
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_enemy_drops')) {
+            rsl_preset.shuffle_enemy_drops = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_empty_pots')) {
+            rsl_preset.shuffle_empty_pots = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_empty_crates')) {
+            rsl_preset.shuffle_empty_crates = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_wonderitems')) {
+            rsl_preset.shuffle_wonderitems = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_grass')) {
+            rsl_preset.shuffle_grass = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_gossipstones')) {
+            rsl_preset.shuffle_gossipstones = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_fishies')) {
+            rsl_preset.shuffle_fishies = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_boulders')) {
+            rsl_preset.shuffle_boulders = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('prevent_guay_respawns')) {
+            rsl_preset.prevent_guay_respawns = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('dogs_anywhere')) {
+            rsl_preset.dogs_anywhere = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('minimap_enemy_tracker')) {
+            rsl_preset.minimap_enemy_tracker = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_dungeon_rewards')) {
+            rsl_preset.shuffle_dungeon_rewards = 'reward';
+        }
+
+        if (this.ootr_version.branch === 'Fenhl') {
+            rsl_preset.shuffle_hideout_entrances = 'off';
+            rsl_preset.shuffle_gerudo_valley_river_exit = 'balanced';
+            rsl_preset.shuffle_ganon_tower = false;
+            delete rsl_preset.spawn_positions;
+            rsl_preset.shuffle_adult_spawn = 'balanced';
+            rsl_preset.shuffle_child_spawn = 'balanced';
+            rsl_preset.owl_drops = 'balanced';
+            rsl_preset.warp_songs = 'balanced';
+            rsl_preset.blue_warps = 'dungeon';
+            rsl_preset.open_forest = true;
+            rsl_preset.open_deku = false;
+            rsl_preset.require_gohma = false;
+            delete rsl_preset.shopsanity_prices;
+            rsl_preset.special_deal_price_distribution = 'betavariate';
+            rsl_preset.special_deal_price_min = 0;
+            rsl_preset.special_deal_price_max = 300;
+            rsl_preset.shuffle_items = true;
+            rsl_preset.shuffle_base_item_pool = true;
+            rsl_preset.triforce_hunt_mode = 'normal';
+            rsl_preset.shuffle_gerudo_fortress_heart_piece = 'vanilla';
+            rsl_preset.exclusive_one_ways = false;
+            rsl_preset.dungeon_back_access = false;
+            rsl_preset.logic_water_gold_scale_no_entry = false;
+            rsl_preset.skip_reward_from_rauru = true;
+            rsl_preset.ocarina_songs = [];
+        }
+        this.settings_presets['Random Settings League'] = rsl_preset;
     }
 
     readSettingsList_7_1_143(file_cache: ExternalFileCache): void {
@@ -853,6 +954,7 @@ class SettingsList {
                         } catch {
                             setting.disabled_default = dd.replaceAll(/['",]+/g, '');
                         }
+                        setting.custom_disabled_default = true;
                         dd = null;
                     }
                     if (disable) {
@@ -871,12 +973,16 @@ class SettingsList {
                                 }
                             }
                         }
+                        // Can't parse boolean keys, convert to string (currently only an issue on Realrob branch)
+                        sanitized_str = sanitized_str.replaceAll('False:', '"false":').replaceAll('True:', '"true":');
+                        //console.log(`Adding disable map for ${setting.name}: ${sanitized_str}`);
                         setting.disable_map = JSON.parse(sanitized_str);
                         disable = null;
                     }
                     if (Object.keys(setting_types).some((prefix) => info[1].trim().toLowerCase().startsWith(prefix))) {
                         if (setting.name !== '' && setting.name !== 'allowed_tricks' && !setting.cosmetic) {
                             this.settings[setting.name] = setting.default;
+                            if (setting.custom_disabled_default !== true) setting.disabled_default = setting.default;
                             this.setting_definitions[setting.name] = Object.assign({}, setting);
                         }
                         setting = Object.assign({}, setting_types[`${info[1].trim().toLowerCase().split('(')[0]}(`]);
@@ -1006,6 +1112,7 @@ function new_setting(type: string): Setting {
         name: '',
         default: false,
         disabled_default: false,
+        custom_disabled_default: false,
         type: 'bool',
         display_name: '',
         tab: '',

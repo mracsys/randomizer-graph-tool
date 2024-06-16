@@ -1,4 +1,6 @@
 import ExternalFileCache from './OotrFileCache.js';
+import type { GraphLocation } from '../GraphPlugin.js';
+import { non_required_items } from './ItemList.js';
 
 type Dictionary<T> = {
     [key: string]: T,
@@ -8,7 +10,7 @@ type JsonLogicRegion = {
     region_name: string,
     dungeon?: string,
     scene?: string,
-    is_boss_room?: string,
+    is_boss_room?: string | boolean,
     hint?: string,
     alt_hint?: string,
     savewarp: string,
@@ -47,11 +49,12 @@ export function read_macro_json(file_path: string, file_cache: ExternalFileCache
 }
 
 export function replace_python_booleans(rule: string): string {
-    let s = rule.replaceAll(/\bor\b/ig, '||');
+    let s = rule.replaceAll('==', '===');
+    s = s.replaceAll('!=', '!==');
+    s = s.replaceAll(/not\s([A-Za-z0-9\(\)_']+)\s===/ig, "$1 !=="); // Realrob MQ Ice Cavern boulder shuffle "not (x == y)" -> "(x !== y)"
+    s = s.replaceAll(/\bor\b/ig, '||');
     s = s.replaceAll(/\band\b/ig, '&&');
     s = s.replaceAll(/\bnot\b/ig, '!');
-    s = s.replaceAll('==', '===');
-    s = s.replaceAll('!=', '!==');
     s = s.replaceAll(/\bTrue\b/g, 'true');
     s = s.replaceAll(/\bFalse\b/g, 'false');
     return s.trim();
@@ -81,4 +84,12 @@ export function replace_python_tuples(text: string): string {
     }
 
     return result;
+}
+
+export const locationFilter = (l: GraphLocation): boolean => {
+    return (
+        l.type !== 'Event'
+        && l.type !== 'GraphEvent'
+        && (l.item === null || !non_required_items.includes(l.item.name))
+    );
 }

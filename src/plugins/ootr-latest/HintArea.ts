@@ -49,14 +49,10 @@ class HintArea {
 
                 for (const entrance of parent_region.entrances) {
                     if (!(already_checked.includes(entrance))) {
-                        if (!!(entrance.type)) {
-                            if (['OverworldOneWay', 'OwlDrop', 'Spawn', 'WarpSong'].includes(entrance.type)) {
-                                fallback_spot_queue.push(entrance);
-                            } else {
-                                spot_queue.push(entrance);
-                            }
+                        if (!!(entrance.type) && ['OverworldOneWay', 'OwlDrop', 'Spawn', 'WarpSong'].includes(entrance.type)) {
+                            fallback_spot_queue.push(entrance);
                         } else {
-                            throw(`Null entrance type found when searching hint region for spot ${spot.name}`);
+                            spot_queue.push(entrance);
                         }
                     }
                 }

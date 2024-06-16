@@ -79,6 +79,7 @@ class Search {
     reset_cache() {
         this.current_sphere = 0;
         this.reset_visits();
+        this.reset_spheres();
         if (this.initial_cache) {
             this._cache = this.initial_cache;
             this.cached_spheres = [this._cache];
@@ -396,7 +397,8 @@ class Search {
             let sim_mode = state.world.settings.graphplugin_simulator_mode === undefined ? false : state.world.settings.graphplugin_simulator_mode;
             if (sim_mode) {
                 for (let hint_data of Object.values(state.world.fixed_item_area_hints)) {
-                    if (hint_data.hint === 'FREE') {
+                    if (hint_data.hint === 'FREE'
+                    && (!(Object.keys(state.world.settings).includes('skip_reward_from_rauru')) || state.world.settings.skip_reward_from_rauru || !hint_data.hint_locations.includes('ToT Reward from Rauru'))) {
                         hint_data.hinted = true;
                     } else {
                         hint_data.hinted = false;
@@ -444,6 +446,13 @@ class Search {
                 }
             }
             this.current_sphere++;
+        }
+        // last sweep in case of any new access from last item sphere,
+        // usually a subrule
+        for (let e of remaining_entrances) {
+            if (this.spot_access(e)) {
+                e.sphere = this.current_sphere;
+            }
         }
     }
 

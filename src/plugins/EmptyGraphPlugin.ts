@@ -1,6 +1,6 @@
 import ExternalFileCache from "./ExternalFileCache.js";
 import { GraphPlugin } from "./GraphPlugin.js";
-import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout } from "./GraphPlugin.js";
+import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout, GraphBoulder } from "./GraphPlugin.js";
 
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
@@ -37,6 +37,8 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     uncheck_location(location: GraphLocation): void { return };
     check_entrance(entrance: GraphEntrance): void { return };
     uncheck_entrance(entrance: GraphEntrance): void { return };
+    check_boulder(boulder: GraphBoulder): void { return };
+    uncheck_boulder(boulder: GraphBoulder): void { return };
     collect_locations(): void { return };
     collect_spheres(): void { return };
     get_accessible_entrances(): GraphEntrance[] { return [] };
@@ -58,6 +60,7 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     get_full_entrance_pool(world: GraphWorld) { return {} };
     get_entrance_pool(world: GraphWorld, entrance: GraphEntrance) { return {} };
     set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void { return };
+    set_boulder_type(boulder: GraphBoulder, type: number | null): void { return };
 
     // Hint interface
     unhide_hint(hint_location: GraphLocation): void { return };
