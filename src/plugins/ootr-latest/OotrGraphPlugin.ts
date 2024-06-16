@@ -622,47 +622,55 @@ export class OotrGraphPlugin extends GraphPlugin {
             // convert empty dungeon settings to internal location items
             if (Object.keys(plando).includes('settings')) {
                 if (Object.keys(plando.settings).includes('empty_dungeons_mode')) {
-                    if (plando.settings.empty_dungeons_mode === 'specific' && Object.keys(plando.settings).includes('empty_dungeons_specific')) {
-                        let free_dungeons: string[] = plando.settings.empty_dungeons_specific;
-                        let i = 0;
-                        if (Object.keys(plando).includes('locations')) {
-                            if (Object.keys(plando.settings).includes('shuffle_bosses') && plando.settings.shuffle_bosses !== 'off'
-                            && (!(Object.keys(plando.settings).includes('mix_entrance_pools'))
-                            || (Array.isArray(plando.settings.mix_entrance_pools) && !plando.settings.mix_entrance_pools.includes('Boss')))
-                            && (!(Object.keys(plando.settings).includes('decouple_entrances')) || plando.settings.decouple_entrances === false)) {
-                                if (Object.keys(plando).includes('entrances')) {
-                                    for (let dungeon of free_dungeons) {
-                                        let reward_entrance = dungeonNameToEntranceMap[dungeon];
-                                        if (Object.keys(plando.entrances).includes(reward_entrance)) {
-                                            let t: PlandoEntranceTarget = plando.entrances[reward_entrance];
-                                            if (!!t.region) {
-                                                let reward_location = bossRegionToBossRewardMap[t.region];
-                                                if (!!reward_location && Object.keys(plando.locations).includes(reward_location)) {
-                                                    plando.locations[empty_reward_location_names[i]] = plando.locations[reward_location];
-                                                    delete plando.locations[reward_location];
-                                                    i++;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } else if (!(Object.keys(plando.settings).includes('shuffle_bosses')) || plando.settings.shuffle_bosses === 'off') {
-                                for (let dungeon of free_dungeons) {
-                                    let reward_location = dungeonNameToBossRewardMap[dungeon];
-                                    if (!!reward_location && Object.keys(plando.locations).includes(reward_location)) {
-                                        plando.locations[empty_reward_location_names[i]] = plando.locations[reward_location];
-                                        delete plando.locations[reward_location];
-                                        i++;
-                                    }
-                                }
-                            }
-                        }
-                    }
                     if (plando.settings.empty_dungeons_mode === 'rewards' && Object.keys(plando.settings).includes('empty_dungeons_rewards')) {
                         let free_rewards: string[] = plando.settings.empty_dungeons_rewards;
                         if (!(Object.keys(plando).includes('locations'))) plando.locations = {};
                         for (let i = 0; i < free_rewards.length; i++) {
                             plando.locations[empty_reward_location_names[i]] = free_rewards[i];
+                        }
+                    } else {
+                        let free_dungeons: string[] = [];
+                        if (plando.settings.empty_dungeons_mode === 'specific' && Object.keys(plando.settings).includes('empty_dungeons_specific')) {
+                            free_dungeons = plando.settings.empty_dungeons_specific;
+                        } else if (Object.keys(plando).includes('empty_dungeons')) {
+                            for (let [dungeon, is_empty] of Object.entries(plando.empty_dungeons)) {
+                                if (is_empty) free_dungeons.push(dungeon);
+                            }
+                        }
+                        if (free_dungeons.length > 0) {
+                            let i = 0;
+                            if (Object.keys(plando).includes('locations')) {
+                                if (Object.keys(plando.settings).includes('shuffle_bosses') && plando.settings.shuffle_bosses !== 'off'
+                                && (!(Object.keys(plando.settings).includes('mix_entrance_pools'))
+                                || (Array.isArray(plando.settings.mix_entrance_pools) && !plando.settings.mix_entrance_pools.includes('Boss')))
+                                && (!(Object.keys(plando.settings).includes('decouple_entrances')) || plando.settings.decouple_entrances === false)) {
+                                    if (Object.keys(plando).includes('entrances')) {
+                                        for (let dungeon of free_dungeons) {
+                                            let reward_entrance = dungeonNameToEntranceMap[dungeon];
+                                            if (Object.keys(plando.entrances).includes(reward_entrance)) {
+                                                let t: PlandoEntranceTarget = plando.entrances[reward_entrance];
+                                                if (!!t.region) {
+                                                    let reward_location = bossRegionToBossRewardMap[t.region];
+                                                    if (!!reward_location && Object.keys(plando.locations).includes(reward_location)) {
+                                                        plando.locations[empty_reward_location_names[i]] = plando.locations[reward_location];
+                                                        delete plando.locations[reward_location];
+                                                        i++;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else if (!(Object.keys(plando.settings).includes('shuffle_bosses')) || plando.settings.shuffle_bosses === 'off') {
+                                    for (let dungeon of free_dungeons) {
+                                        let reward_location = dungeonNameToBossRewardMap[dungeon];
+                                        if (!!reward_location && Object.keys(plando.locations).includes(reward_location)) {
+                                            plando.locations[empty_reward_location_names[i]] = plando.locations[reward_location];
+                                            delete plando.locations[reward_location];
+                                            i++;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
