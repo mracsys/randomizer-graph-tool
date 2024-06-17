@@ -252,6 +252,7 @@ class SettingsList {
                 "Requiem of Spirit": "AvA>vA",
                 "Nocturne of Shadow": "<>>A<>v",
                 "Prelude of Light": "^>^><^",
+                "ZR Frogs Ocarina Game": "A<>v<>vAvAv><A",
             }
         };
         this.setting_definitions = {};
@@ -334,6 +335,7 @@ class SettingsList {
                 "Requiem of Spirit": "AvA>vA",
                 "Nocturne of Shadow": "<>>A<>v",
                 "Prelude of Light": "^>^><^",
+                "ZR Frogs Ocarina Game": "A<>v<>vAvAv><A",
             },
             disabled_default: {
                 "Zeldas Lullaby": "<^><^>",
@@ -348,6 +350,7 @@ class SettingsList {
                 "Requiem of Spirit": "AvA>vA",
                 "Nocturne of Shadow": "<>>A<>v",
                 "Prelude of Light": "^>^><^",
+                "ZR Frogs Ocarina Game": "A<>v<>vAvAv><A",
             },
             type: 'dict',
             display_name: 'Known Ocarina Melodies',

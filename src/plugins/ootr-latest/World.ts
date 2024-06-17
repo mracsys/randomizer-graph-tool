@@ -360,6 +360,7 @@ class World implements GraphWorld {
                 "Requiem of Spirit": "<^>vA",
                 "Nocturne of Shadow": "<^>vA",
                 "Prelude of Light": "<^>vA",
+                "ZR Frogs Ocarina Game": "<^>vA",
             }
             this.settings.graphplugin_song_melodies = {};
         } else {

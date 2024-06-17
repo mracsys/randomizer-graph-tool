@@ -1592,6 +1592,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         "Requiem of Spirit": "AvA>vA",
                         "Nocturne of Shadow": "<>>A<>v",
                         "Prelude of Light": "^>^><^",
+                        "ZR Frogs Ocarina Game": "A<>v<>vAvAv><A",
                     };
                 }
                 for (let [song_name, melody] of Object.entries(changed_songs)) {

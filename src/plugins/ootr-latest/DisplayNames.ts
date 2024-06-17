@@ -35,6 +35,7 @@ export const display_names: DisplayNames = {
             "Hyrule Castle Grounds",
             "HC Garden",
             "HC Garden Locations",
+            "HC Garden Skippable Locations",
             "Castle Grounds From Ganons Castle",
             "Ganons Castle Grounds",
             "Ganons Castle Ledge"
@@ -72,7 +73,8 @@ export const display_names: DisplayNames = {
             "GF Roof Gold Skulltula",
             "GF Break Room Entrance",
             "GF Balcony",
-            "GF Outside Gate"
+            "GF Outside Gate",
+            "GF Above Jail Child Locations"
         ],
         "Gerudo Valley": [
             "Gerudo Valley",
@@ -120,7 +122,13 @@ export const display_names: DisplayNames = {
             "Kak Impas Rooftop",
             "Kak Odd Medicine Rooftop",
             "Kak Backyard",
-            "Kak Behind Gate"
+            "Kak Behind Gate",
+            "Burning Kakariko",
+            "Kak Cutscene Entrance",
+            "Kak Impas Ledge Cutscene Entrance",
+            "Kak Impas Rooftop Cutscene Entrance",
+            "Kak Backyard Cutscene Entrance",
+            "Kak Behind Gate Cutscene Entrance"
         ],
         "Kokiri Forest": [
             "Kokiri Forest",
@@ -450,7 +458,8 @@ export const display_names: DisplayNames = {
             "Shadow Temple Across Chasm",
             "Shadow Temple Boss Door",
             "Shadow Temple Invisible Maze",
-            "Shadow Temple 3 Spinning Pots Rupees"
+            "Shadow Temple 3 Spinning Pots Rupees",
+            "Shadow Temple Chasm Gold Skulltula"
         ],
         "Ice Cavern": [
             "Ice Cavern",
