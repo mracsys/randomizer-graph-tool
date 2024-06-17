@@ -2155,7 +2155,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 item_dungeon_targets.push('????');
                 item_dungeon_targets.push('FREE');
                 let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
-                console.log(`New dungeon: ${reward_dungeon}, Old dungeon: ${prev_dungeon}`);
+                //console.log(`New dungeon: ${reward_dungeon}, Old dungeon: ${prev_dungeon}`);
                 world.fixed_item_area_hints[item_name].hint = reward_dungeon;
                 if (!(['????', 'FREE'].includes(reward_dungeon))) {
                     let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[reward_dungeon]);
@@ -2249,7 +2249,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         if (connected_dungeon_exit === null) throw `Could not update dungeon reward hint for disconnected boss region`;
                         reward_dungeon = entranceToDungeonMap[connected_dungeon_exit.name];
                     }
-                    if (!!prev_dungeon && !importing) {
+                    if (!!prev_dungeon && !importing && prev_dungeon !== reward_dungeon) {
                         if (!(['????', 'FREE'].includes(prev_dungeon))) {
                             let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
                             world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
@@ -2350,7 +2350,8 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     try_hint_reward(l: GraphLocation, unhint: boolean = false) {
         if (l.name !== 'Links Pocket' && (l.name !== 'ToT Reward from Rauru'
-        || (!!l.world && Object.keys(l.world?.settings).includes('skip_reward_from_rauru') && l.world.settings.skip_reward_from_rauru === false))) {
+        || (!!l.world && Object.keys(l.world?.settings).includes('skip_reward_from_rauru') && l.world.settings.skip_reward_from_rauru === false))
+        && !empty_reward_location_names.includes(l.name)) {
             if (!!l.item && !!l.world && !unhint) {
                 let world = this.worlds[l.world.id];
                 if (Object.keys(l.world.fixed_item_area_hints).includes(l.item.name)) {
