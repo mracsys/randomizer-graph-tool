@@ -215,6 +215,7 @@ export class GraphHintGoal {
 export abstract class GraphPlugin {
     abstract worlds: GraphWorld[];
     abstract file_cache: ExternalFileCache;
+    public static version_list: string[];
 
     constructor(
         private entrance_cache: {[world_id: number]: GraphEntrance[]} = {},

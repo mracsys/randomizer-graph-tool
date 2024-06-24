@@ -330,7 +330,7 @@ const option_to_item_names: {[option: string]: string[]} = {
 }
 
 export class OotrGraphPlugin extends GraphPlugin {
-    private version_list = [
+    public static version_list = [
         '8.1 Stable',
         '8.1.45 Dev',
         '8.1.45 Fenhl-3',
@@ -405,9 +405,9 @@ export class OotrGraphPlugin extends GraphPlugin {
             });
         }
 
-        if (!!user_overrides && valid_cache) {
+        /*if (!!user_overrides && valid_cache) {
             this.settings_list.override_settings(user_overrides);
-        }
+        }*/
 
         // If this is a running in a test environment, skip parsing logic
         // as this takes more than a few ms.
@@ -427,7 +427,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         // they will not be present in the overrides and could differ from regular
         // defaults. This only applies to overrides as normal settings defaults do
         // not conflict.
-        if (Object.keys(user_overrides).includes('settings')) {
+/*        if (Object.keys(user_overrides).includes('settings')) {
             let randomized_keys: string[] = [];
             let setting_keys = Object.keys(user_overrides.settings);
             let global_overrides = Object.keys(global_settings_overrides).map(s => this.settings_list.setting_definitions[s]);
@@ -479,7 +479,8 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.all_tricks_worlds = this.create_tricked_worlds();
         this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
         this.create_searches();
-        this.set_viewable_region_groups();
+        this.set_viewable_region_groups();*/
+        this.import(user_overrides);
         this.initialized = true;
     }
 
@@ -1294,7 +1295,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             versions: [],
         };
 
-        for (let v of this.version_list) {
+        for (let v of OotrGraphPlugin.version_list) {
             ootr.versions.push(new OotrVersion(v));
         }
 
@@ -2168,7 +2169,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 if (reward_dungeon === 'FREE') {
                     let boss_location: Location;
-                    if (this.ootr_version.branch === 'Fenhl') {
+                    if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
                         boss_location = world.get_location("ToT Reward from Rauru");
                     } else {
                         boss_location = world.get_location("Links Pocket");
@@ -2187,7 +2188,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 if (prev_dungeon === 'FREE') {
                     let boss_location: Location;
-                    if (this.ootr_version.branch === 'Fenhl') {
+                    if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
                         boss_location = world.get_location("ToT Reward from Rauru");
                     } else {
                         boss_location = world.get_location("Links Pocket");
@@ -2257,7 +2258,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                         if (prev_dungeon === 'FREE') {
                             let boss_location: Location;
-                            if (this.ootr_version.branch === 'Fenhl') {
+                            if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
                                 boss_location = world.get_location("ToT Reward from Rauru");
                             } else {
                                 boss_location = world.get_location("Links Pocket");
@@ -2431,6 +2432,9 @@ export class OotrGraphPlugin extends GraphPlugin {
             'WarpSong':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
             'BlueWarp':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Extra', 'ChildSpawn', 'AdultSpawn']
         };
+        if (this.ootr_version.branch === 'Fenhl') {
+            one_way_valid_target_types.WarpSong.push('AdultSpawn', 'ChildSpawn');
+        }
         // Fenhl's branch expanded pool options
         let one_way_valid_reverse_target_types: {[entrance_type: string]: string[]} = {
             'OverworldOneWay':  ['Overworld', 'Interior', 'SpecialInterior'],
@@ -2624,6 +2628,8 @@ export class OotrGraphPlugin extends GraphPlugin {
             'OverworldOneWay',
             'OwlDrop',
             'Spawn',
+            'ChildSpawn',
+            'AdultSpawn',
             'WarpSong',
             'BlueWarp',
             'Extra',
@@ -2641,6 +2647,8 @@ export class OotrGraphPlugin extends GraphPlugin {
             'Grotto': 'Grottos',
             'Grave': 'Grottos',
             'Spawn': 'Spawn Points',
+            'ChildSpawn': 'Spawn Points',
+            'AdultSpawn': 'Spawn Points',
             'WarpSong': 'Warp Songs',
             'BlueWarp': 'Blue Warps',
         };
@@ -2656,6 +2664,8 @@ export class OotrGraphPlugin extends GraphPlugin {
         // mark warps to expose to the API
         let warp_exit_types: string[] = [
             'Spawn',
+            'ChildSpawn',
+            'AdultSpawn',
             'WarpSong',
         ];
 
@@ -2664,6 +2674,8 @@ export class OotrGraphPlugin extends GraphPlugin {
             'OverworldOneWay': 1,
             'OwlDrop': 2,
             'Spawn': 3,
+            'ChildSpawn': 3,
+            'AdultSpawn': 3,
             'WarpSong': 4,
             'Dungeon': 5,
             'DungeonSpecial': 5,
@@ -2782,7 +2794,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     
                     // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
                     if (!!(return_entrance.parent_region.dungeon)
-                    && !(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name) && this.ootr_version.branch !== 'Fenhl')) {
+                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.ootr_version.branch === 'Fenhl')) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -2808,7 +2820,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
                         if (!!(return_entrance.parent_region.dungeon)
-                        && !(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name) && this.ootr_version.branch !== 'Fenhl')) {
+                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.ootr_version.branch === 'Fenhl')) {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;

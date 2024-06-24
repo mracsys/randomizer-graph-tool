@@ -781,6 +781,11 @@ class World implements GraphWorld {
                         let new_exit = new Entrance(exit_name, new_region, this);
                         new_exit.original_connection_name = exit;
                         new_exit.rule_string = replace_python_booleans(rule);
+                        if (new_region.name === 'Root' && exit === 'GF Above Jail Child Locations') {
+                            // use search mode to unhack the logic hack for child fortress HP,
+                            // but allow it for unit tests
+                            new_exit.rule_string = "!collect_checked_only && (shuffle_gerudo_fortress_heart_piece === 'remove' || !shuffle_hideout_entrances)";                            
+                        }
                         if (this.settings.logic_rules !== 'none') {
                             if (this.parent_graph.debug) console.log(`parsing ${new_exit.name}`);
                             this.parser.parse_spot_rule(new_exit);
@@ -1139,7 +1144,7 @@ class World implements GraphWorld {
         let exits: Entrance[] = [];
         let regions: Region[] = [];
         let processed_regions: Region[] = [starting_region];
-        exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null && !e.one_way));
+        exits.push(...starting_region.exits.filter(e => e.type === null && e.target_group === null && !e.one_way && !e.is_savewarp && e.original_connection_name !== 'Farores Wind Warp'));
         while (exits.length > 0 || regions.length > 0) {
             //console.log(`regions: ${regions.length}, exits: ${exits.length}`);
             if (regions.length <= 0) {
@@ -1154,7 +1159,9 @@ class World implements GraphWorld {
             for (let region of regions) {
                 //console.log(`region ${region.name}`);
                 region_group.add_region(region);
-                exits.push(...region.exits.filter(e => e.type === null && e.target_group === null && !e.one_way));
+                // Farore's Wind exits are not typed entrances and thus don't have the one_way tag,
+                // check explicitly to prevent target region escape
+                exits.push(...region.exits.filter(e => e.type === null && e.target_group === null && !e.one_way && !e.is_savewarp && e.original_connection_name !== 'Farores Wind Warp'));
                 processed_regions.push(region);
             }
             regions = [];

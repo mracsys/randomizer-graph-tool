@@ -108,7 +108,7 @@ export const rsl_preset_template: SettingsDictionary = {
     "shopsanity": "4",
     "shopsanity_prices": "random",
     "tokensanity": "all",
-    "shuffle_scrubs": "random",
+    "shuffle_scrubs": "regular",
     "shuffle_child_trade": [
         "Weird Egg",
         "Chicken",

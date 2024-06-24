@@ -396,7 +396,7 @@ async function test_oneway_entrance_pools() {
 
 async function test_import(debug: boolean = false) {
     let result_files = [
-        'python_plando_XUQEP4H68Z.json',
+        'python_plando_ZDVAJM1N24.json',
     ];
     let variant = 'fenhl'
     let initialized = false;

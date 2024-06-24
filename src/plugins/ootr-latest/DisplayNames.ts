@@ -98,10 +98,10 @@ export const display_names: DisplayNames = {
             "GC Boulder Maze Central",
             "GC Boulder Maze Left Chest",
             "GC Boulder Maze 2 Chests",
-            "GC Woods Warp",
             "GC Darunias Chamber",
             "GC Grotto Platform",
-            "GC Spinning Pot"
+            "GC Spinning Pot",
+            "GC Woods Warp"
         ],
         "Graveyard": [
             "Graveyard",

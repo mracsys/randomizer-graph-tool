@@ -487,7 +487,17 @@ class SettingsList {
         if (Object.keys(this.setting_definitions).includes('disabled_locations')) {
             this.setting_definitions.disabled_locations.tab = 'Main Rules';
             this.setting_definitions.disabled_locations.section = 'Logic';
-            this.setting_definitions.disabled_locations.order = 3;
+            this.setting_definitions.disabled_locations.order = 4;
+        }
+        if (Object.keys(this.setting_definitions).includes('logic_water_gold_scale_no_entry')) {
+            this.setting_definitions.logic_water_gold_scale_no_entry.tab = 'Main Rules';
+            this.setting_definitions.logic_water_gold_scale_no_entry.section = 'Logic';
+            this.setting_definitions.logic_water_gold_scale_no_entry.order = 3;
+        }
+        if (Object.keys(this.setting_definitions).includes('reachable_locations')) {
+            this.setting_definitions.reachable_locations.tab = 'Main Rules';
+            this.setting_definitions.reachable_locations.section = 'Logic';
+            this.setting_definitions.reachable_locations.order = 5;
         }
     }
 
@@ -861,7 +871,11 @@ class SettingsList {
                     setting.display_name = info[0].trim().replaceAll(/['"\\]+/g, '');
                 }
                 if (info[0].trim().toLowerCase() === 'name' || info[0].trim().toLowerCase() === "'name'") {
-                    setting.name = info[1].trim().replaceAll(/['",]+/g, '');
+                    let unsplit = info[1];
+                    for (let i = 2; i < info.length; i++) {
+                        unsplit += `:${info[i]}`;
+                    }
+                    setting.name = unsplit.trim().replaceAll(/['",]+/g, '');
                     // logic rules always assumed off, no explicit default in dictionary
                     this.settings[setting.name] = false;
                     trick_list[setting.name] = setting.display_name;
@@ -930,6 +944,10 @@ class SettingsList {
                 info = code_line.split('=');
                 info[0] = info[0].trim();
                 if (info.length > 1) {
+                    let unsplit = info[1];
+                    for (let i = 2; i < info.length; i++) {
+                        unsplit += `=${info[i]}`;
+                    }
                     if (d) {
                         d = d.replaceAll(/[']+/g, '"');
                         // lists won't parse if they're wrapped in quotes
@@ -982,25 +1000,25 @@ class SettingsList {
                         setting.disable_map = JSON.parse(sanitized_str);
                         disable = null;
                     }
-                    if (Object.keys(setting_types).some((prefix) => info[1].trim().toLowerCase().startsWith(prefix))) {
+                    if (Object.keys(setting_types).some((prefix) => unsplit.trim().toLowerCase().startsWith(prefix))) {
                         if (setting.name !== '' && setting.name !== 'allowed_tricks' && !setting.cosmetic) {
                             this.settings[setting.name] = setting.default;
                             if (setting.custom_disabled_default !== true) setting.disabled_default = setting.default;
                             this.setting_definitions[setting.name] = Object.assign({}, setting);
                         }
-                        setting = Object.assign({}, setting_types[`${info[1].trim().toLowerCase().split('(')[0]}(`]);
+                        setting = Object.assign({}, setting_types[`${unsplit.trim().toLowerCase().split('(')[0]}(`]);
                         setting.name = info[0];
                         setting.display_name = setting.name;
                         setting.cosmetic = false;
                     } else {
                         if (info[0].toLowerCase() === 'default') {
-                            d = info[1].trim();
+                            d = unsplit.trim();
                             if (d.endsWith(',')) {
                                 d = d.slice(0, -1);
                             }
                         }
                         if (info[0].toLowerCase() === 'disabled_default') {
-                            dd = info[1].trim();
+                            dd = unsplit.trim();
                             if (dd.endsWith(',')) {
                                 dd = dd.slice(0, -1);
                             }
@@ -1010,35 +1028,35 @@ class SettingsList {
                             c = {};
                         }
                         if (info[0].toLowerCase() === 'minimum') {
-                            let m = info[1].trim();
+                            let m = unsplit.trim();
                             if (m.endsWith(',')) {
                                 m = m.slice(0, -1);
                             }
                             setting.minimum = JSON.parse(m);
                         }
                         if (info[0].toLowerCase() === 'maximum') {
-                            let m = info[1].trim();
+                            let m = unsplit.trim();
                             if (m.endsWith(',')) {
                                 m = m.slice(0, -1);
                             }
                             setting.maximum = JSON.parse(m);
                         }
                         if (info[0].toLowerCase() === 'cosmetic') {
-                            let m = info[1].trim().toLowerCase();
+                            let m = unsplit.trim().toLowerCase();
                             if (m.endsWith(',')) {
                                 m = m.slice(0, -1);
                             }
                             setting.cosmetic = JSON.parse(m);
                         }
                         if (info[0].toLowerCase() === 'gui_text') {
-                            let m = info[1].trim().replaceAll(/['",]+/g, '');
+                            let m = unsplit.trim().replaceAll(/['",]+/g, '');
                             if (m.endsWith(',')) {
                                 m = m.slice(0, -1);
                             }
                             setting.display_name = m;
                         }
                         if (info[0].toLowerCase() === 'disable') {
-                            disable = info[1].trim();
+                            disable = unsplit.trim();
                             if (disable.endsWith(',')) {
                                 disable = disable.slice(0, -1);
                             }
@@ -1063,10 +1081,14 @@ class SettingsList {
                     }
                     if (c !== null && code_line.split(':').length > 1) {
                         let i = code_line.split(':');
-                        if (i[1].trim().endsWith(',')) {
-                            i[1] = i[1].trim().slice(0, -1);
+                        let unsplit = i[1];
+                        for (let j = 2; j < i.length; j++) {
+                            unsplit += `:${i[j]}`;
                         }
-                        c[i[0].trim().replaceAll(/['",]+/g, '')] = i[1].trim().replaceAll(/['",]+/g, '');
+                        if (unsplit.trim().endsWith(',')) {
+                            unsplit = unsplit.trim().slice(0, -1);
+                        }
+                        c[i[0].trim().replaceAll(/['",]+/g, '')] = unsplit.trim().replaceAll(/['",]+/g, '');
                     } else if (c !== null) {
                         setting.choices = Object.assign({}, c);
                         c = null;

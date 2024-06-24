@@ -5,6 +5,7 @@ import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, Gra
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
     public file_cache: ExternalFileCache;
+    public static version_list: string[];
 
     constructor() {
         super();

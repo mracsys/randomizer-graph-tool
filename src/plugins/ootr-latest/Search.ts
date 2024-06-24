@@ -128,9 +128,13 @@ class Search {
         for (let state of this.state_list) {
             for (let entrance of state.world.get_entrances()) {
                 entrance.visited = false;
+                entrance.child_visited = false;
+                entrance.adult_visited = false;
             }
             for (let location of state.world.get_locations()) {
                 location.visited = false;
+                location.child_visited = false;
+                location.adult_visited = false;
             }
         }
     }
@@ -139,9 +143,13 @@ class Search {
         for (let state of this.state_list) {
             for (let entrance of state.world.get_entrances()) {
                 entrance.visited_with_other_tricks = false;
+                entrance.child_visited_with_other_tricks = false;
+                entrance.adult_visited_with_other_tricks = false;
             }
             for (let location of state.world.get_locations()) {
                 location.visited_with_other_tricks = false;
+                location.child_visited_with_other_tricks = false;
+                location.adult_visited_with_other_tricks = false;
             }
         }
     }
@@ -365,7 +373,7 @@ class Search {
         this.check_pending_starting_items();
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
-            if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable()) || location.skipped)) {
+            if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable(race_mode)) || location.skipped)) {
                 if (!location.checked && location.explicitly_collect_item && !location.skipped) {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);
