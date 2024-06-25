@@ -44,6 +44,19 @@ export const non_required_items = [
     'Gerudo Mask',
 ];
 
+// Additional items to include in item table for peeking identical-looking
+// item models
+const peekable_items: ItemTable = {
+    'Small Key (???)': ['Peekable', false, null, null],
+    'Small Key Ring (???)': ['Peekable', false, null, null],
+    'Boss Key (???)': ['Peekable', false, null, null],
+    'Map (???)': ['Peekable', false, null, null],
+    'Compass (???)': ['Peekable', false, null, null],
+    'Silver Rupee (???)': ['Peekable', false, null, null],
+    'Silver Rupee Pouch (???)': ['Peekable', false, null, null],
+    'Soul (???)': ['Peekable', false, null, null],
+};
+
 export default class ItemList {
     public item_table: ItemTable;
 
@@ -110,6 +123,6 @@ export default class ItemList {
         for (let item of non_required_items) {
             python_entries[item][1] = true;
         }
-        this.item_table = python_entries;
+        this.item_table = Object.assign(python_entries, peekable_items);
     }
 }

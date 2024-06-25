@@ -405,10 +405,6 @@ export class OotrGraphPlugin extends GraphPlugin {
             });
         }
 
-        /*if (!!user_overrides && valid_cache) {
-            this.settings_list.override_settings(user_overrides);
-        }*/
-
         // If this is a running in a test environment, skip parsing logic
         // as this takes more than a few ms.
         if (test_only || !valid_cache) {
@@ -422,64 +418,6 @@ export class OotrGraphPlugin extends GraphPlugin {
             this.set_drop_location_names(world);
         }
         this.reset_disabled_location_choices();
-        // If user overrides were provided for initializing the graph instead of
-        // being imported, disabled default values need to be double checked as
-        // they will not be present in the overrides and could differ from regular
-        // defaults. This only applies to overrides as normal settings defaults do
-        // not conflict.
-/*        if (Object.keys(user_overrides).includes('settings')) {
-            let randomized_keys: string[] = [];
-            let setting_keys = Object.keys(user_overrides.settings);
-            let global_overrides = Object.keys(global_settings_overrides).map(s => this.settings_list.setting_definitions[s]);
-            if (Object.keys(user_overrides).includes('randomized_settings')) {
-                randomized_keys = Object.keys(user_overrides.randomized_settings);
-            }
-            for (let world of this.worlds) {
-                let world_randomized_keys = randomized_keys;
-                if (!!(user_overrides.settings.world_count) && user_overrides.settings.world_count > 1) {
-                    world_randomized_keys = Object.keys(user_overrides.randomized_settings[`World ${world.id+1}`]);
-                }
-                let world_setting_keys = setting_keys.filter(s =>
-                    !(world_randomized_keys.includes(s))
-                    && !(Object.keys(global_settings_overrides).includes(s))
-                );
-                world_randomized_keys = world_randomized_keys.filter(s =>
-                    !(Object.keys(global_settings_overrides).includes(s))
-                );
-                // Add initialized settings to "disabled" list so that they don't get
-                // inadvertently changed. Assumes that user-provided settings do not
-                // conflict.
-                let world_randomized_settings = world_randomized_keys.map(k =>
-                    Object.keys(this.settings_list.setting_definitions).includes(k) ?
-                        this.settings_list.setting_definitions[k]
-                        : null
-                ).filter(k => k !== null) as Setting[]; // Typescript doesn't pick up on the null filter
-                let world_settings = world_setting_keys.map(k =>
-                    Object.keys(this.settings_list.setting_definitions).includes(k) ?
-                        this.settings_list.setting_definitions[k]
-                        : null
-                ).filter(k => k !== null) as Setting[];
-                this.disabled_settings = [
-                    ...world_randomized_settings,
-                    ...world_settings,
-                    ...global_overrides,
-                ];
-                for (let setting of world_settings) {
-                    this.check_for_disabled_settings(world, setting, { from_import: true });
-                }
-                for (let setting of world_randomized_settings) {
-                    this.check_for_disabled_settings(world, setting, { from_import: true });
-                }
-                this.check_for_undisabled_settings(world);
-            }
-        }
-        this.disabled_settings = [];
-        this.import_data(this.settings_list);
-        this.finalize_world();
-        this.all_tricks_worlds = this.create_tricked_worlds();
-        this.all_tricks_and_keys_worlds = this.create_tricked_worlds(true);
-        this.create_searches();
-        this.set_viewable_region_groups();*/
         this.import(user_overrides);
         this.initialized = true;
     }
