@@ -911,6 +911,7 @@ class SettingsList {
             'button(':          new_setting('null'),
             'textbox(':         new_setting('null'),
             'checkbutton(':     new_setting('bool'),
+            'checkbutton (':    new_setting('bool'), // formatting for dogs_anywhere in Realrob fork
             'combobox(':        new_setting('str'),
             'radiobutton(':     new_setting('str'),
             'fileinput(':       new_setting('str'),
