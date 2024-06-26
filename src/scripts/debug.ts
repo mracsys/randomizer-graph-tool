@@ -28,7 +28,8 @@ async function async_wrapper() {
         //test_entrance_linking();
         //test_region_viewability();
         //test_entrance_pools();
-        test_import(true);
+        //test_import(true);
+        test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
         //test_random_settings(100, true);
@@ -48,6 +49,8 @@ async function async_wrapper() {
         }
     }
 }
+
+const localstorage_plando = {};
 
 async function test_v8_settings_import() {
     let version = '8.1.45 Fenhl-3';
@@ -418,6 +421,34 @@ async function test_import(debug: boolean = false) {
         }
 
         graph.import(plando);
+        graph.collect_spheres();
+
+        console.log(`\nTesting seed ${seed}\n`);
+
+        compare_js_to_python(graph, data);
+        if (debug) save_python_output_as_unit_test(plando, graph, data, false);
+    }
+}
+
+async function test_load(debug: boolean = false) {
+    let result_files = [
+        'python_plando_1BKILJ35R9.json',
+    ];
+    let variant = 'realrob-8'
+
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.29 Rob-104', {files: {}});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files:string;
+    for (let result_file of result_files) {
+        let seed = result_file.split('_')[2];
+        let data: PythonData = JSON.parse(readFileSync(resolve('tests/spoilers', variant, `python_spheres_${seed}`), 'utf-8'));
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds', variant, `python_plando_${seed}`), { encoding: 'utf8'}));
+
+        [version, local_files] = get_plando_randomizer_version(plando);
+        global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+        graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
+
         graph.collect_spheres();
 
         console.log(`\nTesting seed ${seed}\n`);

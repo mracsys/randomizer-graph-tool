@@ -2023,19 +2023,26 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     extract_region_from_hint = (stone_name: string, color_split: string[], split_index: number, world: World) => {
         let hinted_group: RegionGroup | null = null;
+        const interior_hint_areas = [
+            "the Temple of Time",
+            "the Thieves' Hideout"
+        ]
         if (split_index < color_split.length) {
             let hint_area = color_split[split_index];
-            //console.log(`Matching hint for ${stone_name} to region filter ${hint_area}`);
-            let matched_regions = world.regions.filter(r => r.hint()?.str === hint_area && !!r.parent_group);
-            //console.log(`Found ${matched_regions.length} regions`);
-            if (matched_regions.length > 0) {
-                //console.log(`Using surrogate region ${matched_regions[0].name} for parent group selection`);
-                hinted_group = matched_regions[0].parent_group;
-                /*if (!!hinted_group) {
-                    console.log(`Set region group to ${hinted_group.name}`);
-                } else {
-                    console.log(`Something went wrong, set hinted group to null`);
-                }*/
+            // No top-level region groups for interiors, so throw them out.
+            if (!interior_hint_areas.includes(hint_area)) {
+                //console.log(`Matching hint for ${stone_name} to region filter ${hint_area}`);
+                let matched_regions = world.regions.filter(r => r.hint()?.str === hint_area && !!r.parent_group);
+                //console.log(`Found ${matched_regions.length} regions`);
+                if (matched_regions.length > 0) {
+                    //console.log(`Using surrogate region ${matched_regions[0].name} for parent group selection`);
+                    hinted_group = matched_regions[0].parent_group;
+                    /*if (!!hinted_group) {
+                        console.log(`Set region group to ${hinted_group.name}`);
+                    } else {
+                        console.log(`Something went wrong, set hinted group to null`);
+                    }*/
+                }
             }
         }
         return hinted_group
