@@ -331,7 +331,7 @@ const option_to_item_names: {[option: string]: string[]} = {
 
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
-        '8.1 Stable',
+        '8.1.0 Release',
         '8.1.45 Dev',
         '8.1.45 Fenhl-3',
         '8.1.29 Rob-104',
@@ -672,6 +672,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         let sim_mode = this.worlds[0].settings.graphplugin_simulator_mode;
         if (sim_mode === undefined) sim_mode = false;
         if (Object.keys(plando).includes(':tracked_hints')) {
+            console.log(`Importing saved hints with sim mode ${sim_mode}`);
             let hints = plando[':tracked_hints'] as PlandoHintList;
             for (let [hint_location_name, hint_data] of Object.entries(hints)) {
                 if (hint_location_name === 'temple_of_time_altar') {
@@ -696,7 +697,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 item = this.worlds[0].get_item(hint_data.item.item)
                                 if (!!hint_data.item.price) item.price = hint_data.item.price;
                             }
-                            this.hint_location(hint_location, location, item, sim_mode || hint_location.checked);
+                            this.hint_location(hint_location, location, item, sim_mode && !hint_location.checked);
                             break;
                         case 'dual':
                             if (hint_data.location === undefined) throw `Can't import dual hint with undefined first location: ${hint_location_name}`;
@@ -717,18 +718,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 item2 = this.worlds[0].get_item(hint_data.item2.item)
                                 if (!!hint_data.item2.price) item2.price = hint_data.item2.price;
                             }
-                            this.hint_dual_locations(hint_location, location1, item, location2, item2, sim_mode || hint_location.checked);
+                            this.hint_dual_locations(hint_location, location1, item, location2, item2, sim_mode && !hint_location.checked);
                             break;
                         case 'entrance':
                             if (hint_data.entrance === undefined) throw `Can't import entrance hint with undefined entrance: ${hint_location_name}`;
                             let source = this.worlds[0].get_entrance(`${hint_data.entrance.source.from} -> ${hint_data.entrance.source.region}`);
                             let target = this.worlds[0].get_entrance(`${hint_data.entrance.target.from} -> ${hint_data.entrance.target.region}`);
-                            this.hint_entrance(hint_location, source, target, sim_mode || hint_location.checked);
+                            this.hint_entrance(hint_location, source, target, sim_mode && !hint_location.checked);
                             break;
                         case 'woth':
                             if (hint_data.area === undefined) throw `Can't import woth hint with undefined region: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            this.hint_required_area(hint_location, area, sim_mode || hint_location.checked);
+                            this.hint_required_area(hint_location, area, sim_mode && !hint_location.checked);
                             break;
                         case 'goal':
                             if (hint_data.area === undefined) throw `Can't import goal hint with undefined region: ${hint_location_name}`;
@@ -746,18 +747,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                             }
                             if (!!hint_data.goal.location) goal.location = this.worlds[0].get_location(hint_data.goal.location);
                             goal.item_count = hint_data.goal.item_count;
-                            this.hint_area_required_for_goal(hint_location, area, goal, sim_mode || hint_location.checked);
+                            this.hint_area_required_for_goal(hint_location, area, goal, sim_mode && !hint_location.checked);
                             break;
                         case 'foolish':
                             if (hint_data.area === undefined) throw `Can't import foolish hint with undefined region: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            this.hint_unrequired_area(hint_location, area, sim_mode || hint_location.checked);
+                            this.hint_unrequired_area(hint_location, area, sim_mode && !hint_location.checked);
                             break;
                         case 'important_check':
                             if (hint_data.area === undefined) throw `Can't import important check hint with undefined region: ${hint_location_name}`;
                             if (hint_data.num_major_items === undefined) throw `Can't import important check hint with undefined major item count: ${hint_location_name}`;
                             area = this.worlds[0].get_region_group(hint_data.area);
-                            this.hint_area_num_items(hint_location, area, hint_data.num_major_items, sim_mode || hint_location.checked);
+                            this.hint_area_num_items(hint_location, area, hint_data.num_major_items, sim_mode && !hint_location.checked);
                             break;
                         case 'misc':
                             if (hint_data.area === undefined) throw `Can't import misc hint with undefined region: ${hint_location_name}`;
@@ -769,7 +770,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 item = this.worlds[0].get_item(hint_data.item.item)
                                 if (!!hint_data.item.price) item.price = hint_data.item.price;
                             }
-                            this.hint_item_in_area(hint_location, area, item, sim_mode || hint_location.checked);
+                            this.hint_item_in_area(hint_location, area, item, sim_mode && !hint_location.checked);
                             break;
                         default:
                             throw `Unknown hint type in import data: ${hint_data.type}`;
@@ -864,6 +865,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             'light medallion': 'Light Medallion',
         }
         if (Object.keys(plando).includes('gossip_stones')) {
+            console.log(`Parsing spoiler hints with sim mode ${sim_mode}`);
             let gossip_hints: OotrPlandoHints = plando['gossip_stones'];
             for (let [stone_name, hint] of Object.entries(gossip_hints)) {
                 if (Object.keys(hint_stone_to_location_map).includes(stone_name)) {
@@ -880,7 +882,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                             if (color_split.length > 1) {
                                 hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                             }
-                            if (!!hinted_group) this.hint_required_area(hint_location, hinted_group, true);
+                            if (!!hinted_group) this.hint_required_area(hint_location, hinted_group, sim_mode && !hint_location.checked);
                         // older builds did not have color on the #time# path
                         } else if (hint.text.includes('on the path of time')) {
                             try {
@@ -890,7 +892,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 let goal = new GraphHintGoal();
                                 goal.item_count = 1;
                                 goal.item = this.worlds[0].get_item(path_items['time']);
-                                if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                                if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, sim_mode && !hint_location.checked);
                             } catch (e) {
                                 console.log(`Trouble parsing spoiler gossip stone hint: path hint path could not be read for text ${hint.text}`);
                                 if (e instanceof Error) {
@@ -907,11 +909,11 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 let path = color_split[3];
                                 if (Object.keys(path_locations).includes(path.toLowerCase())) {
                                     goal.location = this.worlds[0].get_location(path_locations[path.toLowerCase()]);
-                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, sim_mode && !hint_location.checked);
                                 }
                                 if (Object.keys(path_items).includes(path.toLowerCase())) {
                                     goal.item = this.worlds[0].get_item(path_items[path.toLowerCase()]);
-                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, true);
+                                    if (!!hinted_group) this.hint_area_required_for_goal(hint_location, hinted_group, goal, sim_mode && !hint_location.checked);
                                 }
                             } catch (e) {
                                 console.log(`Trouble parsing spoiler gossip stone hint: path hint path could not be read for text ${hint.text}`);
@@ -927,18 +929,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                             }
                             if (!!hinted_group) {
                                 let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
-                                this.hint_item_in_area(hint_location, hinted_group, hinted_item, true);
+                                this.hint_item_in_area(hint_location, hinted_group, hinted_item, sim_mode && !hint_location.checked);
                             // no match, must be location or dual hint
                             } else if (hint.hinted_locations.length === 2) {
                                 let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
                                 let hinted_location = this.worlds[0].get_location(hint.hinted_locations[0]);
                                 let hinted_item2 = this.worlds[0].get_item(hint.hinted_items[1]);
                                 let hinted_location2 = this.worlds[0].get_location(hint.hinted_locations[1]);
-                                this.hint_dual_locations(hint_location, hinted_location, hinted_item, hinted_location2, hinted_item2, true);
+                                this.hint_dual_locations(hint_location, hinted_location, hinted_item, hinted_location2, hinted_item2, sim_mode && !hint_location.checked);
                             } else {
                                 let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
                                 let hinted_location = this.worlds[0].get_location(hint.hinted_locations[0]);
-                                this.hint_location(hint_location, hinted_location, hinted_item, true);
+                                this.hint_location(hint_location, hinted_location, hinted_item, sim_mode && !hint_location.checked);
                             }
                         }
                         
@@ -953,12 +955,12 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                         if (!!hinted_group) {
                             if (hint.text.includes('a foolish choice')) {
-                                this.hint_unrequired_area(hint_location, hinted_group, true);
+                                this.hint_unrequired_area(hint_location, hinted_group, sim_mode && !hint_location.checked);
                             } else if (hint.text.includes('major items')) {
                                 try {
                                     let num_majors = parseInt(color_split[3]);
                                     if (num_majors === undefined || num_majors === null) throw(`Could not parse integer from ${color_split[3]}`);
-                                    this.hint_area_num_items(hint_location, hinted_group, num_majors, true);
+                                    this.hint_area_num_items(hint_location, hinted_group, num_majors, sim_mode && !hint_location.checked);
                                 } catch (e) {
                                     console.log(`Trouble parsing spoiler gossip stone hint: important_check hint major items count is not a number in text ${hint.text}`);
                                     if (e instanceof Error) {
