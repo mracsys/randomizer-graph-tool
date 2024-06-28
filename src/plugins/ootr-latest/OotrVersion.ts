@@ -130,6 +130,10 @@ class OotrVersion implements GameVersion {
     github_url(): string {
         switch(this.branch) {
             case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
                 return `https://raw.githubusercontent.com/OoTRandomizer/OoT-Randomizer/${this.to_url_string()}`;
             case 'R':
                 return `https://raw.githubusercontent.com/Roman971/OoT-Randomizer/${OotrVersion.devr_version_commit_ids[this.to_url_string()]}`;
