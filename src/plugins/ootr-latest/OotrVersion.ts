@@ -49,12 +49,13 @@ class OotrVersion implements GameVersion {
                 this.branch = branch_versions[0];
                 this.supp = parseInt(branch_versions[1]);
             } else if (versions[1] === 'Stable' || versions[1] === 'Release') {
-                this.branch = '';
+                this.branch = versions[1];
                 this.supp = 0;
                 this.is_release_tag = true;
             } else {
-                this.branch = '';
+                this.branch = versions[1];
                 this.supp = 0;
+                this.is_release_tag = true;
             }
         } else {
             this.branch = '';
@@ -109,10 +110,18 @@ class OotrVersion implements GameVersion {
     }
 
     to_string(semverStr: boolean = false): string {
-        if (this.branch !== '' && !semverStr) {
+        if (this.branch !== '' && !semverStr && !this.is_release_tag) {
             return `${this.major}.${this.minor}.${this.patch} ${this.branch}-${this.supp}`;
-        } else if (this.is_release_tag) {
-            return `v${this.major}.${this.minor}.${this.patch}`;
+        } else if (this.is_release_tag && !semverStr) {
+            return `${this.major}.${this.minor}.${this.patch} ${this.branch}`;
+        } else {
+            return `${this.major}.${this.minor}.${this.patch}`;
+        }
+    }
+
+    to_url_string(): string {
+        if (this.branch !== '' && !this.is_release_tag) {
+            return `${this.major}.${this.minor}.${this.patch} ${this.branch}-${this.supp}`;
         } else {
             return `${this.major}.${this.minor}.${this.patch}`;
         }
@@ -121,21 +130,25 @@ class OotrVersion implements GameVersion {
     github_url(): string {
         switch(this.branch) {
             case '':
-                return `https://raw.githubusercontent.com/OoTRandomizer/OoT-Randomizer/${this.to_string()}`;
+                return `https://raw.githubusercontent.com/OoTRandomizer/OoT-Randomizer/${this.to_url_string()}`;
             case 'R':
-                return `https://raw.githubusercontent.com/Roman971/OoT-Randomizer/${OotrVersion.devr_version_commit_ids[this.to_string()]}`;
+                return `https://raw.githubusercontent.com/Roman971/OoT-Randomizer/${OotrVersion.devr_version_commit_ids[this.to_url_string()]}`;
             case 'Rob':
-                return `https://raw.githubusercontent.com/rrealmuto/OoT-Randomizer/${OotrVersion.devrob_version_commit_ids[this.to_string()]}`;
+                return `https://raw.githubusercontent.com/rrealmuto/OoT-Randomizer/${OotrVersion.devrob_version_commit_ids[this.to_url_string()]}`;
             case 'Fenhl':
-                return `https://raw.githubusercontent.com/fenhl/OoT-Randomizer/${OotrVersion.devfenhl_version_commit_ids[this.to_string()]}`;
+                return `https://raw.githubusercontent.com/fenhl/OoT-Randomizer/${OotrVersion.devfenhl_version_commit_ids[this.to_url_string()]}`;
             default:
-                throw(`Unsupported branch for remote file retrieval: ${this.to_string()}`);
+                throw(`Unsupported branch for remote file retrieval: ${this.to_url_string()}`);
         }
     }
 
     local_folder(): string {
         switch(this.branch) {
             case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
                 if (this.gte('7.1.143')) {
                     return './ootr-local-143';
                 } else {
@@ -232,6 +245,10 @@ class OotrVersion implements GameVersion {
         ];
         switch(this.branch) {
             case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
                 if (this.gte('7.1.143')) {
                     file_list.push('SettingsListTricks.py');
                 } else {

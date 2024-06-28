@@ -865,7 +865,6 @@ export class OotrGraphPlugin extends GraphPlugin {
             'light medallion': 'Light Medallion',
         }
         if (Object.keys(plando).includes('gossip_stones')) {
-            console.log(`Parsing spoiler hints with sim mode ${sim_mode}`);
             let gossip_hints: OotrPlandoHints = plando['gossip_stones'];
             for (let [stone_name, hint] of Object.entries(gossip_hints)) {
                 if (Object.keys(hint_stone_to_location_map).includes(stone_name)) {

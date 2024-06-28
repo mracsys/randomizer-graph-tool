@@ -56,6 +56,10 @@ export default class LocationList {
         };
         switch(ootr_version.branch) {
             case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
             case 'R':
             case 'Rob':
             case 'Fenhl':
