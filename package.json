@@ -41,14 +41,14 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
+    "test": "pnpm node --experimental-vm-modules $(pnpm bin jest)",
     "clean": "rm -rf ./lib",
-    "debug": "yarn run clean && yarn run build:dev",
-    "build": "yarn run clean && yarn run build:esm",
+    "debug": "pnpm run clean && pnpm run build:dev",
+    "build": "pnpm run clean && pnpm run build:esm",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",
     "build:dev": "tsc -p ./configs/tsconfig.dev.json",
     "semantic-release": "semantic-release",
-    "prepack": "yarn run build"
+    "prepack": "pnpm run build"
   },
   "repository": {
     "type": "git",
