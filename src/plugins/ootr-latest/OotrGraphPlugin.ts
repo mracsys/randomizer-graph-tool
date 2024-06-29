@@ -332,8 +332,8 @@ const option_to_item_names: {[option: string]: string[]} = {
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '8.1.0 Release',
-        '8.1.45 Dev',
-        '8.1.45 Fenhl-3',
+        '8.1.49 Dev',
+        '8.1.49 Fenhl-2',
         '8.1.29 Rob-104',
     ];
 
@@ -2856,6 +2856,14 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (world.settings.shuffle_gerudo_fortress_heart_piece === 'vanilla') {
                         world.push_item(loc, ItemFactory('Piece of Heart', world)[0]);
                         loc.shuffled = false;
+                    }
+                    // Remove setting is unique in that the collection location is
+                    // completely removed from the game, not just the shuffled item.
+                    // Make it internal to hide it if this is true.
+                    if (world.settings.shuffle_gerudo_fortress_heart_piece === 'remove') {
+                        loc.internal = true;
+                    } else {
+                        loc.internal = false;
                     }
                 } else if (loc.name === 'ToT Light Arrows Cutscene') {
                     if (world.shuffle_ganon_bosskey === 'on_lacs') {

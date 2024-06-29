@@ -815,6 +815,9 @@ class SettingsList {
         if (Object.keys(this.setting_definitions).includes('shuffle_dungeon_rewards')) {
             rsl_preset.shuffle_dungeon_rewards = 'reward';
         }
+        if (Object.keys(this.setting_definitions).includes('skip_reward_from_rauru')) {
+            rsl_preset.skip_reward_from_rauru = true;
+        }
 
         if (this.ootr_version.branch === 'Fenhl') {
             rsl_preset.shuffle_hideout_entrances = 'off';
@@ -840,7 +843,6 @@ class SettingsList {
             rsl_preset.exclusive_one_ways = false;
             rsl_preset.dungeon_back_access = false;
             rsl_preset.logic_water_gold_scale_no_entry = false;
-            rsl_preset.skip_reward_from_rauru = true;
             rsl_preset.ocarina_songs = [];
         }
         this.settings_presets['Random Settings League'] = rsl_preset;

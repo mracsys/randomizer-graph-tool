@@ -1500,7 +1500,7 @@ class World implements GraphWorld {
         // non-internal, allowing it to show up in trackers.
         let starting_reward = true;
         let pocket: Location;
-        if (this.version.branch === 'Fenhl') {
+        if (Object.keys(this.settings).includes('skip_reward_from_rauru')) {
             pocket = this.get_location('ToT Reward from Rauru');
             if (!this.settings.skip_reward_from_rauru) starting_reward = false;
         } else {
