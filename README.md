@@ -8,10 +8,6 @@ Install in your project with
 
 `npm install --save @mracsys/randomizer-graph-tool`
 
-or
-
-`yarn add @mracsys/randomizer-graph-tool`
-
 If the graph will be used in a browser instead of node, add the following key to your `package.json` file:
 
 ```json
@@ -28,7 +24,7 @@ If anyone knows of a cleaner solution please let me know. @babel/standalone does
 import { WorldGraphFactory } from "@mracsys/randomizer-graph-tool"
 
 let plando_file = JSON.parse(your_settings_as_plando.json);
-let graph = await WorldGraphRemoteFactory('ootr', plando_file, '7.1.143');
+let graph = await WorldGraphRemoteFactory('ootr', plando_file, plando_file[':version']);
 graph.collect_locations();
 let locations: GraphLocation[] = graph.get_visited_locations();
 for (let location of locations) {
@@ -45,7 +41,7 @@ async WorldGraphRemoteFactory(
     game: string = 'ootr',
     user_overrides: any = null,
     version: string = '7.1.143',
-    global_cache: ExternalFileCache = { files: {} },
+    global_cache: ExternalFileCache | null = null,
     debug: boolean = false
 ): GraphPlugin
 ```
@@ -56,7 +52,7 @@ search as far as it can from the spawn entrance and ignore unconnected entrances
 For synchronous behavior, use `WorldGraphFactory` with a manually created `ExternalFileCache` of the same
 game and version.
 
-Compile time for the graph is 1-2 seconds, but a full search is less than a millisecond. You should cache and mutate
+Compile time for the graph is 5-10 seconds, but a full search is less than a millisecond. You should cache and mutate
 the graph object between uses to speed up calculations. See the _GraphPlugin_ type below for usage.
 
 ***Parameters***
@@ -71,15 +67,32 @@ _user\_overrides_ - Valid plando file for the selected game and version.
 _version_ - Randomizer version for the game. Supported versions are:
 
 - ootr
-    - 7.1.117
-    - 7.1.143
-    - 7.1.154
-    - 7.1.143 R-1
+    - 8.1.0 Release
+    - 8.1.45 f.LUM
+    - 8.1.45 Fenhl-3
+    - 8.1.29 Rob-104
+    - 7.1.198 Rob-49
+    - 7.1.195 R-1
     - 7.1.154 R-1
+    - 7.1.143 R-1
 
-_global\_cache_ - Instance of ExternalFileCache (see below) containing required randomizer files as strings. If not specified, files are retrieved automatically from the internet. In a development environment with many requests from repeated startups, this may lead to ratelimiting from Github. A local cache for dev work is highly recommended.
+_global\_cache_ - Instance of ExternalFileCache (see below) containing required randomizer files as strings. If not specified, files are retrieved automatically from the internet. In a development environment with many requests from repeated startups, this may lead to ratelimiting from Github. A local cache is highly recommended.
 
 _debug_ - Toggles extra console logging for development purposes
+
+```typescript
+WorldGraphFactory(
+    game: string = 'ootr',
+    user_overrides: any = null,
+    version: string = '7.1.143',
+    global_cache: ExternalFileCache = { files: {}, subfolder: '' },
+    debug: boolean = false
+): GraphPlugin
+```
+
+Synchronous variant of `WorldGraphRemoteFactory`. If a file cache is not provided, a stub object is created.
+This stub is not capable of searches as it needs external files to describe the world. Check if the graph is
+a stub or not with the `initialized` property.
 
 ```typescript
 async ExternalFileCacheFactory(
@@ -106,71 +119,289 @@ _local\_files_ - __(Optional)__ Local folder containing external randomizer file
 
 _local\_url_ - __(Optional)__ URL prefix override for randomizer files. If null and _local\_files_ is false, the Github repo for the selected game version is automatically used.
 
+
+```typescript
+async ExternalFileCacheFactory(
+    game: string = 'ootr',
+    version: string = '7.1.143',
+    {
+        local_files = null,
+        local_url = null,
+    }: {
+        local_files?: string | null,
+        local_url?: string | null,
+    } = {}
+): ExternalFileCache
+```
+
 ### Types
 
 ```typescript
 class GraphPlugin {
-    public worlds: GraphWorld[];
-    public file_cache: ExternalFileCache;
-    public initialized: boolean;
+    abstract worlds: GraphWorld[];
+    abstract file_cache: ExternalFileCache;
+    public static version_list: string[];
 
-    reset(): void;
-    reset_cache(): void;
+    constructor(
+        private entrance_cache: {[world_id: number]: GraphEntrance[]} = {},
+        private location_cache: {[world_id: number]: GraphLocation[]} = {},
+        private item_cache: GraphItemDictionary = {},
+        public initialized: boolean = false,
+    ) {}
+
+    reset() {
+        this.worlds = [];
+        this.reset_cache();
+    }
+
+    reset_cache() {
+        this.entrance_cache = [];
+        this.location_cache = [];
+        this.item_cache = [];
+    }
 
     // plando file processing
-    import(save_file: any): void;
-    export(pretty: boolean): string;
+    abstract import(save_file: any): void;
+    abstract export(with_user_overrides?: boolean, settings_only?: boolean): any;
+
+    abstract get_settings_presets(): string[];
+    abstract get_settings_preset(preset_name: string): any;
+    abstract load_settings_preset(preset_name: string): void;
 
     // Version/branch list for selection, static class method
-    get_game_versions(): GraphGameVersions;
-    
-    get_settings_options(): {[setting_name: string]: GraphSetting};
-    change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
+    abstract get_game_versions(): GraphGameVersions;
+
+    abstract get_settings_options(): GraphSettingsOptions;
+    abstract get_settings_layout(): GraphSettingsLayout;
+    abstract change_setting(world: GraphWorld, setting: GraphSetting, value: GraphSettingType): void;
+
+    // Convenience settings for changing the starting items setting(s)
+    abstract add_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
+    abstract remove_starting_item(world: GraphWorld, item: GraphItem, count?: number): void;
+    abstract add_starting_items(world: GraphWorld, item: GraphItem[]): void;
+    abstract remove_starting_items(world: GraphWorld, item: GraphItem[]): void;
+    abstract replace_starting_item(world: GraphWorld, add_item: GraphItem, remove_item: GraphItem): void;
 
     // Search interface
-    collect_locations(): void;
-    collect_spheres(): void;
-    get_accessible_entrances(): GraphEntrance[];
-    get_visited_locations(): GraphLocation[];
-    get_required_locations(): GraphLocation[]; // not currently implemented for ootr
-    get_items(): {[world_id: number]: GraphItem[]};
+    abstract check_location(location: GraphLocation): void;
+    abstract uncheck_location(location: GraphLocation): void;
+    abstract check_entrance(entrance: GraphEntrance): void;
+    abstract uncheck_entrance(entrance: GraphEntrance): void;
+    abstract check_boulder(boulder: GraphBoulder): void;
+    abstract uncheck_boulder(boulder: GraphBoulder): void;
+    abstract collect_locations(): void;
+    abstract collect_spheres(): void;
+    abstract get_accessible_entrances(): GraphEntrance[];
+    abstract get_visited_locations(): GraphLocation[];
+    abstract get_required_locations(): GraphLocation[];
+
+    // Search interface world-specific convenience functions
+    abstract get_accessible_entrances_for_world(world: GraphWorld): GraphEntrance[];
+    abstract get_visited_locations_for_world(world: GraphWorld): GraphLocation[];
+    abstract get_required_locations_for_world(world: GraphWorld): GraphLocation[];
+    abstract get_required_locations_for_items(world: GraphWorld, goal_items: GraphItem[]): GraphLocation[];
+    abstract get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
+    // filters collected items for some unshuffled items like skull tokens
+    abstract get_player_inventory_for_world(world: GraphWorld): {[item_name: string]: number};
+
+    // World building interface
+    abstract set_location_item(location: GraphLocation, item: GraphItem | null, price?: number): void;
+    abstract get_full_exit_pool(world: GraphWorld): GraphEntrancePool;
+    abstract get_full_entrance_pool(world: GraphWorld): GraphEntrancePool;
+    abstract get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): GraphEntrancePool;
+    abstract set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance | null): void;
+    abstract set_boulder_type(boulder: GraphBoulder, type: number | null): void;
+
+    // Item factory can create items that are not shuffled in the world, use with caution!
+    abstract get_item(world: GraphWorld, item_name: string): GraphItem;
+
+    // Hint interface
+    abstract unhide_hint(hint_location: GraphLocation): void;
+    abstract hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void;
+    abstract hint_dual_locations(hint_location: GraphLocation, hinted_location1: GraphLocation, item1: GraphItem, hinted_location2: GraphLocation, item2: GraphItem): void;
+    abstract hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
+    abstract hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
+    abstract hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void;
+    abstract hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
+    abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void;
+    abstract hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void;
+    abstract unhint(hint_location: GraphLocation): void;
+    abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): {hint: string, hinted: boolean};
 
     // Search interface world-specific convenience functions
     get_entrances_for_world(world: GraphWorld): GraphEntrance[];
-    get_accessible_entrances_for_world(world: GraphWorld): GraphEntrance[];
     get_locations_for_world(world: GraphWorld): GraphLocation[];
-    get_visited_locations_for_world(world: GraphWorld): GraphLocation[];
-    get_required_locations_for_world(world: GraphWorld): GraphLocation[];  // not currently implemented for ootr
-    get_required_locations_for_items(world: GraphWorld, goal_items: GraphItem[]): GraphLocation[];  // not currently implemented for ootr
-    get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
     get_regions_for_world(world: GraphWorld): GraphRegion[];
-
-    // World building interface
-    set_location_item(location: GraphLocation, item: GraphItem): void;
-    get_entrance_pool(world: GraphWorld, entrance: GraphEntrance): {[category: string]: GraphEntrance[]};
-    set_entrance(entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
+    get_items(): {[world_id: number]: GraphItem[]};
 }
 
-class GameVersion {
-    public version: string
-
-    // comparison methods to use for sorting versions
-    gt(version: string): boolean;
-    gte(version: string): boolean;
-    lt(version: string): boolean;
-    lte(version: string): boolean;
-    eq(version: string): boolean;
+export interface GraphLocation {
+    name: string;
+    alias: string;
+    type: string;
+    shuffled: boolean;
+    price?: number | null;
+    item: GraphItem | null;
+    vanilla_item: GraphItem | null;
+    parent_region: GraphRegion | null;
+    hint_area(): string | null;
+    world: GraphWorld | null;
+    boulders: GraphBoulder[];
+    sphere: number;
+    visited: boolean;
+    visited_with_other_tricks: boolean;
+    child_visited: boolean;
+    child_visited_with_other_tricks: boolean;
+    adult_visited: boolean;
+    adult_visited_with_other_tricks: boolean;
+    skipped: boolean;
+    checked: boolean;
+    is_hint: boolean;
+    hint: GraphHint | null;
+    hint_text: string;
+    hinted: boolean;
+    is_shop: boolean;
+    holds_shop_refill: boolean;
+    is_restricted: boolean;
+    internal: boolean;
+    public_event: boolean;
+    viewable(use_unshuffled_items_filter?: boolean): boolean;
 }
 
-type GraphGameVersions = {
+export interface GraphItem {
+    name: string;
+    player?: number;
+    price: number | null;
+    advancement: boolean;
+}
+
+export interface GraphEntrance {
+    name: string;
+    alias: string;
+    target_alias: string;
+    use_target_alias: boolean;
+    type: string | null;
+    type_alias: string;
+    type_priority: number;
+    shuffled: boolean;
+    coupled: boolean;
+    is_warp: boolean;
+    parent_region: GraphRegion;
+    source_group: GraphRegion | null;
+    target_group: GraphRegion | null;
+    connected_region: GraphRegion | null;
+    original_connection: GraphRegion | null;
+    reverse: GraphEntrance | null,
+    replaces: GraphEntrance | null,
+    world: GraphWorld;
+    boulders: GraphBoulder[],
+    sphere: number;
+    visited: boolean;
+    visited_with_other_tricks: boolean;
+    child_visited: boolean;
+    child_visited_with_other_tricks: boolean;
+    adult_visited: boolean;
+    adult_visited_with_other_tricks: boolean;
+    checked: boolean;
+    hinted: boolean;
+    viewable(): boolean;
+    is_reverse(): boolean;
+}
+
+export interface GraphEntrancePool {
+    [region_category: string]: GraphEntrance[],
+}
+
+export interface GraphRegion {
+    name: string;
+    alias: string;
+    page: string;
+    exits: GraphEntrance[];
+    entrances: GraphEntrance[];
+    locations: GraphLocation[];
+    boulders: GraphBoulder[];
+    world: GraphWorld;
+    is_required: boolean;
+    required_for: GraphHintGoal[];
+    is_not_required: boolean;
+    hinted_items: GraphItem[];
+    num_major_items: number | null;
+    viewable: boolean;
+}
+
+export interface GraphBoulder {
+    name: string,
+    alias: string,
+    type: number,
+    checked: boolean,
+    hinted: boolean,
+    shuffled: boolean,
+    world: GraphWorld,
+}
+
+export interface GraphHint {
+    type: string;
+    area: GraphRegion | null;
+    location: GraphLocation | null;
+    location2: GraphLocation | null;
+    entrance: GraphEntrance | null;
+    target: GraphEntrance | null;
+    goal: GraphHintGoal | null;
+    item: GraphItem | null;
+    item2: GraphItem | null;
+    num_major_items: number | null;
+    equals(other_hint: GraphHint): boolean;
+}
+
+export interface GraphWorld {
+    id: number;
+    regions: GraphRegion[];
+    region_groups: GraphRegion[];
+    readonly settings: GraphSettingsConfiguration,
+    boulders: GraphBoulder[];
+    fixed_item_area_hints: {
+        [item_name: string]: {
+            hint: string,
+            hinted: boolean,
+            hint_locations: string[],
+        }
+    },
+    get_entrance(entrance: GraphEntrance | string): GraphEntrance,
+    get_location(location: GraphLocation | string): GraphLocation,
+    get_entrances(): GraphEntrance[],
+    get_locations(): GraphLocation[],
+    get_item(item: GraphItem | string): GraphItem,
+    get_boulder(boulder: GraphBoulder | string): GraphBoulder,
+}
+
+export type GraphGameVersions = {
     game: string,
     versions: GameVersion[],
-}
+};
 
-type GraphSetting = {
+export abstract class GameVersion {
+
+    constructor(public version: string) {}
+
+    // comparison methods to use for sorting versions
+    abstract gt(version: string): boolean;
+    abstract gte(version: string): boolean;
+    abstract lt(version: string): boolean;
+    abstract lte(version: string): boolean;
+    abstract eq(version: string): boolean;
+
+    // standardized naming scheme for caching randomizer files
+    abstract local_folder(): string;
+};
+
+export type GraphSettingsConfiguration = {
+    [internal_name: string]: GraphSettingType,
+};
+
+export type GraphSetting = {
     name: string,
     type: string,
-    default: any,
+    default: GraphSettingType,
     disabled_default: GraphSettingType,
     disables: GraphSetting[],
     disabled(settings: GraphSettingsConfiguration): boolean,
@@ -180,71 +411,43 @@ type GraphSetting = {
     choices?: {[internal_name: string]: string},
     minimum?: number,
     maximum?: number,
-}
-
-type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
-type GraphSettingsConfiguration = {
-    [internal_name: string]: GraphSettingType,
 };
 
-interface GraphLocation {
-    name: string;
-    alias: string;
-    type: string;
-    shuffled: boolean;
-    price?: number | null;
-    item: GraphItem | null;
-    vanilla_item: GraphItem | null;
-    parent_region: GraphRegion | null;
-    world: GraphWorld | null;
-    sphere: number;
-    viewable(): boolean;
+export type GraphSettingsOptions = {
+    [setting_name: string]: GraphSetting
 }
 
-interface GraphEntrance {
-    name: string;
-    alias: string;
-    target_alias: string;
-    use_target_alias: boolean;
-    type: string | null;
-    type_alias: string;
-    shuffled: boolean;
-    coupled: boolean;
-    is_warp: boolean;
-    parent_region: GraphRegion;
-    connected_region: GraphRegion | null;
-    original_connection: GraphRegion | null;
-    reverse: GraphEntrance | null,
-    replaces: GraphEntrance | null,
-    world: GraphWorld;
-    sphere: number;
-    viewable(): boolean;
+export type GraphSettingType = boolean | string | number | string[] | object | null | undefined;
+
+export type GraphSettingsLayout = {
+    [tab: string]: {
+        settings: GraphSetting[],
+        sections: {
+            [section: string]: GraphSetting[],
+        }
+    }
 }
 
-interface GraphItem {
-    name: string;
-    player?: number;
-}
+export type GraphItemDictionary = {
+    [world_id: number]: {
+        [item_name: string]: GraphItem,
+    },
+};
 
-interface GraphWorld {
-    id: number;
-    regions: GraphRegion[];
-    region_groups: GraphRegion[];
-    readonly settings: GraphSettingsConfiguration,
-    get_entrance(entrance: GraphEntrance | string): GraphEntrance,
-    get_location(location: GraphLocation | string): GraphLocation,
-    get_entrances(): GraphEntrance[],
-    get_locations(): GraphLocation[],
-}
+export class GraphHintGoal {
+    public location: GraphLocation | null = null;
+    public item: GraphItem | null = null;
+    public item_count: number = 0;
 
-interface GraphRegion {
-    name: string;
-    alias: string;
-    page: string;
-    exits: GraphEntrance[];
-    entrances: GraphEntrance[];
-    locations: GraphLocation[];
-    world: GraphWorld;
+    equals(other_goal: GraphHintGoal): boolean {
+        return (
+            this.location?.name === other_goal.location?.name
+            && this.item?.name === other_goal.item?.name
+            && this.item?.player === other_goal.item?.player
+            && this.item?.price === other_goal.item?.price
+            && this.item_count === other_goal.item_count
+        )
+    }
 }
 ```
 
@@ -252,19 +455,19 @@ interface GraphRegion {
 
 Initialize the repository with:
 
-`yarn install`
+`pnpm install`
 
 Build the project with:
 
-`yarn build`
+`pnpm build`
 
 Compile a dev environment with testing scripts with:
 
-`yarn debug`
+`pnpm debug`
 
 Unit tests are included in `tests`. Requires OOTR 7.1.143 files to be saved locally to a folder `ootr-local-143` in the root of the project. Run with jest or:
 
-`yarn test`
+`pnpm test`
 
 Integration testing scripts are included in `src/scripts/`
 
@@ -280,49 +483,21 @@ npm publish --access=public
 
 ### 2.0.0
 
+* Breaking changes for file cache and graph factories.
+* Full integration with [TOoTR](https://github.com/mracsys/tootr)
 * Removed support for Ocarina of Time Randomizer dev versions before 7.1.143. Files are temporarily archived in the `src/plugins/ootr-7.1` folder in case support is restored in the future.
+* Removed Roman971's branch from advertised supported versions. Still supported internally for now. Feature set superseded by RealRob's and Fenhl's branches.
 * New OOTR versions and branches supported
     - Main branch
-        - 7.1.198
-    - Roman971's branch
-        - 7.1.195 R-1
+        - 8.1.0 Release
+        - 8.1.45 Dev
+    - Fenhl's branch
+        - 8.1.45 Fenhl-3
     - RealRob's branch
-        - 7.1.198 Rob-49
-* Introduced GraphPlugin.change_setting
-    - Replaces direct mutation of GraphWorld.settings
-    - Handles other internal changes required for a setting, such as swapping between Ocarina of Time vanilla and Master Quest region files
-    - Handles setting dependencies by disabling child settings when necessary. Settings are disabled by setting them to their `disabled_default` value.
-* GraphWorld.settings changed to readonly
-* GraphWorld convenience functions in parallel with existing GraphPlugin per-world methods
-* Settings display names parsing for OOTR lists added
-* Custom display names added for regions, entrances, and locations
-    - `alias` is the default display name
-    - GraphEntrance `target_alias` overrides the default alias when considering valid destinations for a GraphRegion exit. These values can be the same between different entrances, such as multiple Great Fairy Fountain interiors in Ocarina of Time.
-    - GraphEntrance `use_target_alias` property to specify if the target alias should be used given the current world settings
-    - GraphEntrance `type_alias` provides a display name for the entrance type when considering valid destinations. Targets can be grouped by destination region or entrance type.
-* Grouped regions added for display purposes
-    - Accessed via GraphWorld.region_groups
-    - `page` property of each region specifies a suggested grouping method for region groups, such as Overworld and Dungeons
-    - Region groups have all the same properties as lower level GraphRegion objects
-* Added GraphPlugin.get_entrance_pools() method to retrieve remaining unconnected entrances for a given entrance type
-* Entrance metadata added
-    - Original forward and reverse entrance connections pre-shuffle, where applicable
-    - is_warp property for unidirectional entrances
-    - coupled property to implicitly support randomizers that do not have a decoupled entrances setting
-    - sphere property for the item collection sphere in which the entrance can be traversed per the chosen randomizer logic settings
-    - replaces property holds the target entrance for a given region exit if the exit is shuffled and connected
-* Added GraphPlugin.export() method to save graph state to a text file that can be fed back into a new graph instance
-* Added GraphPlugin.import() method to reset graph state with a given input file instead of creating a completely new graph
-* GraphPlugin.get_items() return type is now a per-world dictionary of item names to item objects.
-    - Previous implementation was a per-world array of item objects for all locations in the game, including duplicate items.
-    - Item dictionary values are now unique with no duplicates.
-* New OOTR settings appended to upstream settings lists
-    - `graphplugin_trials_specific` to set specific enabled trials in the `settings` key instead of requiring a `trials` key
-    - `graphplugin_song_melodies` to set known song melodies with Ocarina Melody randomization enabled instead of relying on the `songs` key.
+        - 8.1.29 Rob-104
 * Unit tests use local cached copies of randomizer files except for the remote file retrieval test
-* Bug fixes
-    - Fixed bug in OOTR settings list parsing for inline python comments
-    - Decoupled entrances do not try to always link reverse entrances, frequently overriding previously set connections from the imported file with invalid connections
+* Use pnpm instead of yarn
+* Many bugfixes
 
 ### 1.1.1
 

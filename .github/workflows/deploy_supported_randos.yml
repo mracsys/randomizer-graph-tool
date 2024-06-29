@@ -2,7 +2,9 @@ name: Cache Remote Rando Files
 
 on:
   push:
-    branches: [ tracker-integration ]
+    branches: 
+      - main
+      - tracker-integration
 
 jobs:
   build:
