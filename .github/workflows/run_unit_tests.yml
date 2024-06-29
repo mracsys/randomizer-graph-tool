@@ -10,18 +10,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - name: Checkout
+        - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - name: Install pnpm
         with:
-          node-version: 20.x
+          version: 8
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
           cache: 'pnpm'
           registry-url: https://registry.npmjs.org
+
       - name: Run Unit Tests
         run: |
-          pnpm --frozen-lockfile
+          pnpm install --frozen-lockfile
           pnpm debug
           yarn test
+
       - name: Publish to NPM
         shell: bash
         run: pnpm publish --access public --no-git-checks
