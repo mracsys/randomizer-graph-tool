@@ -35,7 +35,7 @@ const downloadFiles = async () => {
             } else {
                 mkdirSync(resolve(`${serverRoot}${folderName}`), { recursive: true });
             }
-            writeFileSync(resolve(`${serverRoot}${folderName}`, fileName), JSON.stringify(fileContent));
+            writeFileSync(resolve(`${serverRoot}${folderName}`, fileName), fileContent);
         }
     }
 }
