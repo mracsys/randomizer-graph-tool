@@ -1,16 +1,30 @@
 import ExternalFileCache from "./ExternalFileCache.js";
 import { GraphPlugin } from "./GraphPlugin.js";
-import type { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout, GraphBoulder } from "./GraphPlugin.js";
+import { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout, GraphBoulder, GameVersion } from "./GraphPlugin.js";
+
+class EmptyGameVersion implements GameVersion {
+    constructor(public version: string) {}
+
+    gt(version: string) { return true }
+    gte(version: string) { return true }
+    lt(version: string) { return true }
+    lte(version: string) { return true }
+    eq(version: string) { return true }
+
+    local_folder(): string { return '' }
+}
 
 export default class EmptyGraphPlugin extends GraphPlugin {
     public worlds: GraphWorld[];
     public file_cache: ExternalFileCache;
+    public version: GameVersion;
     public static version_list: string[];
 
     constructor() {
         super();
         this.worlds = [];
         this.file_cache = { files: {}, subfolder: '' };
+        this.version = new EmptyGameVersion('');
     }
 
     import(save_file: any): void { return };

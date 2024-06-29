@@ -218,6 +218,7 @@ export class GraphHintGoal {
 export abstract class GraphPlugin {
     abstract worlds: GraphWorld[];
     abstract file_cache: ExternalFileCache;
+    abstract version: GameVersion;
     public static version_list: string[];
 
     constructor(

@@ -352,7 +352,7 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     constructor(
         public user_overrides: any,
-        public ootr_version: OotrVersion,
+        public version: OotrVersion,
         public file_cache: OotrFileCache,
         public debug: boolean = false,
         public test_only: boolean = false,
@@ -364,10 +364,10 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.search = new Search([]);
         this.all_tricks_search = new Search([]);
         this.all_tricks_and_keys_search = new Search([]);
-        this.settings_list = new SettingsList(ootr_version, file_cache);
-        this.location_list = new LocationList(ootr_version, file_cache);
-        this.entrance_list = new EntranceList(ootr_version, file_cache);
-        this.item_list = new ItemList(ootr_version, file_cache);
+        this.settings_list = new SettingsList(version, file_cache);
+        this.location_list = new LocationList(version, file_cache);
+        this.entrance_list = new EntranceList(version, file_cache);
+        this.item_list = new ItemList(version, file_cache);
 
         let valid_cache = Object.keys(this.file_cache.files).length > 0;
 
@@ -412,7 +412,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             return;
         }
 
-        this.build_world_graphs(this.settings_list, ootr_version);
+        this.build_world_graphs(this.settings_list, version);
         for (let world of this.worlds) {
             world.parser.parse_shop_rules();
             this.set_drop_location_names(world);
@@ -984,7 +984,7 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     export(with_user_overrides: boolean = false, settings_only: boolean = false): any {
         let plando: OotrPlando = {
-            ':version': this.ootr_version.to_string(),
+            ':version': this.version.to_string(),
             settings: this.worlds[0].settings,
             dungeons: {},
             trials: {},
@@ -2114,7 +2114,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 if (reward_dungeon === 'FREE') {
                     let boss_location: Location;
-                    if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
+                    if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
                         boss_location = world.get_location("ToT Reward from Rauru");
                     } else {
                         boss_location = world.get_location("Links Pocket");
@@ -2133,7 +2133,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 if (prev_dungeon === 'FREE') {
                     let boss_location: Location;
-                    if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
+                    if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
                         boss_location = world.get_location("ToT Reward from Rauru");
                     } else {
                         boss_location = world.get_location("Links Pocket");
@@ -2203,7 +2203,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                         if (prev_dungeon === 'FREE') {
                             let boss_location: Location;
-                            if (this.ootr_version.branch === 'Fenhl' || this.ootr_version.gte('8.1.38')) {
+                            if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
                                 boss_location = world.get_location("ToT Reward from Rauru");
                             } else {
                                 boss_location = world.get_location("Links Pocket");
@@ -2377,7 +2377,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             'WarpSong':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Overworld', 'Extra', 'Spawn', 'Interior', 'SpecialInterior'],
             'BlueWarp':         ['WarpSong', 'BlueWarp', 'OwlDrop', 'OverworldOneWay', 'Extra', 'ChildSpawn', 'AdultSpawn']
         };
-        if (this.ootr_version.branch === 'Fenhl') {
+        if (this.version.branch === 'Fenhl') {
             one_way_valid_target_types.WarpSong.push('AdultSpawn', 'ChildSpawn');
         }
         // Fenhl's branch expanded pool options
@@ -2546,7 +2546,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         savewarp.parent_region.dungeon :
                         `${savewarp.parent_region.dungeon} MQ`;
                     // A region in MQ Shadow Temple in Fenhl's branch doesn't have a savewarp, but vanilla does
-                    if (this.ootr_version.branch === 'Fenhl') {
+                    if (this.version.branch === 'Fenhl') {
                         // Handle vanilla Shadow Temple "extra" savewarp on Fenhl's branch if MQ Shadow is initially chosen
                         if (dungeon_variant_name === 'Shadow Temple' && !!savewarp.replaces?.original_connection) {
                             let alt_savewarp = savewarp.world.get_entrance('Shadow Temple Across Chasm -> Shadow Temple Entryway', dungeon_variant_name);
@@ -2602,7 +2602,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         let always_coupled_entrances = [
             'GraphGanonsTower',
         ];
-        if (this.ootr_version.branch !== 'Fenhl') {
+        if (this.version.branch !== 'Fenhl') {
             always_coupled_entrances.push('ChildBoss', 'AdultBoss');
         }
 
@@ -2646,7 +2646,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let source_region_name = forward_entry[0].split(' -> ')[0];
-                if (this.ootr_version.branch !== 'Fenhl') {
+                if (this.version.branch !== 'Fenhl') {
                     // Handle different entrances for Ganons Castle to Ganons Tower depending on MQ variant.
                     // Skip the alternate as it is copied from the currently linked variant.
                     if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
@@ -2692,9 +2692,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (forward_entrance.parent_region.dungeon !== 'Ganons Castle') {
                         entrance_variant_name = forward_entrance.name;
                     } else {
-                        if (this.ootr_version.branch !== 'Fenhl' && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
+                        if (this.version.branch !== 'Fenhl' && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
                             entrance_variant_name = 'Ganons Castle Lobby -> Ganons Castle Tower';
-                        } else if (this.ootr_version.branch !== 'Fenhl' && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
+                        } else if (this.version.branch !== 'Fenhl' && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
                             entrance_variant_name = 'Ganons Castle Main -> Ganons Castle Tower';
                         } else {
                             entrance_variant_name = forward_entrance.name;
@@ -2739,7 +2739,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     
                     // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
                     if (!!(return_entrance.parent_region.dungeon)
-                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.ootr_version.branch === 'Fenhl')) {
+                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl')) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -2753,7 +2753,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             // second loop for target region groups, which requires all entrance metadata to be set
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let source_region_name = forward_entry[0].split(' -> ')[0];
-                if (this.ootr_version.branch !== 'Fenhl') {
+                if (this.version.branch !== 'Fenhl') {
                     if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
                     if (!(world.dungeon_mq['Ganons Castle']) && source_region_name === 'Ganons Castle Main') continue;
                 }
@@ -2765,7 +2765,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
                         if (!!(return_entrance.parent_region.dungeon)
-                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.ootr_version.branch === 'Fenhl')) {
+                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl')) {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;
@@ -3070,7 +3070,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     let shuffle_item: Item | null = null;
 
                     if (loc.vanilla_item.name === dungeon_text('Boss Key', dungeon)) {
-                        if (this.ootr_version.lt('8.0.0')) {
+                        if (this.version.lt('8.0.0')) {
                             shuffle_setting = dungeon !== 'Ganons Castle' ? <string>world.settings.shuffle_bosskeys : <string>world.shuffle_ganon_bosskey;
                             // OOTR bug in 7.1.x, BKs are starting items if key rings are on,
                             // key rings give BKs, and small keysy is on
@@ -3085,7 +3085,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         }
                     } else if (loc.vanilla_item.name === dungeon_text('Small Key', dungeon)) {
                         shuffle_setting = <string>world.settings.shuffle_smallkeys;
-                        if (this.ootr_version.gte('8.0.0')) {
+                        if (this.version.gte('8.0.0')) {
                             if (shuffle_setting !== 'vanilla' && !!dungeon && world.keyring(dungeon)
                             && !!loc.vanilla_item_name && !vanilla_items_processed.includes(loc.vanilla_item_name)) {
                                 vanilla_items_processed.push(loc.vanilla_item_name);
@@ -3198,7 +3198,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         let always_coupled_entrances = [
             'GraphGanonsTower',
         ];
-        if (this.ootr_version.branch !== 'Fenhl') {
+        if (this.version.branch !== 'Fenhl') {
             always_coupled_entrances.push('ChildBoss', 'AdultBoss');
         }
         let always = (_: WorldState, { age = null, spot = null, tod = null }: kwargs = {}) => true;
@@ -3471,7 +3471,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     set_savewarps(world: World): void {
-        if (this.ootr_version.branch !== 'Fenhl') return;
+        if (this.version.branch !== 'Fenhl') return;
 
         this.reset_savewarps(world);
         let entrances = world.get_entrances().filter(e =>
@@ -3581,7 +3581,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         let target = this.get_original_or_replaced_entrance(boss_door_exit);
         // If a boss room is inside a dungeon entrance (or inside a dungeon which is inside a dungeon entrance),
         // make the blue warp go to the furthest dungeon's blue warp target. Fenhl disables this for decoupled.
-        if (target?.coupled || this.ootr_version.branch !== 'Fenhl') {
+        if (target?.coupled || this.version.branch !== 'Fenhl') {
             while (true) {
                 if (target === null || !(target?.name in boss_exits)) {
                     break;

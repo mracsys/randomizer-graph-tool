@@ -952,7 +952,7 @@ class World implements GraphWorld {
                         && dungeon_variant_name === 'Ganons Castle'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             alt_connection_name = 'Ganons Castle Lobby';
-                    } else if (this.parent_graph.ootr_version.branch !== 'Fenhl'
+                    } else if (this.parent_graph.version.branch !== 'Fenhl'
                         && dungeon_variant_name === 'Ganons Castle MQ'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             alt_connection_name = 'Ganons Castle Main';
@@ -1570,7 +1570,7 @@ class World implements GraphWorld {
             this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
             this.state.collect(ItemFactory('Small Key (Treasure Chest Game)', this)[0]);
         }
-        if (!(this.settings.shuffle_individual_ocarina_notes) && this.parent_graph.ootr_version.gte('7.1.138')) {
+        if (!(this.settings.shuffle_individual_ocarina_notes) && this.parent_graph.version.gte('7.1.138')) {
             this.state.collect(ItemFactory('Ocarina A Button', this)[0]);
             this.state.collect(ItemFactory('Ocarina C up Button', this)[0]);
             this.state.collect(ItemFactory('Ocarina C down Button', this)[0]);
@@ -1618,7 +1618,7 @@ class World implements GraphWorld {
             'Dark Link Soul',
         ];
         // This soul got renamed at some point
-        if (this.parent_graph.ootr_version.lt('8.0.0')) {
+        if (this.parent_graph.version.lt('8.0.0')) {
             enemy_souls_core.push('Shell blade Soul');
         } else {
             enemy_souls_core.push('Shell Blade Soul');
