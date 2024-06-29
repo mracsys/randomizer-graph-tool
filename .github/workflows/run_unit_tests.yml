@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Unit Tests
 
 on:
   push:
@@ -8,13 +8,10 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -24,4 +21,4 @@ jobs:
           cache: 'pnpm'
       - run: pnpm --frozen-lockfile
       - run: pnpm debug
-      - run: pnpm test
+      - run: yarn test

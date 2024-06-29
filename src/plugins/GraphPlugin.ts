@@ -154,6 +154,9 @@ export abstract class GameVersion {
     abstract lt(version: string): boolean;
     abstract lte(version: string): boolean;
     abstract eq(version: string): boolean;
+
+    // standardized naming scheme for caching randomizer files
+    abstract local_folder(): string;
 };
 
 export type GraphSettingsConfiguration = {

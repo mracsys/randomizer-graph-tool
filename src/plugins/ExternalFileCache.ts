@@ -2,13 +2,16 @@
 //import { resolve } from 'path';
 
 class ExternalFileCache {
-    constructor(public files: {[filename: string]: string} = {}) {}
+    constructor(
+        public files: {[filename: string]: string} = {},
+        public subfolder: string = '',
+    ) {}
 
-    static async load_files(file_list: string[], { remote_url = null, local_folder = null }: {remote_url?: string | null, local_folder?: string | null} = {}) {
+    static async load_files(file_list: string[], subfolder: string = '', { remote_url = null, local_folder = null }: {remote_url?: string | null, local_folder?: string | null} = {}) {
         let files: {[filename: string]: string} = {};
         for (let f of file_list) {
             try {
-                if (!!local_folder) {
+                if (local_folder !== null) {
                     // Dynamic import breaks in some environments.
                     // Delete the next two lines and uncomment the
                     // imports at the start of this file if you have
@@ -19,8 +22,21 @@ class ExternalFileCache {
                     const resolve = (await import('path')).resolve;
                     // assumes cwd is root of project!!
                     files[f] = readFileSync(resolve(local_folder, f), { encoding: 'utf8'});
-                } else if (!!remote_url) {
-                    let response = await fetch(`${remote_url}/${f}`);
+                } else if (remote_url !== null) {
+                    let url_prefix = remote_url;
+                    if (remote_url.endsWith('/')) {
+                        url_prefix = url_prefix.slice(0, url_prefix.length - 1);
+                    }
+                    let response: Response;
+                    if (subfolder !== '') {
+                        let fetch_url = `${url_prefix}/${subfolder}/${f}`;
+                        //console.log(`Fetching ${fetch_url}`);
+                        response = await fetch(fetch_url);
+                    } else {
+                        let fetch_url = `${url_prefix}/${f}`;
+                        //console.log(`Fetching ${fetch_url}`);
+                        response = await fetch(fetch_url);
+                    }
                     files[f] = await response.text();
                 } else {
                     throw `Could not load external files: no external source specified (remote_url and local_folder are both null)`;
@@ -36,7 +52,7 @@ class ExternalFileCache {
             }
         }
 
-        return new ExternalFileCache(files);
+        return new ExternalFileCache(files, subfolder);
     }
 }
 

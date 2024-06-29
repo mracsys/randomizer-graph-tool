@@ -560,7 +560,7 @@ class SettingsList {
     }
 
     copy(): SettingsList {
-        let s = new SettingsList(this.ootr_version, { files: {} });
+        let s = new SettingsList(this.ootr_version, { files: {}, subfolder: '' });
         if (this.settings.world_count > 1) {
             s.dungeons = {};
             s.empty_dungeons = {};

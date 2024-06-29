@@ -10,7 +10,7 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     constructor() {
         super();
         this.worlds = [];
-        this.file_cache = { files: {} };
+        this.file_cache = { files: {}, subfolder: '' };
     }
 
     import(save_file: any): void { return };

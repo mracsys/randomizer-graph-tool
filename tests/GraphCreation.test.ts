@@ -5,6 +5,6 @@ import { resolve } from 'path';
 
 describe('OOTR 7.1.143 graph initialization', () => {
     test('empty graph creation', async () => {
-        expect(() => WorldGraphFactory('ootr', {}, '7.1.143', {files: {}})).not.toThrow();
+        expect(() => WorldGraphFactory('ootr', {}, '7.1.143', {files: {}, subfolder: ''})).not.toThrow();
     });
 });

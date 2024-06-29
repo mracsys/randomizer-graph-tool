@@ -8,10 +8,13 @@ class OotrFileCache extends ExternalFileCache {
         let file_list = ootr_version.get_file_list();
         let _cache;
         if (!!local_files) {
-            _cache = await ExternalFileCache.load_files(file_list, {local_folder: local_files});
+            _cache = await ExternalFileCache.load_files(file_list, ootr_version.local_folder(), {local_folder: local_files});
         } else {
-            let remote_url = !!local_url ? local_url :  ootr_version.github_url();
-            _cache = await ExternalFileCache.load_files(file_list, {remote_url: remote_url});
+            if (!!local_url) {
+                _cache = await ExternalFileCache.load_files(file_list, ootr_version.local_folder(), {remote_url: local_url});
+            } else {
+                _cache = await ExternalFileCache.load_files(file_list, '', {remote_url: ootr_version.github_url()});
+            }
         }
         return new OotrFileCache(_cache.files);
     }

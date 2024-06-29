@@ -1,5 +1,6 @@
 import ExternalFileCache from "./plugins/ExternalFileCache.js";
 import OotrFileCache from "./plugins/ootr-latest/OotrFileCache.js";
+import OotrVersion from "./plugins/ootr-latest/OotrVersion.js";
 import {
     GraphPlugin,
     GameVersion,
@@ -62,6 +63,20 @@ async function ExternalFileCacheFactory(
     }
 }
 
+function ExternalFileCacheList(
+    game: string = 'ootr',
+    version: string = '7.1.143',
+): string[] {
+    switch(game) {
+        case 'ootr':
+            let ootr_version = new OotrVersion(version);
+            let file_list = ootr_version.get_file_list();
+            return file_list;
+        default:
+            throw `Unimplemented game ${game}`;
+    }
+}
+
 // Creates a new world graph.
 // If a file cache is not provided, a stub graph object
 // is created. This is to work around React's inability
@@ -73,7 +88,7 @@ function WorldGraphFactory(
         game: string = 'ootr',
         user_overrides: any = null,
         version: string = '7.1.143',
-        global_cache: ExternalFileCache = { files: {} },
+        global_cache: ExternalFileCache = { files: {}, subfolder: '' },
         debug: boolean = false
     ): GraphPlugin {
         switch(game) {
@@ -91,6 +106,7 @@ export {
     WorldGraphRemoteFactory,
     WorldGraphFactory,
     ExternalFileCacheFactory,
+    ExternalFileCacheList,
     GraphPlugin,
     ExternalFileCache,
     GameVersion,

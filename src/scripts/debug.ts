@@ -404,7 +404,7 @@ async function test_import(debug: boolean = false) {
     let variant = 'fenhl'
     let initialized = false;
 
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.45 Fenhl-3', {files: {}});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.45 Fenhl-3', {files: {}, subfolder: ''});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files:string;
@@ -436,7 +436,7 @@ async function test_load(debug: boolean = false) {
     ];
     let variant = 'realrob-8'
 
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.29 Rob-104', {files: {}});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.29 Rob-104', {files: {}, subfolder: ''});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files:string;
@@ -459,7 +459,7 @@ async function test_load(debug: boolean = false) {
 }
 
 async function test_remote_files() {
-    //let _cache = {files: {}};
+    //let _cache = {files: {}, subfolder: ''};
     let _cache = await ExternalFileCacheFactory('ootr', '7.1.117');
     let graph = WorldGraphFactory('ootr', {}, '7.1.117', _cache);
     console.log(graph.get_game_versions().versions[0].version);

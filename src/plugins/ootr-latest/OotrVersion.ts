@@ -149,40 +149,16 @@ class OotrVersion implements GameVersion {
     local_folder(): string {
         switch(this.branch) {
             case '':
+                return `ootr-local-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
             case 'Dev':
             case 'f.LUM':
             case 'Stable':
             case 'Release':
-                if (this.gte('7.1.143')) {
-                    return './ootr-local-143';
-                } else {
-                    throw(`Unsupported version for local file retrieval (minimum 7.1.143 f.LUM): ${this.to_string()}`);
-                }
-                break;
             case 'R':
-                if (this.gte('7.1.143 R-1')) {
-                    return './ootr-local-roman-143';
-                } else {
-                    throw(`Unsupported version for local file retrieval (minimum 7.1.143 R-1): ${this.to_string()}`);
-                }
-                break;
             case 'Rob':
-                if (this.gte('7.1.198 Rob-49')) {
-                    return './ootr-local-realrob-198';
-                } else {
-                    throw(`Unsupported version for local file retrieval (minimum 7.1.198 Rob-49): ${this.to_string()}`);
-                }
-                break;
             case 'Fenhl':
-                if (this.gte('8.1.45 Fenhl-3')) {
-                    return './ootr-local-fenhl-8-1-45-3';
-                } else {
-                    throw(`Unsupported version for local file retrieval (minimum 8.1.45 Fenhl-3): ${this.to_string()}`);
-                }
-                break;
             default:
-                throw(`Unsupported branch for local file retrieval (supported: f.LUM, Rob, R, Fenhl): ${this.to_string()}`);
-                break;
+                return `ootr-local-${this.branch}-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
         }
     }
 

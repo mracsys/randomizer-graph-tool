@@ -29,8 +29,8 @@
     "semver": "^7.5.4"
   },
   "devDependencies": {
-    "@jest/globals": "^29.6.2",
     "@babel/core": "^7.21.4",
+    "@jest/globals": "^29.6.2",
     "@types/babel__core": "^7.20.1",
     "@types/babel__generator": "^7.6.4",
     "@types/node": "^20.4.4",
@@ -41,14 +41,15 @@
     "typescript": "^5.1.6"
   },
   "scripts": {
-    "test": "pnpm node --experimental-vm-modules $(pnpm bin jest)",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "clean": "rm -rf ./lib",
     "debug": "pnpm run clean && pnpm run build:dev",
     "build": "pnpm run clean && pnpm run build:esm",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",
     "build:dev": "tsc -p ./configs/tsconfig.dev.json",
     "semantic-release": "semantic-release",
-    "prepack": "pnpm run build"
+    "prepack": "pnpm run build",
+    "downloadRandos": "pnpm run clean && pnpm run build:dev && node --experimental-vm-modules lib/dev/scripts/UpdateLocalFiles.mjs"
   },
   "repository": {
     "type": "git",
