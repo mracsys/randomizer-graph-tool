@@ -145,6 +145,11 @@ export type GraphGameVersions = {
 };
 
 export abstract class GameVersion {
+    abstract branch: string;
+    abstract major: number;
+    abstract minor: number;
+    abstract patch: number;
+    abstract supp: number;
 
     constructor(public version: string) {}
 

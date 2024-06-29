@@ -3,6 +3,12 @@ import { GraphPlugin } from "./GraphPlugin.js";
 import { GraphGameVersions, GraphSetting, GraphEntrance, GraphLocation, GraphRegion, GraphWorld, GraphItem, GraphHintGoal, GraphSettingType, GraphSettingsOptions, GraphSettingsLayout, GraphBoulder, GameVersion } from "./GraphPlugin.js";
 
 class EmptyGameVersion implements GameVersion {
+    public branch: string = '';
+    public major: number = 0;
+    public minor: number = 0;
+    public patch: number = 0;
+    public supp: number = 0;
+
     constructor(public version: string) {}
 
     gt(version: string) { return true }
