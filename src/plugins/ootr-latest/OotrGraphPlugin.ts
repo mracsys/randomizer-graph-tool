@@ -925,7 +925,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                                 hinted_group = this.extract_region_from_hint(stone_name, color_split, 1, this.worlds[0]);
                                 if (hinted_group === null) hinted_group = this.extract_region_from_hint(stone_name, color_split, 3, this.worlds[0]);
                             }
-                            if (!!hinted_group) {
+                            // Special case for Sheik in Kakariko wording triggering region hints
+                            if (!!hinted_group && !hint.text.includes('Sheik gives')) {
                                 let hinted_item = this.worlds[0].get_item(hint.hinted_items[0]);
                                 this.hint_item_in_area(hint_location, hinted_group, hinted_item, (sim_mode && !hint_location.checked) || !sim_mode);
                             // no match, must be location or dual hint
@@ -1285,6 +1286,10 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (entrance.world === null) throw `Cannot check entrance ${entrance.name} with a null parent world`;
         let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
         e.checked = true;
+        let t = !!e.replaces && !e.is_warp ? e.replaces : e;
+        if (!!(t.reverse) && e.coupled) {
+            t.reverse.checked = true;
+        }
         this.set_viewable_region_groups();
     }
 
@@ -1292,6 +1297,10 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (entrance.world === null) throw `Cannot check entrance ${entrance.name} with a null parent world`;
         let e = this.worlds[entrance.world.id].get_entrance(entrance.name);
         e.checked = false;
+        let t = !!e.replaces && !e.is_warp ? e.replaces : e;
+        if (!!(t.reverse) && e.coupled) {
+            t.reverse.checked = false;
+        }
         this.reset_searches();
         this.set_viewable_region_groups();
     }

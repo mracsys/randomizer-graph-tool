@@ -408,6 +408,8 @@ class Search {
                     if (hint_data.hint === 'FREE'
                     && (!(Object.keys(state.world.settings).includes('skip_reward_from_rauru')) || state.world.settings.skip_reward_from_rauru || !hint_data.hint_locations.includes('ToT Reward from Rauru'))) {
                         hint_data.hinted = true;
+                    } else if (state.world.settings.shuffle_mapcompass === 'startwith' && state.world.settings.enhance_map_compass) {
+                        hint_data.hinted = true;
                     } else {
                         hint_data.hinted = false;
                         for (let hint_location of hint_data.hint_locations) {
