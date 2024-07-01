@@ -31,6 +31,7 @@ class OotrVersion implements GameVersion {
     static devfenhl_version_commit_ids: VersionCommitMap = {
         '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',
         '8.1.49 Fenhl-2': '0c181c423ed88d071b3e21798a229ecc403c8076',
+        '8.1.51 Fenhl-1': '032f3a95acfed7f431fe6c5125aa44438ca6d6d0',
     }
     constructor(ootr_version: string, generate_files: boolean = true) {
         this.version = ootr_version;

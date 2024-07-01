@@ -332,8 +332,8 @@ const option_to_item_names: {[option: string]: string[]} = {
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '8.1.0 Release',
-        '8.1.49 Dev',
-        '8.1.49 Fenhl-2',
+        '8.1.51 Dev',
+        '8.1.51 Fenhl-1',
         '8.1.29 Rob-104',
     ];
 
