@@ -163,6 +163,7 @@ const dungeonToEntranceMap: {[dungeonName: string]: string} = {
     "WATR": "Water Temple Before Boss -> Morpha Boss Room",
     "SPRT": "Spirit Temple Before Boss -> Twinrova Boss Room",
     "SHDW": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
+    "CAST": "Ganons Castle Main -> Ganons Castle Tower",
 };
 const entranceToDungeonMap: {[entrance: string]: string} = {
     "Deku Tree Before Boss -> Queen Gohma Boss Room": "DEKU",
@@ -173,6 +174,7 @@ const entranceToDungeonMap: {[entrance: string]: string} = {
     "Water Temple Before Boss -> Morpha Boss Room": "WATR",
     "Spirit Temple Before Boss -> Twinrova Boss Room": "SPRT",
     "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "SHDW",
+    "Ganons Castle Main -> Ganons Castle Tower": "CAST",
 }
 const dungeonNameToBossRewardMap: {[dungeonName: string]: string} = {
     'Deku Tree':              "Queen Gohma",
@@ -2107,10 +2109,14 @@ export class OotrGraphPlugin extends GraphPlugin {
                 item_area_targets.push('????');
                 [world.fixed_item_area_hints[item_name].hint, prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
             } else {
-                let item_dungeon_targets = Object.keys(dungeonToEntranceMap);
-                item_dungeon_targets.push('????');
-                item_dungeon_targets.push('FREE');
-                let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, item_dungeon_targets);
+                let item_dungeon_targets = new Set([...Object.keys(dungeonToEntranceMap)]);
+                // Only cycle through Ganon's Castle if tower shuffle exists and is on
+                if (world.settings.shuffle_ganon_tower !== true) {
+                    item_dungeon_targets.delete('CAST');
+                }
+                item_dungeon_targets.add('????');
+                item_dungeon_targets.add('FREE');
+                let [reward_dungeon, prev_dungeon] = cycle_areas(item_name, world, forward, Array.from(item_dungeon_targets.values()));
                 //console.log(`New dungeon: ${reward_dungeon}, Old dungeon: ${prev_dungeon}`);
                 world.fixed_item_area_hints[item_name].hint = reward_dungeon;
                 if (!(['????', 'FREE'].includes(reward_dungeon))) {
@@ -3224,6 +3230,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (!!entrance.connected_region) entrance.disconnect();
                     entrance.shuffled = true;
                     entrance.coupled = !decoupled || (!!entrance.type && always_coupled_entrances.includes(entrance.type));
+                    entrance.replaces = null;
                 // reset unshuffled entrances to vanilla targets to handle settings changes
                 } else if (!!(entrance.type)) {
                     if (!!entrance.connected_region) entrance.disconnect();
