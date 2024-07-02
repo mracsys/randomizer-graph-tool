@@ -1306,7 +1306,7 @@ export const display_names: DisplayNames = {
         "Graveyard Grass Patch 10": "Grass 10",
         "Graveyard Grass Patch 11": "Grass 11",
         "Graveyard Grass Patch 12": "Grass 12",
-        "Graveyard Soil Patch 1": "Plant Bean",
+        "Graveyard Soil Patch 2": "Plant Bean",
         "Graveyard Freestanding PoH": "Inside Ledge Crate",
         "Graveyard Freestanding PoH Crate": "Break Ledge Crate",
         "Graveyard Dampe Gravedigging Tour": "Dampe Digging Check",

@@ -317,7 +317,7 @@ const option_to_item_names: {[option: string]: string[]} = {
         'LW Beyond Mido Soil Patch 1',
         'Lake Hylia Soil Patch 1',
         'Desert Colossus Soil Patch 1',
-        'Graveyard Soil Patch 1',
+        'Graveyard Soil Patch 2',
         'Death Mountain Soil Patch 1',
         'DMC Central Nearby Soil Patch 1',
         'Zora River Soil Patch 1',
