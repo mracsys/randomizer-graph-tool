@@ -31,7 +31,7 @@ const viewable_events = [
     'LW Beyond Mido Soil Patch 1',
     'Lake Hylia Soil Patch 1',
     'Desert Colossus Soil Patch 1',
-    'Graveyard Soil Patch 1',
+    'Graveyard Soil Patch 2',
     'Death Mountain Soil Patch 1',
     'DMC Central Nearby Soil Patch 1',
     'Zora River Soil Patch 1',
