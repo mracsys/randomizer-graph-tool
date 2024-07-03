@@ -3422,7 +3422,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         this.all_tricks_and_keys_search.collect_locations();
         for (let region of this.all_tricks_and_keys_search.iter_visited_regions()) {
             // ignore the logical bypass to Hyrule Castle through the skip_child_zelda branch from Root
-            if (!!region.parent_group && region.name !== 'HC Garden Locations') region.parent_group.viewable = true;
+            if (!!region.parent_group && !(['HC Garden Locations', 'HC Garden Skippable Locations'].includes(region.name))) region.parent_group.viewable = true;
         }
     }
 
