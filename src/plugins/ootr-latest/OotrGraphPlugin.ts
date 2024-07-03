@@ -2198,6 +2198,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
             let reward_dungeon: string;
             try {
+                let prev_dungeon = world.fixed_item_area_hints[item_name].hint;
                 if ((!!(world.settings.shuffle_dungeon_rewards) && !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) || world.mixed_pools_bosses) {
                     // Search out from entrances to the target region to find a top level region with an alias.
                     // Entrance search instead of exit because decoupled breaks the entrance/exit relationship.
@@ -2208,7 +2209,6 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (parent_region === null) throw `Could not update dungeon reward hint for disconnected location ${location.name}`;
                     reward_dungeon = parent_region.abbreviation;
                 } else {
-                    let prev_dungeon = world.fixed_item_area_hints[item_name].hint;
                     if (location.name === 'Links Pocket' || location.name === 'ToT Reward from Rauru' || empty_reward_location_names.includes(location.name)) {
                         reward_dungeon = 'FREE';
                     } else {
@@ -2222,24 +2222,26 @@ export class OotrGraphPlugin extends GraphPlugin {
                             let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
                             world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
                         }
-                        if (prev_dungeon === 'FREE') {
-                            let boss_location: Location;
-                            if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
-                                boss_location = world.get_location("ToT Reward from Rauru");
-                            } else {
-                                boss_location = world.get_location("Links Pocket");
-                            }
-                            if (boss_location.item?.name !== item_name) {
-                                for (let l_name of empty_reward_location_names) {
-                                    let empty_location = world.get_location(l_name);
-                                    if (empty_location.item?.name === item_name) {
-                                        boss_location = empty_location;
-                                        break;
-                                    }
+                    }
+                }
+                if (!!prev_dungeon && !importing && prev_dungeon !== reward_dungeon) {
+                    if (prev_dungeon === 'FREE') {
+                        let boss_location: Location;
+                        if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
+                            boss_location = world.get_location("ToT Reward from Rauru");
+                        } else {
+                            boss_location = world.get_location("Links Pocket");
+                        }
+                        if (boss_location.item?.name !== item_name) {
+                            for (let l_name of empty_reward_location_names) {
+                                let empty_location = world.get_location(l_name);
+                                if (empty_location.item?.name === item_name) {
+                                    boss_location = empty_location;
+                                    break;
                                 }
                             }
-                            this.set_location_item(boss_location, null, undefined, false);
                         }
+                        this.set_location_item(boss_location, null, undefined, false);
                     }
                 }
             } catch (e) {
