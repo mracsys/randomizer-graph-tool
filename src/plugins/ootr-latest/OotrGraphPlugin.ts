@@ -2100,14 +2100,57 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
             return [targets[area_index], targets[prev_index]];
         }
+        const update_free_rewards = (reward_item: Item, new_hint: string, old_hint: string) => {
+            if (new_hint === 'FREE') {
+                let boss_location: Location;
+                if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
+                    boss_location = world.get_location("ToT Reward from Rauru");
+                } else {
+                    boss_location = world.get_location("Links Pocket");
+                }
+                // additional internal locations for empty dungeon rewards
+                if (boss_location.item !== null) {
+                    for (let l_name of empty_reward_location_names) {
+                        let empty_location = world.get_location(l_name);
+                        if (empty_location.item === null) {
+                            boss_location = empty_location;
+                            break;
+                        }
+                    }
+                }
+                this.set_location_item(boss_location, reward_item, undefined, false);
+            }
+            if (old_hint === 'FREE') {
+                let boss_location: Location;
+                if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
+                    boss_location = world.get_location("ToT Reward from Rauru");
+                } else {
+                    boss_location = world.get_location("Links Pocket");
+                }
+                if (boss_location.item?.name !== item_name) {
+                    for (let l_name of empty_reward_location_names) {
+                        let empty_location = world.get_location(l_name);
+                        if (empty_location.item?.name === item_name) {
+                            boss_location = empty_location;
+                            break;
+                        }
+                    }
+                }
+                this.set_location_item(boss_location, null, undefined, false);
+            }
+            this.reset_searches();
+        }
         let world = this.worlds[graph_world.id]; // "casts" from GraphWorld to World
         if (Object.keys(world.fixed_item_area_hints).includes(item_name)) {
             let reward_item = world.get_item(item_name);
             if ((!!(world.settings.shuffle_dungeon_rewards) && !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) || world.mixed_pools_bosses) {
                 let prev_area: string;
+                let new_area: string;
                 let item_area_targets = Object.values(HintAreas).map(a => a.abbreviation);
                 item_area_targets.push('????');
-                [world.fixed_item_area_hints[item_name].hint, prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
+                [new_area, prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
+                world.fixed_item_area_hints[item_name].hint = new_area;
+                update_free_rewards(reward_item, new_area, prev_area);
             } else {
                 let item_dungeon_targets = new Set([...Object.keys(dungeonToEntranceMap)]);
                 // Only cycle through Ganon's Castle if tower shuffle exists and is on
@@ -2127,44 +2170,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     let dungeon_boss_entrance = world.get_entrance(dungeonToEntranceMap[prev_dungeon]);
                     world.remove_hinted_dungeon_reward(dungeon_boss_entrance, true);
                 }
-                if (reward_dungeon === 'FREE') {
-                    let boss_location: Location;
-                    if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
-                        boss_location = world.get_location("ToT Reward from Rauru");
-                    } else {
-                        boss_location = world.get_location("Links Pocket");
-                    }
-                    // additional internal locations for empty dungeon rewards
-                    if (boss_location.item !== null) {
-                        for (let l_name of empty_reward_location_names) {
-                            let empty_location = world.get_location(l_name);
-                            if (empty_location.item === null) {
-                                boss_location = empty_location;
-                                break;
-                            }
-                        }
-                    }
-                    this.set_location_item(boss_location, reward_item, undefined, false);
-                }
-                if (prev_dungeon === 'FREE') {
-                    let boss_location: Location;
-                    if (this.version.branch === 'Fenhl' || this.version.gte('8.1.38')) {
-                        boss_location = world.get_location("ToT Reward from Rauru");
-                    } else {
-                        boss_location = world.get_location("Links Pocket");
-                    }
-                    if (boss_location.item?.name !== item_name) {
-                        for (let l_name of empty_reward_location_names) {
-                            let empty_location = world.get_location(l_name);
-                            if (empty_location.item?.name === item_name) {
-                                boss_location = empty_location;
-                                break;
-                            }
-                        }
-                    }
-                    this.set_location_item(boss_location, null, undefined, false);
-                }
-                this.reset_searches();
+                update_free_rewards(reward_item, reward_dungeon, prev_dungeon);
             }
             this.set_viewable_region_groups();
         } else {
