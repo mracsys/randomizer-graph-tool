@@ -1792,29 +1792,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             e.user_connection = null;
             this.reset_searches();
         }
-        // link blue warp to boss room exit
-        if (!!e.type && ['ChildBoss', 'AdultBoss'].includes(e.type) && (e.world.settings.blue_warps === undefined || e.world.settings.blue_warps === 'dungeon')) {
-            let boss_exit: Entrance | null = null;
-            if (e.primary && e.coupled && !!e.replaces) {
-                boss_exit = e.replaces.reverse;
-            } else if (e.secondary) {
-                boss_exit = e;
-            }
-            if (!!boss_exit) {
-                let blue_warp: Entrance | null = null;
-                let blue_warp_search_region = !!e.replaces ? e.replaces.reverse : e.reverse;
-                if (!!blue_warp_search_region) {
-                    for (let exit of blue_warp_search_region.parent_region.exits) {
-                        if (exit.type === 'BlueWarp') {
-                            blue_warp = exit;
-                        }
-                    }
-                    if (!!blue_warp) {
-                        this.set_blue_warp(blue_warp, boss_exit);
-                    }
-                }
-            }
-        }
+        this.set_blue_warps(e.world);
         this.set_viewable_region_groups();
     }
 
