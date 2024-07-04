@@ -477,7 +477,7 @@ class World implements GraphWorld {
         if (this.warp_songs_shuffled) this.shuffled_entrance_types.push('WarpSong');
         if (!!this.settings.shuffle_child_spawn && this.settings.shuffle_child_spawn !== 'off') this.shuffled_entrance_types.push('ChildSpawn');
         if (!!this.settings.shuffle_adult_spawn && this.settings.shuffle_adult_spawn !== 'off') this.shuffled_entrance_types.push('AdultSpawn');
-        if (!!this.settings.blue_warps && !(['off', 'vanilla'].includes(this.settings.blue_warps))) this.shuffled_entrance_types.push('BlueWarp');
+        if (!!this.settings.blue_warps && !(['dungeon', 'vanilla'].includes(this.settings.blue_warps))) this.shuffled_entrance_types.push('BlueWarp');
 
         this.one_ways = (
             (!!this.settings.blue_warps && ['balanced', 'full'].includes(this.settings.blue_warps))

@@ -27,9 +27,9 @@ async function async_wrapper() {
         //test_dungeon_region_group_swap();
         //test_entrance_linking();
         //test_region_viewability();
-        //test_entrance_pools();
+        test_entrance_pools();
         //test_import(true);
-        test_load(true);
+        //test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
         //test_random_settings(100, true);
@@ -361,16 +361,23 @@ async function test_region_viewability() {
 }
 
 async function test_entrance_pools() {
-    let version = '7.1.195 R-1';
-    let local_files = 'tests/ootr-local-143';
+    let version = '8.1.51 Fenhl-1';
+    let local_files = 'tests/ootr-local-fenhl-8-1-45-3';
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    let settings = graph.get_settings_options();
-    let er = settings['shuffle_dungeon_entrances'];
-    graph.change_setting(graph.worlds[0], er, 'simple');
-    let entrance = graph.worlds[0].get_entrance('KF Outside Deku Tree -> Deku Tree Lobby');
+    const shuffled_entrance_settings = {
+        settings: {
+            shuffle_interior_entrances: 'all',
+            shuffle_hideout_entrances: 'hideout_savewarp',
+            decouple_entrances: true,
+        }
+    }
+    graph.import(shuffled_entrance_settings);
+    let entrance = graph.worlds[0].get_entrance('Hideout Kitchen Hallway -> Gerudo Fortress');
     let pool = graph.get_entrance_pool(graph.worlds[0], entrance);
-    console.log(Object.keys(pool['Dungeons']).length);
+    console.log(JSON.stringify(Object.values(pool).flat().sort((e1, e2) => !!e1.type && !!e2.type ? e1.type.localeCompare(e2.type) : 0)
+        .map(e => `[${e.type}]: ${e.name}`), null, 4) + '\n');
+    console.log(Object.values(pool).flat().length);
 }
 
 async function test_oneway_entrance_pools() {

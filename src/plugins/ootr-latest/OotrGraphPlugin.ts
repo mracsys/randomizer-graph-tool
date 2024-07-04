@@ -2480,15 +2480,14 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (entrance.one_way) {
             // Warps are allowed to link to any entrance that has not already been linked to another warp.
             // This includes normal entrances that have non-warp links and unshuffled normal entrances.
-            let used_warp_targets = all_targets.map(e => !!e.type && Object.keys(one_way_valid_target_types).includes(e.type) ? null : e.replaces).filter(e => e !== null);
+            let used_warp_targets = all_targets.map(e => !!e.type && e.shuffled && Object.keys(one_way_valid_target_types).includes(e.type) ? e.replaces : null).filter(e => e !== null);
             let warp_targets = all_targets.filter(e => !(used_warp_targets.includes(e)) && !!e.type);
             for (let target of warp_targets) {
                 if (!!(target.type) && !!(entrance.type)) {
-                    if (entrance.one_way) {
-                        if (one_way_valid_target_types[entrance.type].includes(target.type)) {
-                            if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
-                            pool[target.type_alias].push(target);
-                        }
+                    if ((one_way_valid_target_types[entrance.type].includes(target.type) && (target.primary || !simplified_target_types.includes(target.type) || this.version.branch !== 'Fenhl'))
+                    || (this.version.branch === 'Fenhl' && one_way_valid_reverse_target_types[entrance.type].includes(target.type) && target.secondary)) {
+                        if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
+                        pool[target.type_alias].push(target);
                     }
                 }
             }
@@ -2498,30 +2497,23 @@ export class OotrGraphPlugin extends GraphPlugin {
             let targets = all_targets.filter(e => !(used_targets.includes(e)) && !!e.type && e.shuffled);
             for (let target of targets) {
                 if (!!(target.type) && !!(entrance.type)) {
-                    if ((simplified_target_types.includes(target.type) && target.primary)  // only forwards for indoor regions
-                        || (((!(entrance.primary) && !(target.primary))                    // indoors reverse if requested entrance is reverse
-                        || !(simplified_target_types.includes(target.type)))               // overworld forward/reverse
-                        && entrance.source_group?.alias !== target.type_alias)) {
-                        if (Object.keys(world.settings).includes('mix_entrance_pools') && Array.isArray(world.settings['mix_entrance_pools']) && world.settings['mix_entrance_pools'].length > 1) {
-                            if (world.settings['mix_entrance_pools'].includes(target_types_to_mixed_pool_map[entrance.type])
-                            && world.settings['mix_entrance_pools'].includes(target_types_to_mixed_pool_map[target.type])) {
+                    if (((simplified_target_types.includes(target.type)               // only forwards for indoor regions, both forward/reverse for mixed overworld or decoupled
+                    && ((target.primary && entrance.primary) || !simplified_target_types.includes(entrance.type) || !entrance.coupled))
+                    || ((!(entrance.primary) && !(target.primary))                    // indoors reverse if requested entrance is reverse
+                    || !(simplified_target_types.includes(target.type))))             // overworld forward/reverse
+                    && !target.target_group?.exits.includes(entrance)) {              // don't allow self loops to the same region
+                        if (Object.keys(world.settings).includes('mix_entrance_pools')
+                        && Array.isArray(world.settings['mix_entrance_pools'])
+                        && world.settings['mix_entrance_pools'].length > 1
+                        && world.settings.mix_entrance_pools.includes(target_types_to_mixed_pool_map[entrance.type])) {
+                            if (world.settings['mix_entrance_pools'].includes(target_types_to_mixed_pool_map[target.type])) {
                                 if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                                 pool[target.type_alias].push(target);
-                                // only need to check decoupled reverse entrances for simplified types
-                                // since both primary/secondary of other types are added by default.
-                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type) && targets.includes(target.reverse)) {
-                                    if (!(Object.keys(pool).includes(target.reverse.type_alias))) pool[target.reverse.type_alias] = [];
-                                    pool[target.reverse.type_alias].push(target.reverse);
-                                }
                             }
                         } else {
                             if (valid_target_types[entrance.type].includes(target.type)) {
                                 if (!(Object.keys(pool).includes(target.type_alias))) pool[target.type_alias] = [];
                                 pool[target.type_alias].push(target);
-                                if (!(target.coupled) && !!(target.reverse) && simplified_target_types.includes(target.type) && targets.includes(target.reverse)) {
-                                    if (!(Object.keys(pool).includes(target.reverse.type_alias))) pool[target.reverse.type_alias] = [];
-                                    pool[target.reverse.type_alias].push(target.reverse);
-                                }
                             }
                         }
                     }
