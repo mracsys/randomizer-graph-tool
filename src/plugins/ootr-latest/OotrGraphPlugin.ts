@@ -2041,7 +2041,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     }
 
     cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean = true): {hint: string, hinted: boolean} {
-        let cycle_areas = (item_name: string, world: World, forward: boolean, targets: string[]) => {
+        let cycle_areas = (item_name: string, world: World, forward: boolean, targets: string[], exclusive: boolean = true) => {
             let area_index = targets.indexOf(world.fixed_item_area_hints[item_name].hint);
             let prev_index = area_index;
             if (area_index === -1) throw `Unable to find fixed item area ${world.fixed_item_area_hints[item_name].hint}`;
@@ -2052,14 +2052,16 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     area_index++;
                 }
-                while(Object.values(hinted_reward_areas).includes(targets[area_index]) && !(['????', 'FREE'].includes(targets[area_index]))) {
-                    if (area_index === prev_index) {
-                        throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
-                    }
-                    if (area_index >= targets.length - 1) {
-                        area_index = 0;
-                    } else {
-                        area_index++;
+                if (exclusive) {
+                    while(Object.values(hinted_reward_areas).includes(targets[area_index]) && !(['????', 'FREE'].includes(targets[area_index]))) {
+                        if (area_index === prev_index) {
+                            throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
+                        }
+                        if (area_index >= targets.length - 1) {
+                            area_index = 0;
+                        } else {
+                            area_index++;
+                        }
                     }
                 }
             } else {
@@ -2068,14 +2070,16 @@ export class OotrGraphPlugin extends GraphPlugin {
                 } else {
                     area_index--;
                 }
-                while(Object.values(hinted_reward_areas).includes(targets[area_index]) && !(['????', 'FREE'].includes(targets[area_index]))) {
-                    if (area_index === prev_index) {
-                        throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
-                    }
-                    if (area_index <= 0) {
-                        area_index = targets.length - 1;
-                    } else {
-                        area_index--;
+                if (exclusive) {
+                    while(Object.values(hinted_reward_areas).includes(targets[area_index]) && !(['????', 'FREE'].includes(targets[area_index]))) {
+                        if (area_index === prev_index) {
+                            throw `Could not cycle hint areas for reward ${item_name}: all hintable areas already in use`;
+                        }
+                        if (area_index <= 0) {
+                            area_index = targets.length - 1;
+                        } else {
+                            area_index--;
+                        }
                     }
                 }
             }
@@ -2129,7 +2133,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 let new_area: string;
                 let item_area_targets = Object.values(HintAreas).map(a => a.abbreviation);
                 item_area_targets.push('????');
-                [new_area, prev_area] = cycle_areas(item_name, world, forward, item_area_targets);
+                [new_area, prev_area] = cycle_areas(item_name, world, forward, item_area_targets, false);
                 world.fixed_item_area_hints[item_name].hint = new_area;
                 update_free_rewards(reward_item, new_area, prev_area);
             } else {
