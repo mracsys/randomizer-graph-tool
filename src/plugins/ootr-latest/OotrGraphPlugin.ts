@@ -255,7 +255,7 @@ const option_to_item_names: {[option: string]: string[]} = {
         "Bunny Hood",
         "Mask of Truth",
         "Kakariko Village Child Trade 1",
-        "Lost Woods Child Trade 1",
+        "Lost Woods Child Trade 2",
         "Graveyard Child Trade 1",
         "Hyrule Field Child Trade 1",
         "Hyrule Castle Grounds Child Trade 1",

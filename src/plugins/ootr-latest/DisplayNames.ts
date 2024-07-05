@@ -4180,7 +4180,7 @@ export const display_names: DisplayNames = {
         "Epona from Lon Lon Ranch": "Save Epona",
         "Links Cow from Lon Lon Ranch": "Complete Malon's Obstacle Course",
         "Kakariko Village Child Trade 1": "Trade Keaton Mask",
-        "Lost Woods Child Trade 1": "Trade Skull Mask",
+        "Lost Woods Child Trade 2": "Trade Skull Mask",
         "Graveyard Child Trade 1": "Trade Spooky Mask",
         "Hyrule Field Child Trade 1": "Trade Bunny Hood",
         "Hyrule Castle Grounds Child Trade 1": "Wake Up Talon",

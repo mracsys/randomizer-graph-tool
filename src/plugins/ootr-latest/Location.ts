@@ -18,7 +18,7 @@ const DisableType = {
 const viewable_events = [
     'Wake Up Adult Talon from Kak Carpenter Boss House',
     "Kakariko Village Child Trade 1",
-    "Lost Woods Child Trade 1",
+    "Lost Woods Child Trade 2",
     "Graveyard Child Trade 1",
     "Hyrule Field Child Trade 1",
     "Hyrule Castle Grounds Child Trade 1",
