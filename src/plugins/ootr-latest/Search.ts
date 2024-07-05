@@ -374,7 +374,7 @@ class Search {
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
             if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable(race_mode)) || location.skipped)) {
-                if (!location.checked && location.explicitly_collect_item && !location.skipped) {
+                if (!location.checked && location.explicitly_collect_item && !location.shuffled && !location.skipped) {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);
                 } else {

@@ -329,6 +329,9 @@ const option_to_item_names: {[option: string]: string[]} = {
         'Bonooru',
         'Scarecrow Song',
     ],
+    'Buy Bombchus': [
+        'Bombchus (10)',
+    ],
 }
 
 export class OotrGraphPlugin extends GraphPlugin {

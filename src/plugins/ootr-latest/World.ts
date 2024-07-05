@@ -211,6 +211,7 @@ class World implements GraphWorld {
         "Bunny Hood",
         "Mask of Truth",
         "Ocarina",
+        "Bombchus (10)",
     ];
 
     public collect_checked_only: boolean = false;
