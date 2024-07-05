@@ -18,6 +18,8 @@ type SearchCache = {
     pending_collection_locations: Location[],
     pending_inventory_locations: Set<Location>,
     pending_skipped_locations: Set<Location>,
+    pending_child_entrances: Set<Entrance>,
+    pending_adult_entrances: Set<Entrance>,
 };
 type TimeOfDayMap = {
     [world_id: number]: {
@@ -70,6 +72,8 @@ class Search {
             pending_collection_locations: [],
             pending_inventory_locations: new Set<Location>(),
             pending_skipped_locations: new Set<Location>(),
+            pending_child_entrances: new Set<Entrance>,
+            pending_adult_entrances: new Set<Entrance>,
         }
         this.cached_spheres = [this._cache];
         // and do what typescript should have picked up on
@@ -109,6 +113,8 @@ class Search {
                 pending_collection_locations: [],
                 pending_inventory_locations: new Set<Location>(),
                 pending_skipped_locations: new Set<Location>(),
+                pending_child_entrances: new Set<Entrance>,
+                pending_adult_entrances: new Set<Entrance>,
             };
             this.visit_pseudo_starting_items();
             this.cached_spheres = [this._cache];
@@ -221,7 +227,7 @@ class Search {
         this.state_list[item.world.id].remove(item);
     }
 
-    _expand_regions(exit_queue: Entrance[], regions: Region[], tods: TimeOfDayMap, age: string): Entrance[] {
+    _expand_regions(exit_queue: Entrance[], pending_exits: Set<Entrance>, regions: Region[], tods: TimeOfDayMap, age: string): Entrance[] {
         let failed = [];
         // If this search is just determining region viewability for trackers, skip
         // entrance access rules for worlds where the user wants to always see every
@@ -242,6 +248,18 @@ class Search {
                     regions.push(...connected_regions);
                     exit_queue.push(...connected_regions.flatMap(r => r.exits));
                 }
+            }
+        }
+        // Re-check previously visited entrances that weren't accessible
+        // and led to regions we already had access to. Needed for logic
+        // indicators only, no effect on location reachability.
+        // Make a copy of the pending set so that we can safely remove items.
+        let temp_pending = [...pending_exits.values()];
+        for (let exit of temp_pending) {
+            if (exit.access_rule(this.state_list[exit.world.id], {'spot': exit, 'age': age})) {
+                this._cache.visited_entrances.add(exit);
+                if (!this.regions_only) exit.set_visited(this.with_tricks, age);
+                pending_exits.delete(exit);
             }
         }
         // Normal search
@@ -280,6 +298,10 @@ class Search {
                 }
                 this._cache.visited_entrances.add(exit);
                 if (!this.regions_only) exit.set_visited(this.with_tricks, age);
+            } else if (exit.connected_region === null) {
+                failed.push(exit);
+            } else if (regions.includes(exit.connected_region)) {
+                pending_exits.add(exit);
             }
         }
         return failed;
@@ -305,8 +327,8 @@ class Search {
     }
 
     next_sphere(): [Region[], Region[], Set<Location>] {
-        this._cache.adult_queue = this._expand_regions(this._cache.adult_queue, this._cache.adult_regions, this._cache.adult_tod, 'adult');
-        this._cache.child_queue = this._expand_regions(this._cache.child_queue, this._cache.child_regions, this._cache.child_tod, 'child');
+        this._cache.adult_queue = this._expand_regions(this._cache.adult_queue, this._cache.pending_adult_entrances, this._cache.adult_regions, this._cache.adult_tod, 'adult');
+        this._cache.child_queue = this._expand_regions(this._cache.child_queue, this._cache.pending_child_entrances, this._cache.child_regions, this._cache.child_tod, 'child');
         return [this._cache.child_regions, this._cache.adult_regions, this._cache.visited_locations];
     }
 
