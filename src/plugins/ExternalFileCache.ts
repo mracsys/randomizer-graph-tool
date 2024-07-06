@@ -28,16 +28,18 @@ class ExternalFileCache {
                         url_prefix = url_prefix.slice(0, url_prefix.length - 1);
                     }
                     let response: Response;
+                    let fetch_url: string;
                     if (subfolder !== '') {
-                        let fetch_url = `${url_prefix}/${subfolder}/${f}`;
-                        //console.log(`Fetching ${fetch_url}`);
+                        fetch_url = `${url_prefix}/${subfolder}/${f}`;
+                        console.log(`Fetching ${fetch_url}`);
                         response = await fetch(fetch_url);
                     } else {
-                        let fetch_url = `${url_prefix}/${f}`;
-                        //console.log(`Fetching ${fetch_url}`);
+                        fetch_url = `${url_prefix}/${f}`;
+                        console.log(`Fetching ${fetch_url}`);
                         response = await fetch(fetch_url);
                     }
                     files[f] = await response.text();
+                    if (files[f] === undefined) throw `Could not fetch file ${f} from ${fetch_url}`;
                 } else {
                     throw `Could not load external files: no external source specified (remote_url and local_folder are both null)`;
                 }
