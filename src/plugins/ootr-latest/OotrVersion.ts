@@ -19,6 +19,11 @@ class OotrVersion implements GameVersion {
     // Note that stable builds prefix versions with a "v", such as v8.1
     // Dev builds on main branch do not have a prefix.
 
+    static main_version_commit_ids: VersionCommitMap = {
+        '8.1.0': 'd53f30f9a3b7f02cdad78f861843f2e0045656de',
+        '8.1.51': '295db7e069b99db87ecbf8f20171ab34937e90b5',
+    }
+
     static devr_version_commit_ids: VersionCommitMap = {
         '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
         '7.1.154 R-1': 'c5af1e9df2dd280b70b25f02d80d13dce9680d58',
@@ -161,6 +166,44 @@ class OotrVersion implements GameVersion {
             case 'Fenhl':
             default:
                 return `ootr-local-${this.branch}-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
+        }
+    }
+
+    github_repo(): string {
+        switch(this.branch) {
+            case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
+                return `https://github.com/OoTRandomizer/OoT-Randomizer.git`;
+            case 'R':
+                return `https://github.com/Roman971/OoT-Randomizer.git`;
+            case 'Rob':
+                return `https://github.com/rrealmuto/OoT-Randomizer.git`;
+            case 'Fenhl':
+                return `https://github.com/fenhl/OoT-Randomizer.git`;
+            default:
+                throw(`Unsupported branch for remote file retrieval: ${this.to_url_string()}`);
+        }
+    }
+
+    commit_hash(): string {
+        switch(this.branch) {
+            case '':
+            case 'Dev':
+            case 'f.LUM':
+            case 'Stable':
+            case 'Release':
+                return `${OotrVersion.main_version_commit_ids[this.to_url_string()]}`;
+            case 'R':
+                return `${OotrVersion.devr_version_commit_ids[this.to_url_string()]}`;
+            case 'Rob':
+                return `${OotrVersion.devrob_version_commit_ids[this.to_url_string()]}`;
+            case 'Fenhl':
+                return `${OotrVersion.devfenhl_version_commit_ids[this.to_url_string()]}`;
+            default:
+                throw(`Unsupported branch for remote file retrieval: ${this.to_url_string()}`);
         }
     }
 

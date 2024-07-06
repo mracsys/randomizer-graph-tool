@@ -162,6 +162,9 @@ export abstract class GameVersion {
 
     // standardized naming scheme for caching randomizer files
     abstract local_folder(): string;
+    abstract github_repo(): string;
+    abstract commit_hash(): string;
+    abstract get_file_list(): string[];
 };
 
 export type GraphSettingsConfiguration = {

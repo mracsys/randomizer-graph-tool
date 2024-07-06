@@ -18,6 +18,9 @@ class EmptyGameVersion implements GameVersion {
     eq(version: string) { return true }
 
     local_folder(): string { return '' }
+    github_repo(): string { return '' }
+    commit_hash(): string { return '' }
+    get_file_list(): string[] { return [] }
 }
 
 export default class EmptyGraphPlugin extends GraphPlugin {
