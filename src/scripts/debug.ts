@@ -27,8 +27,9 @@ async function async_wrapper() {
         //test_dungeon_region_group_swap();
         //test_entrance_linking();
         //test_region_viewability();
-        test_entrance_pools();
-        //test_import(true);
+        //test_entrance_pools();
+        //test_savewarps();
+        test_import(true);
         //test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
@@ -360,6 +361,43 @@ async function test_region_viewability() {
     graph.collect_spheres();
 }
 
+async function test_savewarps() {
+    let result_files = [
+        'fire_temple_savewarp.json',
+    ];
+    let variant = 'fenhl'
+    let initialized = false;
+
+    let graph: GraphPlugin = WorldGraphFactory('empty');
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files:string;
+    for (let result_file of result_files) {
+        let plando = JSON.parse(readFileSync(resolve('tests/seeds/manual', result_file), { encoding: 'utf8'}));
+
+        if (!initialized) {
+            [version, local_files] = get_plando_randomizer_version(plando);
+            global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+            graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+            initialized = true;
+        }
+
+        graph.import(plando);
+        graph.collect_locations();
+
+        let savewarp = graph.worlds[0].get_entrance('Volvagia Boss Room -> Fire Temple Lower');
+
+        console.log(savewarp.connected_region?.name);
+
+        let from = graph.worlds[0].get_entrance('GV Fortress Side -> GV Carpenter Tent');
+        let connect = graph.worlds[0].get_entrance('Fire Temple Before Boss -> Volvagia Boss Room');
+        graph.set_entrance(from, connect);
+        graph.collect_locations();
+
+        console.log(savewarp.connected_region?.name);
+    }
+}
+
 async function test_entrance_pools() {
     let version = '8.1.51 Fenhl-1';
     let local_files = 'tests/ootr-local-fenhl-8-1-45-3';
@@ -406,7 +444,7 @@ async function test_oneway_entrance_pools() {
 
 async function test_import(debug: boolean = false) {
     let result_files = [
-        'python_plando_ZDVAJM1N24.json',
+        'python_plando_07DLRR1OYW.json',
     ];
     let variant = 'fenhl'
     let initialized = false;
@@ -647,6 +685,9 @@ function get_plando_randomizer_version(plando: {[key: string]: any}): [string, s
                 local_files = 'tests/ootr-local-realrob-8-1-29-104';
                 break;
             case '8.1.45 Fenhl-3':
+                local_files = 'tests/ootr-local-fenhl-8-1-45-3';
+                break;
+            case '8.1.51 Fenhl-1':
                 local_files = 'tests/ootr-local-fenhl-8-1-45-3';
                 break;
             default:

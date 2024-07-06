@@ -1796,6 +1796,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             this.reset_searches();
         }
         this.set_blue_warps(e.world);
+        this.set_savewarps(e.world);
         this.set_viewable_region_groups();
     }
 
@@ -3484,43 +3485,50 @@ export class OotrGraphPlugin extends GraphPlugin {
             let target = (!!entrance.replaces ? entrance.replaces : entrance).reverse;
             let savewarp = target?.parent_region.savewarp;
             if (!!savewarp) {
-                let savewarp_target: Entrance | null;
-                let savewarp_region: Region | null;
-                if (entrance.parent_region.savewarp !== null) {
-                    savewarp_target = entrance.parent_region.savewarp.replaces;
-                    savewarp_region = entrance.parent_region.savewarp.connected_region;
-                } else if (!!entrance.reverse?.savewarp_fallback_name) {
-                    if (entrance.reverse?.savewarp_fallback_name === 'Hyrule Field -> Gerudo Valley') {
-                        savewarp_target = world.get_entrance('GV Lower Stream -> Lake Hylia');
-                        savewarp_region = savewarp_target.connected_region;
-                        savewarp_target = !!savewarp_target.replaces ? savewarp_target.replaces : savewarp_target;
-                        if (!!savewarp_target.savewarp_fallback_name) {
-                            savewarp_target = world.get_entrance(savewarp_target.savewarp_fallback_name);
-                            savewarp_region = world.get_region(savewarp_target.savewarp_fallback_name.split(' -> ')[1]);
+                let savewarp_target: Entrance | null = null;
+                let savewarp_region: Region | null = null;
+                let savewarp_entrance = !!target?.replaces?.reverse ? target.replaces.reverse : target?.reverse;
+                // temporary placeholder to pass tests until this can be investigated upstream
+                if (world.settings.decouple_entrances) savewarp_entrance = entrance;
+                if (!!savewarp_entrance && !!target?.connected_region) {
+                    if (savewarp_entrance.parent_region.savewarp !== null) {
+                        savewarp_target = savewarp_entrance.parent_region.savewarp.replaces;
+                        savewarp_region = savewarp_entrance.parent_region.savewarp.connected_region;
+                    } else if (!!savewarp_entrance.reverse?.savewarp_fallback_name) {
+                        if (savewarp_entrance.reverse?.savewarp_fallback_name === 'Hyrule Field -> Gerudo Valley') {
+                            savewarp_target = world.get_entrance('GV Lower Stream -> Lake Hylia');
+                            savewarp_region = savewarp_target.connected_region;
+                            savewarp_target = !!savewarp_target.replaces ? savewarp_target.replaces : savewarp_target;
+                            if (!!savewarp_target.savewarp_fallback_name) {
+                                savewarp_target = world.get_entrance(savewarp_target.savewarp_fallback_name);
+                                savewarp_region = world.get_region(savewarp_target.savewarp_fallback_name.split(' -> ')[1]);
+                            }
+                        } else {
+                            savewarp_target = world.get_entrance(savewarp_entrance.reverse.savewarp_fallback_name);
+                            savewarp_region = world.get_region(savewarp_entrance.reverse.savewarp_fallback_name.split(' -> ')[1]);
                         }
                     } else {
-                        savewarp_target = world.get_entrance(entrance.reverse.savewarp_fallback_name);
-                        savewarp_region = world.get_region(entrance.reverse.savewarp_fallback_name.split(' -> ')[1]);
-                    }
-                } else {
-                    savewarp_target = entrance;
-                    while (!!savewarp_target.savewarp_fallback_name) {
-                        let parents: Entrance[] = savewarp_target.parent_region.entrances.filter(e => e.reverse)
-                        if (parents.length === 0) {
-                            throw `Unable to set savewarp ${savewarp.name}: No entrances to target for region ${savewarp_target.parent_region.name}`;
-                        } else if (parents.length === 1) {
-                            savewarp_target = parents[0];
-                        } else {
-                            throw `Unable to set savewarp ${savewarp.name}: Found multiple grotto entrances to ${savewarp_target.parent_region.name}`;
+                        savewarp_target = savewarp_entrance;
+                        while (!!savewarp_target.savewarp_fallback_name) {
+                            let parents: Entrance[] = savewarp_target.parent_region.entrances.filter(e => e.reverse)
+                            if (parents.length === 0) {
+                                throw `Unable to set savewarp ${savewarp.name}: No entrances to target for region ${savewarp_target.parent_region.name}`;
+                            } else if (parents.length === 1) {
+                                savewarp_target = parents[0];
+                            } else {
+                                throw `Unable to set savewarp ${savewarp.name}: Found multiple grotto entrances to ${savewarp_target.parent_region.name}`;
+                            }
                         }
+                        savewarp_region = savewarp_target.parent_region;
+                        savewarp_target = savewarp_target.reverse;
                     }
-                    savewarp_region = savewarp_target.parent_region;
-                    savewarp_target = savewarp_target.reverse;
                 }
                 if (!!savewarp_target && !!savewarp_region) {
                     if (!!savewarp.connected_region) savewarp.disconnect();
                     savewarp.replaces = savewarp_target;
                     savewarp.connect(savewarp_region);
+                } else {
+                    if (!!savewarp.connected_region) savewarp.disconnect();
                 }
             }
         }
