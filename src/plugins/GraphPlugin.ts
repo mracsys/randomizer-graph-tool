@@ -256,7 +256,7 @@ export abstract class GraphPlugin {
     abstract load_settings_preset(preset_name: string): void;
 
     // Version/branch list for selection, static class method
-    abstract get_game_versions(): GraphGameVersions;
+    abstract get_game_versions(include_outdated?: boolean): GraphGameVersions;
 
     abstract get_settings_options(): GraphSettingsOptions;
     abstract get_settings_layout(): GraphSettingsLayout;

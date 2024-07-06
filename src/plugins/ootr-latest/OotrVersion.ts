@@ -38,6 +38,7 @@ class OotrVersion implements GameVersion {
         '8.1.49 Fenhl-2': '0c181c423ed88d071b3e21798a229ecc403c8076',
         '8.1.51 Fenhl-1': '032f3a95acfed7f431fe6c5125aa44438ca6d6d0',
     }
+
     constructor(ootr_version: string, generate_files: boolean = true) {
         this.version = ootr_version;
         const versions = ootr_version.split(' ');
@@ -73,6 +74,21 @@ class OotrVersion implements GameVersion {
         } else {
             this.file_list = [];
         }
+    }
+
+    static get_supported_versions(): string[] {
+        let versions: string[] = [];
+        for (let version of Object.keys(OotrVersion.main_version_commit_ids)) {
+            if (version.endsWith('.0')) {
+                versions.push(`${version} Release`);
+            } else {
+                versions.push(`${version} Dev`);
+            }
+        }
+        versions.push(...Object.keys(this.devr_version_commit_ids));
+        versions.push(...Object.keys(this.devrob_version_commit_ids));
+        versions.push(...Object.keys(this.devfenhl_version_commit_ids));
+        return versions;
     }
 
     gte(version: string): boolean {

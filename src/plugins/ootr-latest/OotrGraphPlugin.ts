@@ -1233,14 +1233,20 @@ export class OotrGraphPlugin extends GraphPlugin {
         }
     }
 
-    get_game_versions(): GraphGameVersions {
+    get_game_versions(include_outdated: boolean = false): GraphGameVersions {
         let ootr: GraphGameVersions = {
             game: 'ootr',
             versions: [],
         };
 
-        for (let v of OotrGraphPlugin.version_list) {
-            ootr.versions.push(new OotrVersion(v));
+        if (include_outdated) {
+            for (let v of OotrVersion.get_supported_versions()) {
+                ootr.versions.push(new OotrVersion(v));
+            }
+        } else {
+            for (let v of OotrGraphPlugin.version_list) {
+                ootr.versions.push(new OotrVersion(v));
+            }
         }
 
         return ootr;
