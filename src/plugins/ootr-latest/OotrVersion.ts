@@ -31,6 +31,7 @@ class OotrVersion implements GameVersion {
     }
     static devrob_version_commit_ids: VersionCommitMap = {
         '7.1.198 Rob-49': 'd3fcfa72c833a2e6fb2dffcab3461394aa6765c8',
+        '8.1.29 Rob-101': 'c342eb28bceb1bc4609a955b090a48e6c8632647',
         '8.1.29 Rob-104': '2f40c346f4053b5d66732b0f2e407e4b8dc33f6e',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
