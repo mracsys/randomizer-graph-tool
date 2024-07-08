@@ -731,7 +731,7 @@ class SettingsList {
                 // randomized locations/entrances/regions, so use that to be conservative
                 // for possible things for the user to check.
                 for (let [setting_name, setting_value] of Object.entries(preset_settings)) {
-                    if (setting_value === 'random') {
+                    if (setting_value === 'random' && setting_name !== 'shopsanity') {
                         let setting_choices = this.setting_definitions[setting_name].choices;
                         if (!!setting_choices) {
                             let setting_options = Object.keys(setting_choices);
