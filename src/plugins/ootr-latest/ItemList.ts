@@ -84,7 +84,7 @@ export default class ItemList {
 
     readItemList_7_1_117(file_cache: ExternalFileCache): void {
         if (file_cache.files['ItemList.py'] === undefined) return;
-        const itemlist: string[] = file_cache.files['ItemList.py'].split('\n').filter(Boolean);
+        const itemlist: string[] = file_cache.files['ItemList.py'].replaceAll('\r', '').split('\n').filter(Boolean);
         
         let parsing_items = false;
         let parsed_lines: string = '{';

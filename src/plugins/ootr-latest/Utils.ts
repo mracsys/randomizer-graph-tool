@@ -27,7 +27,7 @@ type JsonLogicMacroFile = {
 // file path not safe for local filesystems!
 export function read_json(file_path: string, file_cache: ExternalFileCache): JsonLogicRegion[] {
     const file_string = file_cache.files['data/' + file_path];
-    let lines = file_string.split('\n');
+    let lines = file_string.replaceAll('\r', '').split('\n');
     let json_string = '';
     for (let line of lines) {
         json_string += line.split('#')[0].replace('\n', ' ');
@@ -39,7 +39,7 @@ export function read_json(file_path: string, file_cache: ExternalFileCache): Jso
 // duplicate function to maintain type safety for non-macro files
 export function read_macro_json(file_path: string, file_cache: ExternalFileCache): JsonLogicMacroFile {
     const file_string = file_cache.files['data/' + file_path];
-    let lines = file_string.split('\n');
+    let lines = file_string.replaceAll('\r', '').split('\n');
     let json_string = '';
     for (let line of lines) {
         json_string += line.split('#')[0].replace('\n', ' ');

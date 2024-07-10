@@ -42,7 +42,7 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "clean": "rm -rf ./lib",
+    "clean": "rimraf ./lib",
     "debug": "pnpm run clean && pnpm run build:dev",
     "build": "pnpm run clean && pnpm run build:esm",
     "build:esm": "tsc -p ./configs/tsconfig.esm.json",

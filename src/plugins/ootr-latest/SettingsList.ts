@@ -847,8 +847,8 @@ class SettingsList {
         } catch {
             console.log(`Could not parse setting_mapping.json: ${file_cache.files['data/settings_mapping.json']}`);
         }
-        const lines: string[] = settingslist.split('\n').filter(Boolean);
-        const tricklines: string[] = trickslist.split('\n').filter(Boolean);
+        const lines: string[] = settingslist.replaceAll('\r', '').split('\n').filter(Boolean);
+        const tricklines: string[] = trickslist.replaceAll('\r', '').split('\n').filter(Boolean);
 
         let setting = new_setting('bool');
         let parsing: boolean = false;
