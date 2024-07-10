@@ -84,6 +84,7 @@ class OotrVersion implements GameVersion {
                 versions.push(`${version} Release`);
             } else {
                 versions.push(`${version} Dev`);
+                versions.push(`${version} f.LUM`);
             }
         }
         versions.push(...Object.keys(this.devr_version_commit_ids));
@@ -176,8 +177,10 @@ class OotrVersion implements GameVersion {
                 return `ootr-local-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
             case 'Dev':
             case 'f.LUM':
+                return `ootr-local-Dev-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
             case 'Stable':
             case 'Release':
+                return `ootr-local-Release-${this.major}-${this.minor}-${this.patch}-${this.supp}`;
             case 'R':
             case 'Rob':
             case 'Fenhl':
