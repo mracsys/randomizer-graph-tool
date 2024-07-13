@@ -76,6 +76,28 @@ export const display_names: DisplayNames = {
             "GF Outside Gate",
             "GF Above Jail Child Locations"
         ],
+        "Hideout 1 Torch Jail": [
+            "Hideout 1 Torch Jail",
+        ],
+        "Hideout 2 Torch Jail": [
+            "Hideout 2 Torches Jail",
+        ],
+        "Hideout 3 Torch Jail": [
+            "Hideout 3 Torches Jail",
+        ],
+        "Hideout 4 Torch Jail": [
+            "Hideout 4 Torches Jail",
+        ],
+        "Hideout Break Room": [
+            "Hideout Break Room",
+            "Hideout Hall to Balcony",
+        ],
+        "Hideout Kitchen": [
+            "Hideout Kitchen Hallway",
+            "Hideout Kitchen Front",
+            "Hideout Kitchen Rear",
+            "Hideout Kitchen Pots",
+        ],
         "Gerudo Valley": [
             "Gerudo Valley",
             "GV Upper Stream",
