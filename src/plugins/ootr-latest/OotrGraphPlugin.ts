@@ -339,6 +339,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         '8.1.0 Release',
         '8.1.51 Dev',
         '8.1.51 Fenhl-1',
+        '8.1.29 Rob-101',
         '8.1.29 Rob-104',
     ];
 
