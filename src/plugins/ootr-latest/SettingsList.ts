@@ -1,5 +1,6 @@
 import ExternalFileCache from "./OotrFileCache.js";
 import OotrVersion from "./OotrVersion.js";
+import { empty_preset_template } from "./EmptyPresetTemplate.js";
 import { rsl_preset_template } from "./RSLPresetTemplate.js";
 import type { GraphSettingType, GraphSettingsLayout } from "../GraphPlugin.js";
 
@@ -745,10 +746,19 @@ class SettingsList {
                     }
                 }
             }
+            this.create_default_preset();
             this.create_rsl_preset();
         } catch {
             console.log(`Could not parse presets_default.json: ${file_cache.files['data/presets_default.json']}`);
         }
+    }
+
+    create_default_preset() {
+        let default_preset = Object.assign({}, empty_preset_template);
+        for (let [setting_name, setting_def] of Object.entries(this.setting_definitions)) {
+            default_preset[setting_name] = setting_def.default;
+        }
+        this.settings_presets['Default / Beginner'] = default_preset;
     }
 
     create_rsl_preset() {
