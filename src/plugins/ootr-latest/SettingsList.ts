@@ -674,7 +674,8 @@ class SettingsList {
     load_settings_presets(file_cache: ExternalFileCache): void {
         if (file_cache.files['data/presets_default.json'] === undefined) return;
         try {
-            this.settings_presets = JSON.parse(file_cache.files['data/presets_default.json']);
+            this.create_default_preset();
+            Object.assign(this.settings_presets, JSON.parse(file_cache.files['data/presets_default.json']));
             for (let [preset_name, preset_settings] of Object.entries(this.settings_presets)) {
                 // convert old-style starting items lists to dictionary format
                 if (preset_settings.starting_items === null || preset_settings.starting_items === undefined) preset_settings.starting_items = {};
@@ -746,7 +747,6 @@ class SettingsList {
                     }
                 }
             }
-            this.create_default_preset();
             this.create_rsl_preset();
         } catch {
             console.log(`Could not parse presets_default.json: ${file_cache.files['data/presets_default.json']}`);
