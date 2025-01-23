@@ -41,6 +41,7 @@ export class Region implements GraphRegion {
         public savewarp: Entrance | null = null,
         public alias: string = '',
         public parent_group: RegionGroup | null = null,
+        public child_regions: RegionGroup[] = [],
         public page: string = '',
         public viewable: boolean = false,
         public is_required: boolean = false,
@@ -67,5 +68,17 @@ export class Region implements GraphRegion {
             return HintAreas[this.alt_hint_name];
         }
         return null;
+    }
+
+    get local_entrances(): Entrance[] {
+        return this.entrances;
+    }
+
+    get local_exits(): Entrance[] {
+        return this.exits;
+    }
+
+    get local_locations(): Location[] {
+        return this.locations;
     }
 }

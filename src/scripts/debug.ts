@@ -444,12 +444,12 @@ async function test_oneway_entrance_pools() {
 
 async function test_import(debug: boolean = false) {
     let result_files = [
-        'python_plando_07DLRR1OYW.json',
+        'python_plando_01DGTGDA2M.json',
     ];
-    let variant = 'fenhl'
+    let variant = 'main'
     let initialized = false;
 
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.1.45 Fenhl-3', {files: {}, subfolder: ''});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '7.1.143', {files: {}, subfolder: ''});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files:string;

@@ -1102,7 +1102,10 @@ class World implements GraphWorld {
         }
         for (let region_group of Object.values(this._region_group_cache)) {
             region_group.sort_lists();
-            this.region_groups.push(region_group);
+            // Don't include subgroups in top level list
+            if (region_group.parent_group === null) {
+                this.region_groups.push(region_group);
+            }
         }
         // Clear region group cache to ensure region variants create new groups
         this._region_group_cache = {};
@@ -1123,15 +1126,36 @@ class World implements GraphWorld {
 
     create_region_group(region: Region): RegionGroup | undefined {
         let alias: string = '';
+        let subgroup_aliases: Set<string> = new Set<string>();
         for (let [group_alias, sub_regions] of Object.entries(display_names.region_groups)) {
-            if (sub_regions.includes(region.name)) {
+            // Regions cannot exist in multiple region groups
+            if (sub_regions.region_names.includes(region.name)) {
                 alias = group_alias;
                 break;
+            }
+            // Regions cannot exist in both the region_names and subgroups lists
+            if (!!sub_regions.subgroups) {
+                for (let [subgroup_name, subgroup_regions] of Object.entries(sub_regions.subgroups)) {
+                    if (subgroup_regions.includes(region.name)) {
+                        alias = group_alias;
+                        subgroup_aliases.add(subgroup_name);
+                        // Don't break yet. Regions can exist in multiple subgroups
+                        // within the same region group (e.g. Castle Grounds)
+                    }
+                }
+                if (alias !== '') break;
             }
         }
         if (alias !== '') {
             let region_group = this.get_new_region_group(alias);
-            region_group.add_region(region);
+            if (subgroup_aliases.size === 0) {
+                region_group.add_region(region);
+            } else {
+                for (let subgroup_alias of subgroup_aliases) {
+                    let region_subgroup = region_group.get_new_sub_group(subgroup_alias);
+                    region_subgroup.add_region(region);
+                }
+            }
             return region_group;
         }
     }
@@ -1267,6 +1291,22 @@ class World implements GraphWorld {
                 throw(`No such region ${region_name}`);
             }
         }
+    }
+
+    get_region_group_from_hint_region(hint_region: string): RegionGroup {
+        let hinted_regions = this.region_groups.filter(r => r.alias === hint_region);
+        if (hinted_regions.length === 0) {
+            hinted_regions = this.region_groups.flatMap(r => r.sub_groups).filter(r => r.alias === hint_region);
+            if (hinted_regions.length === 0) {
+                function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
+                    return value !== null && value !== undefined;
+                }
+                hinted_regions = this.region_groups.flatMap(r => r.exits.filter(e => e.alias === hint_region).map(e => e.original_connection?.parent_group)).filter(notEmpty);
+            }
+        }
+        if (hinted_regions.length === 0) throw `No such hint region ${hint_region}`;
+        if (hinted_regions.length > 1) throw `Multiple hint region candidates found for ${hint_region}`;
+        return hinted_regions[0];
     }
 
     get_entrance(entrance: Entrance | string, dungeon_variant_name: string = ''): Entrance {

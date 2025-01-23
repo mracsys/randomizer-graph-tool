@@ -85,6 +85,10 @@ export interface GraphRegion {
     entrances: GraphEntrance[];
     locations: GraphLocation[];
     boulders: GraphBoulder[];
+    local_exits: GraphEntrance[];
+    local_entrances: GraphEntrance[];
+    local_locations: GraphLocation[];
+    child_regions: GraphRegion[];
     world: GraphWorld;
     is_required: boolean;
     required_for: GraphHintGoal[];
@@ -137,6 +141,7 @@ export interface GraphWorld {
     get_locations(): GraphLocation[],
     get_item(item: GraphItem | string): GraphItem,
     get_boulder(boulder: GraphBoulder | string): GraphBoulder,
+    get_region_group_from_hint_region(hint_region: string): GraphRegion,
 }
 
 export type GraphGameVersions = {
@@ -307,13 +312,14 @@ export abstract class GraphPlugin {
     abstract hint_location(hint_location: GraphLocation, hinted_location: GraphLocation, item: GraphItem): void;
     abstract hint_dual_locations(hint_location: GraphLocation, hinted_location1: GraphLocation, item1: GraphItem, hinted_location2: GraphLocation, item2: GraphItem): void;
     abstract hint_entrance(hint_location: GraphLocation, hinted_entrance: GraphEntrance, replaced_entrance: GraphEntrance): void;
-    abstract hint_required_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
-    abstract hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: GraphRegion, hinted_goal: GraphHintGoal): void;
-    abstract hint_unrequired_area(hint_location: GraphLocation, hinted_area: GraphRegion): void;
-    abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: GraphRegion, item: GraphItem): void;
-    abstract hint_area_num_items(hint_location: GraphLocation, hinted_area: GraphRegion, num_major_items: number): void;
+    abstract hint_required_area(hint_location: GraphLocation, hinted_area: string): void;
+    abstract hint_area_required_for_goal(hint_location: GraphLocation, hinted_area: string, hinted_goal: GraphHintGoal): void;
+    abstract hint_unrequired_area(hint_location: GraphLocation, hinted_area: string): void;
+    abstract hint_item_in_area(hint_location: GraphLocation, hinted_area: string, item: GraphItem): void;
+    abstract hint_area_num_items(hint_location: GraphLocation, hinted_area: string, num_major_items: number): void;
     abstract unhint(hint_location: GraphLocation): void;
     abstract cycle_hinted_areas_for_item(item_name: string, graph_world: GraphWorld, forward: boolean): {hint: string, hinted: boolean};
+    abstract get_hint_regions(): string[];
 
     get_entrances_for_world(world: GraphWorld): GraphEntrance[] {
         if (Object.keys(this.entrance_cache).length === 0) {

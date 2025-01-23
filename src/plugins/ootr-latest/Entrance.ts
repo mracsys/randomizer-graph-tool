@@ -93,7 +93,7 @@ class Entrance implements GraphEntrance {
     connect(region: Region): void {
         this.connected_region = region;
         region.entrances.push(this);
-        if (!!(region.parent_group)) region.parent_group.entrances.push(this);
+        if (!!(region.parent_group)) region.parent_group.connect_entrance_from_sub_region(region, this);
     }
 
     disconnect(): Region {
@@ -105,12 +105,7 @@ class Entrance implements GraphEntrance {
                 throw(`Failed to disconnect entrance ${this.name} from ${this.connected_region.name}`)
             }
             if (!!(this.connected_region.parent_group) && !!(this.type)) {
-                i = this.connected_region.parent_group.entrances.indexOf(this);
-                if (i > -1) {
-                    this.connected_region.parent_group.entrances.splice(i, 1);
-                } else {
-                    throw(`Failed to disconnect entrance ${this.name} from ${this.connected_region.parent_group.name}`)
-                }
+                this.connected_region.parent_group.disconnect_entrance_from_sub_region(this.connected_region, this);
             }
             let previously_connected = this.connected_region;
             this.connected_region = null;
