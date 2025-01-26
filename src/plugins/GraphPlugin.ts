@@ -89,6 +89,7 @@ export interface GraphRegion {
     local_entrances: GraphEntrance[];
     local_locations: GraphLocation[];
     child_regions: GraphRegion[];
+    parent_group: GraphRegion | null;
     world: GraphWorld;
     is_required: boolean;
     required_for: GraphHintGoal[];

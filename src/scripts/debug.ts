@@ -11,6 +11,7 @@ async_wrapper();
 
 async function async_wrapper() {
     try {
+        test_hint_region_search();
         //test_preset();
         //test_collecting_checked_locations();
         //test_reimport_export();
@@ -21,7 +22,7 @@ async function async_wrapper() {
         //test_region_viewability();
         //test_entrance_pools();
         //test_savewarps();
-        test_import(true);
+        //test_import(true);
         //test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
@@ -44,6 +45,13 @@ async function async_wrapper() {
 }
 
 const localstorage_plando = {};
+
+async function test_hint_region_search() {
+    let [version, local_files] = get_plando_randomizer_version({':version': '8.1.51 Fenhl-1'});
+    let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
+    graph.worlds[0].get_region_group_from_hint_region('Temple of Time');
+}
 
 async function test_v8_settings_import() {
     let version = '8.1.45 Fenhl-3';

@@ -1029,6 +1029,24 @@ export class OotrGraphPlugin extends GraphPlugin {
 
                 plando[':tracked_hints'] = {};
                 let locations = this.worlds[0].get_locations();
+                const buildExitName = (entrance: GraphEntrance, original: boolean = false): string => {
+                    let eLink = !!(entrance.replaces) && !original ? entrance.replaces : entrance;
+                    if (!eLink.use_target_alias) {
+                        return eLink.alias;
+                    } else {
+                        return eLink.target_alias;
+                    }
+                }
+                const buildHintRegionName = (hintRegion: GraphRegion | null): string => {
+                    if (hintRegion === null) return '';
+                    if (hintRegion.name.includes('->')) {
+                        let hintEntrance = hintRegion.exits[0].reverse;
+                        if (!!hintEntrance) return buildExitName(hintEntrance);
+                        throw `Could not build hint region name for region with no exits: ${hintRegion.name}`;
+                    } else {
+                        return hintRegion.name;
+                    }
+                }
                 for (let location of locations) {
                     if (location.type !== 'Event' && !!(location.item)) {
                         if (location.shuffled) {
@@ -1056,6 +1074,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                         if (!!location.hint) {
                             let plando_hint: PlandoHint = { type: 'undefined' };
                             let location_item: PlandoItem | string;
+                            let hintRegion = '';
+                            if (!!location.hint.area) hintRegion = buildHintRegionName(location.hint.area);
                             switch (location.hint.type) {
                                 case 'location':
                                     if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
@@ -1110,7 +1130,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                     if (location.hint.area === undefined || location.hint.area === null) throw `Can't save woth hint with undefined region ${location.name}`;
                                     plando_hint = {
                                         type: 'woth',
-                                        area: location.hint.area.alias,
+                                        area: hintRegion,
                                     }
                                     break;
                                 case 'goal':
@@ -1118,7 +1138,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                     if (location.hint.goal === undefined || location.hint.goal === null) throw `Can't save goal hint with undefined goal ${location.name}`;
                                     plando_hint = {
                                         type: 'goal',
-                                        area: location.hint.area.alias,
+                                        area: hintRegion,
                                         goal: {
                                             location: location.hint.goal.location?.name,
                                             item: location.hint.goal.item?.name,
@@ -1130,7 +1150,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                     if (location.hint.area === undefined || location.hint.area === null) throw `Can't save foolish hint with undefined region ${location.name}`;
                                     plando_hint = {
                                         type: 'foolish',
-                                        area: location.hint.area.alias,
+                                        area: hintRegion,
                                     }
                                     break;
                                 case 'important_check':
@@ -1138,7 +1158,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                     if (location.hint.num_major_items === undefined || location.hint.num_major_items === null) throw `Can't save important check hint with undefined major item count ${location.name}`;
                                     plando_hint = {
                                         type: 'important_check',
-                                        area: location.hint.area.alias,
+                                        area: hintRegion,
                                         num_major_items: location.hint.num_major_items,
                                     }
                                     break;
@@ -1147,7 +1167,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                                     if (location.hint.item === undefined || location.hint.item === null) throw `Can't save misc hint with undefined item ${location.name}`;
                                     plando_hint = {
                                         type: 'misc',
-                                        area: location.hint.area.alias,
+                                        area: hintRegion,
                                         item: location.hint.item.name,
                                     }
                                     break;
