@@ -2683,7 +2683,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let source_region_name = forward_entry[0].split(' -> ')[0];
-                if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')) {
+                if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')) {
                     // Handle different entrances for Ganons Castle to Ganons Tower depending on MQ variant.
                     // Skip the alternate as it is copied from the currently linked variant.
                     if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
@@ -2729,9 +2729,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (forward_entrance.parent_region.dungeon !== 'Ganons Castle') {
                         entrance_variant_name = forward_entrance.name;
                     } else {
-                        if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0') && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
+                        if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37') && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
                             entrance_variant_name = 'Ganons Castle Lobby -> Ganons Castle Tower';
-                        } else if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0') && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
+                        } else if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37') && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
                             entrance_variant_name = 'Ganons Castle Main -> Ganons Castle Tower';
                         } else {
                             entrance_variant_name = forward_entrance.name;
@@ -2776,7 +2776,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     
                     // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
                     if (!!(return_entrance.parent_region.dungeon)
-                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.0'))) {
+                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.37'))) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -2802,7 +2802,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
                         if (!!(return_entrance.parent_region.dungeon)
-                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.0'))) {
+                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.37'))) {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;

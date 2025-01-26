@@ -28,7 +28,7 @@ export default class EntranceList {
             default:
                 throw(`Unknown branch for version ${ootr_version.to_string()}`);
         }
-        if (ootr_version.branch !== 'Fenhl' && ootr_version.lt('8.2.0')) {
+        if (ootr_version.branch !== 'Fenhl' && ootr_version.lt('8.2.37')) {
             // Since we have to add the reverse entrance ourselves, always name it after the MQ
             // scheme since it makes the most sense in an upstream rando change.
             let forward_ganons_tower: EntranceConnectionData = ['Ganons Castle Lobby -> Ganons Castle Tower', {}];

@@ -821,7 +821,7 @@ class World implements GraphWorld {
                         new_region.exits.push(new_exit);
                     }
                 }
-                if (is_new_region && this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')
+                if (is_new_region && this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')
                     && new_region.name === 'Ganons Castle Tower' && this.settings.logic_rules !== 'glitched'
                     && !(Object.keys(region.exits).includes('Ganons Castle Main'))
                     && !(Object.keys(region.exits).includes('Ganons Castle Lobby'))) {
@@ -982,11 +982,11 @@ class World implements GraphWorld {
                 if (!!(exit.connected_region) && alt_dungeon_regions.includes(exit.connected_region)) {
                     let alt_region = exit.disconnect();
                     let alt_connection_name: string;
-                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')
+                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')
                         && dungeon_variant_name === 'Ganons Castle'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             alt_connection_name = 'Ganons Castle Lobby';
-                    } else if (this.parent_graph.version.branch !== 'Fenhl' && this.parent_graph.version.lt('8.2.0')
+                    } else if (this.parent_graph.version.branch !== 'Fenhl' && this.parent_graph.version.lt('8.2.37')
                         && dungeon_variant_name === 'Ganons Castle MQ'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             alt_connection_name = 'Ganons Castle Main';
@@ -999,11 +999,11 @@ class World implements GraphWorld {
                     // no need to update original connection property as these entrances aren't shuffled,
                     // but done anyway just in case since the target region group is important
                     let original_connection_name: string;
-                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')
+                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')
                         && dungeon_variant_name === 'Ganons Castle'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             original_connection_name = 'Ganons Castle Lobby';
-                    } else if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')
+                    } else if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')
                         && dungeon_variant_name === 'Ganons Castle MQ'
                         && exit.name === 'Ganons Castle Tower -> Ganons Castle Main') {
                             original_connection_name = 'Ganons Castle Main';
@@ -1083,7 +1083,7 @@ class World implements GraphWorld {
                     // Ganon's Castle is handled properly on Fenhl's branch where Tower can be shuffled.
                     let alt_region: Region;
                     let exit_name = exit.name;
-                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')
+                    if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')
                         && region.dungeon === 'Ganons Castle'
                         && target_region.name === 'Ganons Castle Tower') {
                             let region_override = this.dungeon_mq[region.dungeon] ? 'Ganons Castle Lobby' : 'Ganons Castle Main';
