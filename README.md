@@ -67,10 +67,15 @@ _user\_overrides_ - Valid plando file for the selected game and version.
 _version_ - Randomizer version for the game. Supported versions are:
 
 - ootr
+    - 8.2.0 Release
+    - 8.2.50 f.LUM
+    - 8.2.50 Fenhl-1
+    - 8.2.46 Rob-125
     - 8.1.0 Release
     - 8.1.45 f.LUM
     - 8.1.45 Fenhl-3
     - 8.1.29 Rob-104
+    - 8.1.81 Rob-117
     - 7.1.198 Rob-49
     - 7.1.195 R-1
     - 7.1.154 R-1
@@ -480,6 +485,20 @@ npm publish --access=public
 ```
 
 ## Changelog
+
+### 2.1.0
+
+* Add subregion feature to region groups
+* Support newer randomizer versions
+    - Main branch
+        - 8.2.0 Release
+        - 8.2.50 Dev
+    - Fenhl's branch
+        - 8.2.50 Fenhl-1
+    - RealRob's branch
+        - 8.1.81 Rob-117
+        - 8.2.46 Rob-125
+* Use upstream hint region definitions instead of region group names for hints using regions
 
 ### 2.0.0
 
