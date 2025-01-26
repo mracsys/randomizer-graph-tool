@@ -40,8 +40,6 @@ export const vanilla_dungeon_boulders = {
     'Bottom of the Well': {
         'BOTW_CHEST_BOULDER_1': BOULDER_TYPE.BROWN,
         'BOTW_CHEST_BOULDER_2': BOULDER_TYPE.BROWN,
-        'BOTW_UNNAMED_1': BOULDER_TYPE.BROWN,
-        'BOTW_UNNAMED_2': BOULDER_TYPE.BROWN,
         'BOTW_GRASS_BOULDER_1': BOULDER_TYPE.BROWN,
         'BOTW_GRASS_BOULDER_2': BOULDER_TYPE.BROWN,
     },
@@ -63,6 +61,20 @@ export const vanilla_dungeon_boulders = {
     'Ganons Castle': {
         'IGC_WATER_TRIAL_BOULDER_1': BOULDER_TYPE.RED_ICE,
         'IGC_WATER_TRIAL_BOULDER_2': BOULDER_TYPE.RED_ICE,
+    }
+}
+
+export const vanilla_dungeon_boulders_8_1 = {
+    'Bottom of the Well': {
+        'BOTW_UNNAMED_1': BOULDER_TYPE.BROWN,
+        'BOTW_UNNAMED_2': BOULDER_TYPE.BROWN,
+    }
+}
+
+export const vanilla_dungeon_boulders_8_2 = {
+    'Bottom of the Well': {
+        'BOTW_BOMB_FLOWER_BOULDER_1': BOULDER_TYPE.BROWN,
+        'BOTW_BOMB_FLOWER_BOULDER_2': BOULDER_TYPE.BROWN,
     }
 }
 

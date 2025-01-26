@@ -8,7 +8,7 @@ import { RegionGroup } from "./RegionGroup.js";
 import { Item } from "./Item.js";
 import { Boulder } from "./Boulders.js";
 
-export const TimeOfDay = {
+export const TimeOfDay: {[key: string]: number} = {
     NONE: 0,
     DAY: 1,
     DAMPE: 2,

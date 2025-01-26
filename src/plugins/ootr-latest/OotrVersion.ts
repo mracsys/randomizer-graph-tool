@@ -23,22 +23,28 @@ class OotrVersion implements GameVersion {
         '8.1.0': 'd53f30f9a3b7f02cdad78f861843f2e0045656de',
         '8.1.51': '295db7e069b99db87ecbf8f20171ab34937e90b5',
         '8.2.0': '56d08e8934d1617d3ecbd36891023bd160c2f015',
+        '8.2.50': 'd28dd1bf6d6c4608ff7ed5304bc8a84472a8ea91',
     }
 
     static devr_version_commit_ids: VersionCommitMap = {
-        '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
-        '7.1.154 R-1': 'c5af1e9df2dd280b70b25f02d80d13dce9680d58',
         '7.1.143 R-1': '06390ece7e38fce1dd02ca60a28a7b1ff9fceb10',
+        '7.1.154 R-1': 'c5af1e9df2dd280b70b25f02d80d13dce9680d58',
+        '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
+        '8.1.47 R-1': '35b93e4c65757a62aeb4bb6151fb87d4324e896c',
     }
     static devrob_version_commit_ids: VersionCommitMap = {
         '7.1.198 Rob-49': 'd3fcfa72c833a2e6fb2dffcab3461394aa6765c8',
         '8.1.29 Rob-101': 'c342eb28bceb1bc4609a955b090a48e6c8632647',
         '8.1.29 Rob-104': '2f40c346f4053b5d66732b0f2e407e4b8dc33f6e',
+        '8.1.81 Rob-117': '10c20567d10cf1a1f477f1c5752e170ec518338d',
+        '8.2.46 Rob-124': '2530734b9102e5193d5cf2e40230b5043e15968c',
+        '8.2.46 Rob-125': '09f17cc61ca3e267bc6777df2f46ce5bbd6715ea',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
         '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',
         '8.1.49 Fenhl-2': '0c181c423ed88d071b3e21798a229ecc403c8076',
         '8.1.51 Fenhl-1': '032f3a95acfed7f431fe6c5125aa44438ca6d6d0',
+        '8.2.50 Fenhl-1': '9bb3f11bb4ae7f07b96f60c86243bbb1545b8995',
     }
 
     constructor(ootr_version: string, generate_files: boolean = true) {

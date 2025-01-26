@@ -80,6 +80,15 @@ class WorldState {
         return s;
     }
 
+    count_distinct(items: string[] | IterableIterator<string>, { age = null, spot = null, tod = null }: kwargs = {}): number {
+        if (this.world.version.lte('8.2.0')) return this.count_of(items);
+        let s = 0;
+        for (const i of items) {
+            s += !!this.prog_items[i] ? 1 : 0;
+        }
+        return s;
+    }
+
     item_count(item: string, { age = null, spot = null, tod = null }: kwargs = {}): number {
         return this.prog_items[item];
     }
@@ -97,15 +106,15 @@ class WorldState {
     }
 
     has_medallions(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
-        return this.count_of(this.ItemInfo.medallions.values()) >= count;
+        return this.count_distinct(this.ItemInfo.medallions.values()) >= count;
     }
 
     has_stones(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
-        return this.count_of(this.ItemInfo.stones.values()) >= count;
+        return this.count_distinct(this.ItemInfo.stones.values()) >= count;
     }
 
     has_dungeon_rewards(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
-        return (this.count_of(this.ItemInfo.medallions.values()) + this.count_of(this.ItemInfo.stones.values())) >= count;
+        return (this.count_distinct(this.ItemInfo.medallions.values()) + this.count_distinct(this.ItemInfo.stones.values())) >= count;
     }
 
     had_night_start({ age = null, spot = null, tod = null }: kwargs = {}): boolean {
@@ -137,12 +146,12 @@ class WorldState {
     }
 
     has_ocarina_buttons(count: number, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
-        return this.count_of(this.ItemInfo.ocarina_buttons.values()) >= count;
+        return this.count_distinct(this.ItemInfo.ocarina_buttons.values()) >= count;
     }
 
     has_all_notes_for_song(song: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         if (song === 'Scarecrow Song') {
-            return this.has_ocarina_buttons(2);
+            return this.has_ocarina_buttons(2) || (this.world.version.gt('8.2.0') && !!this.world.settings.free_scarecrow);
         }
         let notes = this.world.song_notes[song];
         if (notes.includes('A')) {
@@ -269,14 +278,27 @@ class WorldState {
         if (this.world.settings.shuffle_enemy_spawns === 'regional') {
             let scene: string | null = null;
             let group: string = 'Unknown Group';
-            if (!!spot && spot instanceof Location && spot.scene !== 0xFF && spot.scene !== 62 && spot.scene !== null) {
-                scene = scene_list[spot.scene];
-            } else if (!!spot && spot instanceof Location && spot.scene === 62) {
-                scene = 'Grottos';
-            } else if (spot?.parent_region?.scene) {
-                scene = spot.parent_region.scene;
-            } else if (spot?.parent_region?.dungeon) {
-                scene = spot.parent_region.dungeon;
+            if (this.world.version.lt('8.1.30')) {
+                if (!!spot && spot instanceof Location && spot.scene !== 0xFF && spot.scene !== 62 && spot.scene !== null) {
+                    scene = scene_list[spot.scene];
+                } else if (!!spot && spot instanceof Location && spot.scene === 62) {
+                    scene = 'Grottos';
+                } else if (spot?.parent_region?.scene) {
+                    scene = spot.parent_region.scene;
+                } else if (spot?.parent_region?.dungeon) {
+                    scene = spot.parent_region.dungeon;
+                }
+            } else {
+                // bugfix after 8.1.29 affects Spirit Temple Hands regional souls (dungeon vs scene)
+                if (!!spot && spot instanceof Location && spot.scene === 62) {
+                    scene = 'Grottos';
+                } else if (spot?.parent_region?.dungeon) {
+                    scene = spot.parent_region.dungeon;
+                } else if (!!spot && spot instanceof Location && spot.scene !== 0xFF && spot.scene !== 62 && spot.scene !== null) {
+                    scene = scene_list[spot.scene];
+                } else if (spot?.parent_region?.scene) {
+                    scene = spot.parent_region.scene;
+                }
             }
             if (!!scene) {
                 let scene_group = get_scene_group(scene);

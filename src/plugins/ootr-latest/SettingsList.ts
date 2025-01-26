@@ -190,6 +190,8 @@ export type SettingsDictionary = {
     shuffle_grotto_entrances?: boolean,
     shuffle_overworld_entrances?: boolean,
     decouple_entrances?: boolean,
+    free_scarecrow?: boolean,
+    shuffle_100_skulltula_rupee?: boolean,
 };
 
 export type SettingsPresets = {
@@ -805,11 +807,16 @@ class SettingsList {
         if (Object.keys(this.setting_definitions).includes('skip_reward_from_rauru')) {
             rsl_preset.skip_reward_from_rauru = true;
         }
+        if (Object.keys(this.setting_definitions).includes('shuffle_ganon_tower')) {
+            rsl_preset.shuffle_ganon_tower = false;
+        }
+        if (Object.keys(this.setting_definitions).includes('shuffle_gerudo_fortress_heart_piece')) {
+            rsl_preset.shuffle_gerudo_fortress_heart_piece = 'vanilla';
+        }
 
         if (this.ootr_version.branch === 'Fenhl') {
             rsl_preset.shuffle_hideout_entrances = 'off';
             rsl_preset.shuffle_gerudo_valley_river_exit = 'balanced';
-            rsl_preset.shuffle_ganon_tower = false;
             delete rsl_preset.spawn_positions;
             rsl_preset.shuffle_adult_spawn = 'balanced';
             rsl_preset.shuffle_child_spawn = 'balanced';
@@ -826,7 +833,6 @@ class SettingsList {
             rsl_preset.shuffle_items = true;
             rsl_preset.shuffle_base_item_pool = true;
             rsl_preset.triforce_hunt_mode = 'normal';
-            rsl_preset.shuffle_gerudo_fortress_heart_piece = 'vanilla';
             rsl_preset.exclusive_one_ways = false;
             rsl_preset.dungeon_back_access = false;
             rsl_preset.logic_water_gold_scale_no_entry = false;

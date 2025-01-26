@@ -103,6 +103,7 @@ export default class ItemList {
                     .replaceAll("'", '"')
                     .replaceAll('\\"', "'")             // I thought there was a change a while back to get rid of apostrophes in internal names...
                     .replaceAll(/0x[\da-fA-F]+/g, hex_replacer)  // JSON doesn't support hex
+                    .replaceAll(/GetItemId\.[A-Z_0-9]*/g, '"GetItemId.ITEM_ID"')    // convert python GetItemId enum to string (unused in this library)
                     .replaceAll(',]', ']')              // JSON doesn't support trailing commas
                     .replaceAll('float["Inf"]', '65535')// convert from python infinity to a large number, infinity doesn't matter for search
                     .replaceAll(/\bNone\b/g, 'null')    // convert from python None to null

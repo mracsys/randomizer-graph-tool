@@ -18,6 +18,7 @@ type JsonLogicRegion = {
     events?: Dictionary<string>,
     locations?: Dictionary<string>,
     exits?: Dictionary<string>,
+    provides_time?: string,
 };
 
 type JsonLogicMacroFile = {

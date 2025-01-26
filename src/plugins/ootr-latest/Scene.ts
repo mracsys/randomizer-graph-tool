@@ -108,7 +108,8 @@ const grotto_scenes: {[grotto_name: string]: string} = {
      'HF Near Kak Grotto': 'Hyrule Field',
      'HF Tektite Grotto': 'Hyrule Field',
      'HC Storms Grotto': 'Hyrule Castle',
-     'Kak Redead Grotto': 'Kakariko Village'
+     'Kak Redead Grotto': 'Kakariko Village',
+     'Kak ReDead Grotto': 'Kakariko Village',
 }
 
 const scene_groups: {[group_name: string]: string[]} = {
@@ -120,8 +121,9 @@ const scene_groups: {[group_name: string]: string[]} = {
     'Water Temple': ['Water Temple', 'Water Temple Boss'],
     'Spirit Temple': ['Spirit Temple', 'Spirit Temple Boss'],
     'Shadow Temple': ['Shadow Temple', 'Shadow Temple Boss'],
-    'Ganons Castle': ['Ganons Castle', 'Ganons Tower'],
+    'Ganons Castle': ['Ganons Castle', 'Ganons Tower', 'Ganons Castle Tower'],
     'Market Area': [
+        'Market',
         'Market Treasure Chest Game',
         'Market Entrance (Child Day)',
         'Market Entrance (Child Night)',

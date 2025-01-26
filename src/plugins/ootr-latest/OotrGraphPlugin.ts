@@ -336,10 +336,14 @@ const option_to_item_names: {[option: string]: string[]} = {
 
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
+        '8.2.0 Release',
+        '8.2.50 Dev',
+        '8.2.50 Fenhl-1',
+        '8.2.46 Rob-125',
         '8.1.0 Release',
         '8.1.51 Dev',
         '8.1.51 Fenhl-1',
-        '8.1.29 Rob-101',
+        '8.1.81 Rob-117',
         '8.1.29 Rob-104',
     ];
 
@@ -2566,7 +2570,15 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                     let alt_savewarp = savewarp.world.get_entrance(savewarp.name, dungeon_variant_name);
                     alt_savewarp.is_savewarp = true;
-                    if (!alt_savewarp.parent_region.is_boss_room && !!savewarp.replaces?.original_connection) {
+                    if ((!alt_savewarp.parent_region.is_boss_room) && !!savewarp.replaces?.original_connection) {
+                        let alt_replaces: Entrance;
+                        if (!!savewarp.replaces.parent_region.dungeon) {
+                            alt_replaces = savewarp.world.get_entrance(savewarp.replaces.name, dungeon_variant_name);
+                        } else {
+                            alt_replaces = savewarp.replaces;
+                        }
+                        alt_savewarp.replaces = alt_replaces;
+                        if (alt_savewarp.replaces === null || alt_savewarp.replaces.original_connection === null) throw `Attempted to connect alternate dungeon savewarp with no equivalent entrance`;
                         let alt_savewarp_target = savewarp.world.get_region(savewarp.replaces.original_connection.name, dungeon_variant_name);
                         alt_savewarp.connect(alt_savewarp_target);
                     }
@@ -2651,7 +2663,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             let decoupled = Object.keys(world.settings).includes('decouple_entrances') && world.settings.decouple_entrances === true;
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let source_region_name = forward_entry[0].split(' -> ')[0];
-                if (this.version.branch !== 'Fenhl') {
+                if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0')) {
                     // Handle different entrances for Ganons Castle to Ganons Tower depending on MQ variant.
                     // Skip the alternate as it is copied from the currently linked variant.
                     if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
@@ -2697,9 +2709,9 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (forward_entrance.parent_region.dungeon !== 'Ganons Castle') {
                         entrance_variant_name = forward_entrance.name;
                     } else {
-                        if (this.version.branch !== 'Fenhl' && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
+                        if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0') && world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Main') {
                             entrance_variant_name = 'Ganons Castle Lobby -> Ganons Castle Tower';
-                        } else if (this.version.branch !== 'Fenhl' && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
+                        } else if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.0') && !world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') {
                             entrance_variant_name = 'Ganons Castle Main -> Ganons Castle Tower';
                         } else {
                             entrance_variant_name = forward_entrance.name;
@@ -2744,7 +2756,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     
                     // Ganons Tower doesn't have an MQ variant but is marked as part of the dungeon
                     if (!!(return_entrance.parent_region.dungeon)
-                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl')) {
+                    && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.0'))) {
                         let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                             return_entrance.parent_region.dungeon :
                             `${return_entrance.parent_region.dungeon} MQ`;
@@ -2770,7 +2782,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     if (return_entrance.target_group === null) {
                         return_entrance.target_group = world.create_target_region_group(return_entrance);
                         if (!!(return_entrance.parent_region.dungeon)
-                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl')) {
+                        && (!(['Ganons Castle Main', 'Ganons Castle Lobby'].includes(source_region_name)) || this.version.branch === 'Fenhl' || this.version.gte('8.2.0'))) {
                             let dungeon_variant_name = return_entrance.world.dungeon_mq[return_entrance.parent_region.dungeon] ?
                                 return_entrance.parent_region.dungeon :
                                 `${return_entrance.parent_region.dungeon} MQ`;
@@ -2934,6 +2946,8 @@ export class OotrGraphPlugin extends GraphPlugin {
                         (world.settings.tokensanity === 'overworld' && loc.dungeon())) {
                             world.push_vanilla_item(loc);
                     }
+                } else if (loc.name === 'Kak 100 Gold Skulltula Reward' && world.settings.shuffle_100_skulltula_rupee !== undefined && world.settings.shuffle_100_skulltula_rupee !== null) {
+                    if (!world.settings.shuffle_100_skulltula_rupee) world.push_vanilla_item(loc);
                 } else if (['ActorOverride', 'Freestanding', 'RupeeTower'].includes(loc.type)) {
                     if (world.settings.shuffle_freestanding_items === 'off' ||
                         (world.settings.shuffle_freestanding_items === 'dungeons' && !(loc.dungeon())) ||
@@ -3387,6 +3401,10 @@ export class OotrGraphPlugin extends GraphPlugin {
                     let known_type: BOULDER_TYPE;
                     if (Object.keys(BOULDER_TYPE_PLANDO).includes(boulder_type)) {
                         known_type = BOULDER_TYPE_PLANDO[boulder_type];
+                    // 8.2.46 Rob-124 python is saving boulder types as ints to the plando
+                    // for some reason, this is only needed for unit tests.
+                    } else if (!isNaN(parseInt(boulder_type)) && [0, 1, 2, 3, 4].includes(parseInt(boulder_type))) {
+                        known_type = parseInt(boulder_type);
                     } else {
                         known_type = BOULDER_TYPE.UNKNOWN;
                     }
@@ -3565,16 +3583,30 @@ export class OotrGraphPlugin extends GraphPlugin {
 
     set_blue_warps(world: World): void {
         // Determine blue warp targets
-        let blue_warps: [Entrance, Entrance][] = [
-            [world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
-            [world.get_entrance('King Dodongo Boss Room -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
-            [world.get_entrance('Barinade Boss Room -> Zoras Fountain'), world.get_entrance('Barinade Boss Room -> Jabu Jabus Belly Before Boss')],
-            [world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'), world.get_entrance('Phantom Ganon Boss Room -> Forest Temple Before Boss')],
-            [world.get_entrance('Volvagia Boss Room -> DMC Central Local'), world.get_entrance('Volvagia Boss Room -> Fire Temple Before Boss')],
-            [world.get_entrance('Morpha Boss Room -> Lake Hylia'), world.get_entrance('Morpha Boss Room -> Water Temple Before Boss')],
-            [world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'), world.get_entrance('Bongo Bongo Boss Room -> Shadow Temple Before Boss')],
-            [world.get_entrance('Twinrova Boss Room -> Desert Colossus'), world.get_entrance('Twinrova Boss Room -> Spirit Temple Before Boss')],
-        ];
+        let blue_warps: [Entrance, Entrance][];
+        if (this.version.branch !== 'Fenhl' || this.version.lt('8.2.50')) {
+            blue_warps = [
+                [world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
+                [world.get_entrance('King Dodongo Boss Room -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
+                [world.get_entrance('Barinade Boss Room -> Zoras Fountain'), world.get_entrance('Barinade Boss Room -> Jabu Jabus Belly Before Boss')],
+                [world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'), world.get_entrance('Phantom Ganon Boss Room -> Forest Temple Before Boss')],
+                [world.get_entrance('Volvagia Boss Room -> DMC Central Local'), world.get_entrance('Volvagia Boss Room -> Fire Temple Before Boss')],
+                [world.get_entrance('Morpha Boss Room -> Lake Hylia'), world.get_entrance('Morpha Boss Room -> Water Temple Before Boss')],
+                [world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'), world.get_entrance('Bongo Bongo Boss Room -> Shadow Temple Before Boss')],
+                [world.get_entrance('Twinrova Boss Room -> Desert Colossus'), world.get_entrance('Twinrova Boss Room -> Spirit Temple Before Boss')],
+            ];
+        } else {
+            blue_warps = [
+                [world.get_entrance('Queen Gohma Blue Warp -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
+                [world.get_entrance('King Dodongo Blue Warp -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
+                [world.get_entrance('Barinade Blue Warp -> Zoras Fountain'), world.get_entrance('Barinade Boss Room -> Jabu Jabus Belly Before Boss')],
+                [world.get_entrance('Phantom Ganon Blue Warp -> Sacred Forest Meadow'), world.get_entrance('Phantom Ganon Boss Room -> Forest Temple Before Boss')],
+                [world.get_entrance('Volvagia Blue Warp -> DMC Central Local'), world.get_entrance('Volvagia Boss Room -> Fire Temple Before Boss')],
+                [world.get_entrance('Morpha Blue Warp -> Lake Hylia'), world.get_entrance('Morpha Boss Room -> Water Temple Before Boss')],
+                [world.get_entrance('Bongo Bongo Blue Warp -> Graveyard Warp Pad Region'), world.get_entrance('Bongo Bongo Boss Room -> Shadow Temple Before Boss')],
+                [world.get_entrance('Twinrova Blue Warp -> Desert Colossus'), world.get_entrance('Twinrova Boss Room -> Spirit Temple Before Boss')],
+            ];
+        }
 
         for (let [blue_warp, boss_door_exit] of blue_warps) {
             this.set_blue_warp(blue_warp, boss_door_exit);
@@ -3598,16 +3630,30 @@ export class OotrGraphPlugin extends GraphPlugin {
             'Bongo Bongo Boss Room -> Shadow Temple Before Boss': world.get_entrance('Shadow Temple Entryway -> Graveyard Warp Pad Region'),
             'Twinrova Boss Room -> Spirit Temple Before Boss': world.get_entrance('Spirit Temple Lobby -> Desert Colossus From Spirit Lobby'),
         };
-        let blue_warp_exits: {[e: string]: Entrance} = {
-            'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
-            'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
-            'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Boss Room -> Zoras Fountain'),
-            'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'),
-            'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Boss Room -> DMC Central Local'),
-            'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Boss Room -> Lake Hylia'),
-            'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'),
-            'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Boss Room -> Desert Colossus'),
-        };
+        let blue_warp_exits: {[e: string]: Entrance};
+        if (this.version.branch !== 'Fenhl' || this.version.lt('8.2.50')) {
+            blue_warp_exits = {
+                'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
+                'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
+                'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Boss Room -> Zoras Fountain'),
+                'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Boss Room -> Sacred Forest Meadow'),
+                'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Boss Room -> DMC Central Local'),
+                'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Boss Room -> Lake Hylia'),
+                'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Boss Room -> Graveyard Warp Pad Region'),
+                'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Boss Room -> Desert Colossus'),
+            };
+        } else {
+            blue_warp_exits = {
+                'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Blue Warp -> KF Outside Deku Tree'),
+                'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Blue Warp -> Death Mountain'),
+                'Jabu Jabus Belly Beginning -> Zoras Fountain': world.get_entrance('Barinade Blue Warp -> Zoras Fountain'),
+                'Forest Temple Lobby -> SFM Forest Temple Entrance Ledge': world.get_entrance('Phantom Ganon Blue Warp -> Sacred Forest Meadow'),
+                'Fire Temple Lower -> DMC Fire Temple Entrance': world.get_entrance('Volvagia Blue Warp -> DMC Central Local'),
+                'Water Temple Lobby -> Lake Hylia': world.get_entrance('Morpha Blue Warp -> Lake Hylia'),
+                'Shadow Temple Entryway -> Graveyard Warp Pad Region': world.get_entrance('Bongo Bongo Blue Warp -> Graveyard Warp Pad Region'),
+                'Spirit Temple Lobby -> Desert Colossus From Spirit Lobby': world.get_entrance('Twinrova Blue Warp -> Desert Colossus'),
+            };
+        }
         let target = this.get_original_or_replaced_entrance(boss_door_exit);
         // If a boss room is inside a dungeon entrance (or inside a dungeon which is inside a dungeon entrance),
         // make the blue warp go to the furthest dungeon's blue warp target. Fenhl disables this for decoupled.
