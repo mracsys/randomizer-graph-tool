@@ -213,32 +213,37 @@ export const display_names: DisplayNames = {
             ]
         },
         "Lost Woods": {
-            "region_names": [
-                "Lost Woods",
-                "LW Beyond Mido",
-                "LW Forest Exit",
-                "LW Underwater Entrance"
-            ]
-        },
-        "Lost Woods Bridge": {
-            "region_names": [
-                "LW Bridge From Forest",
-                "LW Bridge"
-            ]
+            "region_names": [],
+            "subgroups": {
+                "Lost Woods Maze": [
+                    "Lost Woods",
+                    "LW Beyond Mido",
+                    "LW Forest Exit",
+                    "LW Underwater Entrance"
+                ],
+                "Lost Woods Bridge": [
+                    "LW Bridge From Forest",
+                    "LW Bridge"
+                ]
+            }
         },
         "Market": {
-            "region_names": [
-                "Market",
-                "Market Back Alley",
-                "Market Adult Enemies",
-                "Market Dog Lady House",
-                "Market Adult ReDeads"
-            ]
-        },
-        "Market Entrance": {
-            "region_names": [
-                "Market Entrance"
-            ]
+            "region_names": [],
+            "subgroups": {
+                "Market Square": [
+                    "Market",
+                    "Market Back Alley",
+                    "Market Adult Enemies",
+                    "Market Dog Lady House",
+                    "Market Adult ReDeads"
+                ],
+                "Market Entrance": [
+                    "Market Entrance"
+                ],
+                "Temple of Time Entrance": [
+                    "ToT Entrance"
+                ]
+            }
         },
         "Sacred Forest Meadow": {
             "region_names": [
@@ -259,11 +264,6 @@ export const display_names: DisplayNames = {
                 "Serenade of Water Warp",
                 "Nocturne of Shadow Warp",
                 "Requiem of Spirit Warp"
-            ]
-        },
-        "Temple of Time Entrance": {
-            "region_names": [
-                "ToT Entrance"
             ]
         },
         "Zora's Fountain": {
