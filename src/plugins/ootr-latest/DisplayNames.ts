@@ -5021,10 +5021,10 @@ export const display_names: DisplayNames = {
         "1 Torch Jail Straight": {"grouped": [
             "GF Entrances Behind Crates -> Hideout 1 Torch Jail"
         ]},
-        "4 Torch Jail U Tunnel": {"grouped": [
+        "4 Torch Jail L Tunnel": {"grouped": [
             "Gerudo Fortress -> Hideout 4 Torches Jail"
         ]},
-        "4 Torch Jail L Tunnel": {"grouped": [
+        "4 Torch Jail U Tunnel": {"grouped": [
             "GF Roof Entrance Cluster -> Hideout 4 Torches Jail"
         ]},
         "Kitchen Hallway Lower": {"grouped": [
