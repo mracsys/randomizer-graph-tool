@@ -199,9 +199,9 @@ export class RegionGroup implements GraphRegion {
     }
 
     disconnect_entrance(e: Entrance): boolean {
-        let i = this.entrances.indexOf(e);
+        let i = this._entrances.indexOf(e);
         if (i > -1) {
-            this.entrances.splice(i, 1);
+            this._entrances.splice(i, 1);
             return true;
         } else {
             return false;
