@@ -2507,7 +2507,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             }
         } else {
             // Normal entrances can only link to exactly one shuffled target.
-            let used_targets = all_targets.map(e => e.is_savewarp ? null : e.replaces).filter(e => e !== null);
+            let used_targets = all_targets.map(e => e.is_savewarp || e.one_way ? null : e.replaces).filter(e => e !== null);
             let targets = all_targets.filter(e => !(used_targets.includes(e)) && !!e.type && e.shuffled);
             for (let target of targets) {
                 if (!!(target.type) && !!(entrance.type)) {
