@@ -39,6 +39,7 @@ class OotrVersion implements GameVersion {
         '8.1.81 Rob-117': '10c20567d10cf1a1f477f1c5752e170ec518338d',
         '8.2.46 Rob-124': '2530734b9102e5193d5cf2e40230b5043e15968c',
         '8.2.46 Rob-125': '09f17cc61ca3e267bc6777df2f46ce5bbd6715ea',
+        '8.2.50 Rob-128': '2030053144ce99f3364244117db64ba9585a1513',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
         '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',

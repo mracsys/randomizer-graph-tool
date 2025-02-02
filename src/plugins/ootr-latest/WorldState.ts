@@ -326,6 +326,9 @@ class WorldState {
         } else if (boulder_type === BOULDER_TYPE.SILVER) {
             // Check for adult+str2
             return age === 'adult' && this.has('Progressive Strength Upgrade', 2);
+        } else if (boulder_type === BOULDER_TYPE.GOLD) {
+            // Check for adult+str3
+            return age === 'adult' && this.has('Progressive Strength Upgrade', 3);
         } else if (boulder_type === BOULDER_TYPE.BROWN) {
             // Check for adult+hammer or explosives
             return this.world.parser.can_blast_or_smash(this, { age: age });

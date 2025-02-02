@@ -6,7 +6,8 @@ export const enum BOULDER_TYPE {
     BRONZE = 1,
     SILVER = 2,
     RED_ICE = 3,
-    HEAVY_BLOCK = 4,
+    GOLD = 4,        // This was inserted in 8.2.50 Rob-127, moving HEAVY_BLOCK to 5, but none of the test plandos had any of those shuffled.
+    HEAVY_BLOCK = 5, // Probably a good idea to restrict boulder shuffle tracker support to versions after that.
     UNKNOWN = 99,
 }
 
@@ -15,7 +16,8 @@ export const BOULDER_TYPE_STRINGS: {[boulder_type: number]: string} = {
     1: 'BOULDER_TYPE.BRONZE',
     2: 'BOULDER_TYPE.SILVER',
     3: 'BOULDER_TYPE.RED_ICE',
-    4: 'BOULDER_TYPE.HEAVY_BLOCK',
+    4: 'BOULDER_TYPE.GOLD',
+    5: 'BOULDER_TYPE.HEAVY_BLOCK',
     99: 'BOULDER_TYPE.UNKNOWN',
 }
 
@@ -33,6 +35,7 @@ export const boulder_rules: {[boulder_type_name: string]: BOULDER_TYPE} = {
     'BOULDER_TYPE_BRONZE': BOULDER_TYPE.BRONZE,
     'BOULDER_TYPE_SILVER': BOULDER_TYPE.SILVER,
     'BOULDER_TYPE_RED_ICE': BOULDER_TYPE.RED_ICE,
+    'BOULDER_TYPE_GOLD': BOULDER_TYPE.GOLD,
     'BOULDER_TYPE_HEAVY_BLOCK': BOULDER_TYPE.HEAVY_BLOCK
 }
 
