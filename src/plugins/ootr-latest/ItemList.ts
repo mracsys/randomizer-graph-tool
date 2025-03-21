@@ -37,6 +37,7 @@ export type ItemTable = {
 // such as the Biggoron Sword.
 export const non_required_items = [
     'Biggoron Sword',
+    'Giants Knife',
     'Deku Shield',
     'Hylian Shield',
     'Goron Mask',
