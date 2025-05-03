@@ -238,6 +238,11 @@ export function get_plando_randomizer_version(plando: {[key: string]: any}): [st
                 seed_path = './tests/seeds/fenhl-8-2-50-1/';
                 spoiler_path = './tests/spoilers/fenhl-8-2-50-1/';
                 break;
+            case '8.2.69 Fenhl-7':
+                local_files = 'tests/ootr-local-fenhl-8-2-69-7';
+                seed_path = './tests/seeds/fenhl-8-2-69-7/';
+                spoiler_path = './tests/spoilers/fenhl-8-2-69-7/';
+                break;
             default:
                 throw(`Unknown version for local testing: ${version}`);
         }

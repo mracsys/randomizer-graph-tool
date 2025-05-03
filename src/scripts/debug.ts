@@ -11,7 +11,8 @@ async_wrapper();
 
 async function async_wrapper() {
     try {
-        test_hint_region_search();
+        test_new_version();
+        //test_hint_region_search();
         //test_preset();
         //test_collecting_checked_locations();
         //test_reimport_export();
@@ -45,6 +46,20 @@ async function async_wrapper() {
 }
 
 const localstorage_plando = {};
+
+async function test_new_version() {
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.2.69 Fenhl-7', {files: {}, subfolder: ''});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files: string;
+    let seed_path: string;
+    let spoiler_path: string;
+    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.2.69 Fenhl-7'});
+    global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
+    graph.collect_spheres();
+    console.log(`Graph loaded without errors`);
+}
 
 async function test_hint_region_search() {
     let [version, local_files] = get_plando_randomizer_version({':version': '8.1.51 Fenhl-1'});

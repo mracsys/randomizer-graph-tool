@@ -1006,6 +1006,8 @@ class SettingsList {
                         }
                         // Can't parse boolean keys, convert to string (currently only an issue on Realrob branch)
                         sanitized_str = sanitized_str.replaceAll('False:', '"false":').replaceAll('True:', '"true":');
+                        // Can't parse integer keys, convert to string (currently only an issue on Fenhl branch)
+                        sanitized_str = sanitized_str.replaceAll('9:', '"9":');
                         //console.log(`Adding disable map for ${setting.name}: ${sanitized_str}`);
                         setting.disable_map = JSON.parse(sanitized_str);
                         disable = null;

@@ -338,6 +338,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '8.2.0 Release',
         '8.2.50 Dev',
+        '8.2.69 Fenhl-7',
         '8.2.50 Fenhl-1',
         '8.2.52 Rob-132',
         '8.2.50 Rob-128',

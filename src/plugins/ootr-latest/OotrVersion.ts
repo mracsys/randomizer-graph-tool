@@ -47,6 +47,7 @@ class OotrVersion implements GameVersion {
         '8.1.49 Fenhl-2': '0c181c423ed88d071b3e21798a229ecc403c8076',
         '8.1.51 Fenhl-1': '032f3a95acfed7f431fe6c5125aa44438ca6d6d0',
         '8.2.50 Fenhl-1': '9bb3f11bb4ae7f07b96f60c86243bbb1545b8995',
+        '8.2.69 Fenhl-7': '6ea07c8b61e8ddb716faabc78822671dd1757e7f',
     }
 
     constructor(ootr_version: string, generate_files: boolean = true) {
