@@ -1612,7 +1612,7 @@ class World implements GraphWorld {
             this.skipped_locations.push(pocket);
             pocket.skipped = true;
         }
-        if (this.settings.free_scarecrow) {
+        if (this.settings.free_scarecrow || this.settings.scarecrow_behavior === 'free') {
             this.state.collect(ItemFactory('Scarecrow Song', this)[0]);
         }
         if (this.settings.no_epona_race) {

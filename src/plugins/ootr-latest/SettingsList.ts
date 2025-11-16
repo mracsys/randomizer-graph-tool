@@ -193,6 +193,7 @@ export type SettingsDictionary = {
     decouple_entrances?: boolean,
     free_scarecrow?: boolean,
     shuffle_100_skulltula_rupee?: boolean,
+    scarecrow_behavior?: string,
 };
 
 export type SettingsPresets = {
@@ -864,7 +865,14 @@ class SettingsList {
             console.log(`Could not parse setting_mapping.json: ${file_cache.files['data/settings_mapping.json']}`);
         }
         const lines: string[] = settingslist.replaceAll('\r', '').split('\n').filter(Boolean);
-        const tricklines: string[] = trickslist.replaceAll('\r', '').split('\n').filter(Boolean);
+        const alltricklines: string[] = trickslist.replaceAll('\r', '').split('advanced_logic_tricks');
+        const tricklines: string[] = alltricklines[0].split('\n').filter(Boolean);
+        let advancedtricklines: string[];
+        if (alltricklines.length > 1) {
+            advancedtricklines = trickslist.replaceAll('\r', '').split('advanced_logic_tricks')[0].split('\n').filter(Boolean);
+        } else {
+            advancedtricklines = [];
+        }
 
         let setting = new_setting('bool');
         let parsing: boolean = false;
@@ -909,6 +917,46 @@ class SettingsList {
         this.setting_definitions['allowed_tricks'].cosmetic = false;
         this.setting_definitions['allowed_tricks'].choices = trick_list;
         this.settings['allowed_tricks'] = [];
+
+        setting = new_setting('bool');
+        let advanced_trick_list: {[trick: string]: string} = {};
+        for (let line of advancedtricklines) {
+            let code_line = line.split('#')[0];
+            info = code_line.split(split_char);
+            if (info.length > 1) {
+                if (info[0].startsWith("    '")) {
+                    setting.display_name = info[0].trim().replaceAll(/['"\\]+/g, '');
+                }
+                if (info[0].trim().toLowerCase() === 'name' || info[0].trim().toLowerCase() === "'name'") {
+                    let unsplit = info[1];
+                    for (let i = 2; i < info.length; i++) {
+                        unsplit += `:${info[i]}`;
+                    }
+                    setting.name = unsplit.trim().replaceAll(/['",]+/g, '');
+                    // logic rules always assumed off, no explicit default in dictionary
+                    this.settings[setting.name] = false;
+                    advanced_trick_list[setting.name] = setting.display_name;
+                    setting = {
+                        name: '',
+                        default: false,
+                        disabled_default: false,
+                        type: 'bool',
+                        display_name: '',
+                        tab: '',
+                        section: '',
+                        order: 0,
+                        disables: [],
+                        disabled: (settings) => { return false },
+                    };
+                }
+            }
+        }
+        this.setting_definitions['advanced_allowed_tricks'] = new_setting('list');
+        this.setting_definitions['advanced_allowed_tricks'].name = 'advanced_allowed_tricks';
+        this.setting_definitions['advanced_allowed_tricks'].display_name = 'Enable Advanced Tricks';
+        this.setting_definitions['advanced_allowed_tricks'].cosmetic = false;
+        this.setting_definitions['advanced_allowed_tricks'].choices = advanced_trick_list;
+        this.settings['advanced_allowed_tricks'] = [];
 
         let setting_types: SettingTypeDictionary = {
             'settinginfonone(': new_setting('null'),

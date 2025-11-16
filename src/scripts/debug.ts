@@ -4,14 +4,14 @@ import { WorldGraphRemoteFactory, WorldGraphFactory, ExternalFileCacheFactory, E
 import { GraphPlugin } from '../plugins/GraphPlugin.js';
 import OotrGraphPlugin from '../plugins/ootr-latest/OotrGraphPlugin.js';
 import { non_required_items } from '../plugins/ootr-latest/ItemList.js';
-import { compare_js_to_python, save_python_output_as_unit_test, get_plando_randomizer_version, test_settings, test_random_settings } from './generate_unit_tests.js';
+import { compare_js_to_python, save_python_output_as_unit_test, get_plando_randomizer_version, test_settings, test_random_settings, test_specific_random_settings } from './generate_unit_tests.js';
 import type { PythonData } from './generate_unit_tests.js';
 
 async_wrapper();
 
 async function async_wrapper() {
     try {
-        test_new_version();
+        //test_new_version();
         //test_hint_region_search();
         //test_preset();
         //test_collecting_checked_locations();
@@ -27,8 +27,8 @@ async function async_wrapper() {
         //test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
-        //test_random_settings(100, true);
-        //test_specific_random_settings({legacy_sphere_gen: true, sphere_dir: resolve(rsl, 'patches')});
+        test_random_settings(100, true);
+        //test_specific_random_settings({legacy_sphere_gen: true});
         //add_entrance_spheres_to_tests();
         //test_undisabling_settings();
         //test_settings_change();
@@ -48,13 +48,13 @@ async function async_wrapper() {
 const localstorage_plando = {};
 
 async function test_new_version() {
-    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.2.69 Fenhl-7', {files: {}, subfolder: ''});
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.0 Release', {files: {}, subfolder: ''});
     let global_cache: ExternalFileCache;
     let version: string;
     let local_files: string;
     let seed_path: string;
     let spoiler_path: string;
-    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.2.69 Fenhl-7'});
+    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.3.0 Release'});
     global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
     graph.collect_spheres();

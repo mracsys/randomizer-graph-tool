@@ -37,12 +37,12 @@ type SinglePythonSphere = {
 };
 
 // local paths to RSL script and OOTR for generating/validating world searches
-var rsl = '/Users/mracsys/git/plando-random-settings';
-var rando = '/Users/mracsys/git/OoT-Randomizer-Fork';
+var rsl = '/home/mracsys/git/plando-random-settings';
+var rando = '/home/mracsys/git/OoT-Randomizer-Fork';
 
 export async function test_random_settings(max_seeds: number = 1, legacy_sphere_gen: boolean = false) {
     let [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({
-        ':version': '8.2.50 Fenhl-1'
+        ':version': '8.3.0 Release'
     });
     let files;
     files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
@@ -126,7 +126,7 @@ export async function test_random_settings(max_seeds: number = 1, legacy_sphere_
     }
 }
 
-async function test_specific_random_settings({f = '', legacy_sphere_gen = false, sphere_dir = '', seed_dir = '', spoiler_dir = ''}: {f?: string, legacy_sphere_gen?: boolean, sphere_dir?: string, seed_dir?: string, spoiler_dir?: string} = {}) {
+export async function test_specific_random_settings({f = '', legacy_sphere_gen = false, sphere_dir = '', seed_dir = '', spoiler_dir = ''}: {f?: string, legacy_sphere_gen?: boolean, sphere_dir?: string, seed_dir?: string, spoiler_dir?: string} = {}) {
     let plando_input: string;
     if (f === '') {
         let files = readdirSync(resolve(rsl, 'patches')).filter(fn => fn.endsWith('_Spoiler.json'));
@@ -197,6 +197,16 @@ export function get_plando_randomizer_version(plando: {[key: string]: any}): [st
                 seed_path = './tests/seeds/main-8-2/';
                 spoiler_path = './tests/spoilers/main-8-2/';
                 break;
+            case '8.3.0 Release':
+                local_files = 'tests/ootr-local-8-3-0';
+                seed_path = './tests/seeds/main-8-3/';
+                spoiler_path = './tests/spoilers/main-8-3/';
+                break;
+            case '8.3.56 f.LUM':
+                local_files = 'tests/ootr-local-Dev-8-3-56-0';
+                seed_path = './tests/seeds/main-8-3-56/';
+                spoiler_path = './tests/spoilers/main-8-3-56/';
+                break;
             case '7.1.198 R-1':
             case '7.1.195 R-1':
                 local_files = 'tests/ootr-local-roman-195';
@@ -237,6 +247,11 @@ export function get_plando_randomizer_version(plando: {[key: string]: any}): [st
                 local_files = 'tests/ootr-local-fenhl-8-2-50-1';
                 seed_path = './tests/seeds/fenhl-8-2-50-1/';
                 spoiler_path = './tests/spoilers/fenhl-8-2-50-1/';
+                break;
+            case '8.2.69 Fenhl-7':
+                local_files = 'tests/ootr-local-fenhl-8-2-69-7';
+                seed_path = './tests/seeds/fenhl-8-2-69-7/';
+                spoiler_path = './tests/spoilers/fenhl-8-2-69-7/';
                 break;
             case '8.2.69 Fenhl-7':
                 local_files = 'tests/ootr-local-fenhl-8-2-69-7';

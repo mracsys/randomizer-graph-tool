@@ -20,17 +20,21 @@ class OotrVersion implements GameVersion {
     // Dev builds on main branch do not have a prefix.
 
     static main_version_commit_ids: VersionCommitMap = {
-        '8.1.0': 'd53f30f9a3b7f02cdad78f861843f2e0045656de',
+        '8.1.0':  'd53f30f9a3b7f02cdad78f861843f2e0045656de',
         '8.1.51': '295db7e069b99db87ecbf8f20171ab34937e90b5',
-        '8.2.0': '56d08e8934d1617d3ecbd36891023bd160c2f015',
+        '8.2.0':  '56d08e8934d1617d3ecbd36891023bd160c2f015',
         '8.2.50': 'd28dd1bf6d6c4608ff7ed5304bc8a84472a8ea91',
+        '8.3.0':  'fbd0ed2b882fcbd5bd5e26f9d905daa8234f7f93',
+        '8.3.33': 'e2482abab8f9de3b32ab9723a7289aafe60b073c',
+        '8.3.41': '0cf89d3a5b25c4d534b007ead176c8176c798258',
+        '8.3.56': 'e2482abab8f9de3b32ab9723a7289aafe60b073c',
     }
 
     static devr_version_commit_ids: VersionCommitMap = {
         '7.1.143 R-1': '06390ece7e38fce1dd02ca60a28a7b1ff9fceb10',
         '7.1.154 R-1': 'c5af1e9df2dd280b70b25f02d80d13dce9680d58',
         '7.1.195 R-1': '9cb2614c2dc880e163c684c9f2f06695bafed647',
-        '8.1.47 R-1': '35b93e4c65757a62aeb4bb6151fb87d4324e896c',
+        '8.1.47 R-1':  '35b93e4c65757a62aeb4bb6151fb87d4324e896c',
     }
     static devrob_version_commit_ids: VersionCommitMap = {
         '7.1.198 Rob-49': 'd3fcfa72c833a2e6fb2dffcab3461394aa6765c8',
@@ -41,6 +45,7 @@ class OotrVersion implements GameVersion {
         '8.2.46 Rob-125': '09f17cc61ca3e267bc6777df2f46ce5bbd6715ea',
         '8.2.50 Rob-128': '2030053144ce99f3364244117db64ba9585a1513',
         '8.2.52 Rob-132': '464b5184646694ec422a7dfe2a757725d73a7e1b',
+        '8.3.56 Rob-3':   'b95a13428661cae571bb228f264b93730d59faeb',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
         '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',
@@ -48,6 +53,7 @@ class OotrVersion implements GameVersion {
         '8.1.51 Fenhl-1': '032f3a95acfed7f431fe6c5125aa44438ca6d6d0',
         '8.2.50 Fenhl-1': '9bb3f11bb4ae7f07b96f60c86243bbb1545b8995',
         '8.2.69 Fenhl-7': '6ea07c8b61e8ddb716faabc78822671dd1757e7f',
+        '8.3.41 Fenhl-2': '7c6baf0f1afc1c7a4a272a40b4b7d1ee663cff92',
     }
 
     constructor(ootr_version: string, generate_files: boolean = true) {

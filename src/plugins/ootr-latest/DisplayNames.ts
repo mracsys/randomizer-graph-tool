@@ -81,7 +81,8 @@ export const display_names: DisplayNames = {
         "Desert Colossus": {
             "region_names": [
                 "Desert Colossus",
-                "Desert Colossus From Spirit Lobby"
+                "Desert Colossus From Spirit Lobby",
+                "Desert Colossus HP"
             ]
         },
         "Gerudo Fortress": {
@@ -370,7 +371,8 @@ export const display_names: DisplayNames = {
                 "Jabu Jabus Belly Depths",
                 "Jabu Jabus Belly Past Big Octo",
                 "Jabu Jabus Belly Before Slimy Thing",
-                "Jabu Jabus After Right Tentacle"
+                "Jabu Jabus After Right Tentacle",
+                "Jabu Jabus Belly Compass Room"
             ]
         },
         "Forest Temple": {
@@ -456,7 +458,8 @@ export const display_names: DisplayNames = {
                 "Fire Temple Above Boulder Maze",
                 "Fire Temple Before Upper Flare Dancer",
                 "Fire Temple Hammer Steps",
-                "Fire Temple Highest Goron"
+                "Fire Temple Highest Goron",
+                "Fire Temple BK Room"
             ]
         },
         "Water Temple": {
@@ -511,7 +514,30 @@ export const display_names: DisplayNames = {
                 "Water Temple Before Dark Link",
                 "Water Temple Dark Link Room",
                 "Water Temple After Waterfall Room",
-                "Water Temple Triple Wall Torch Gate"
+                "Water Temple Triple Wall Torch Gate",
+                "Water Temple Alcove Ledge Clip",
+                "Water Temple East Column",
+                "Water Temple Bottom Gates Switch",
+                "Water Temple Lowered Water",
+                "Water Temple South Basement Upper Ledge",
+                "Water Temple South Basement Behind Gate",
+                "Water Temple Middle West",
+                "Water Temple Middle South",
+                "Water Temple Boss Key Cage",
+                "Water Temple Boss Key Spout",
+                "Water Temple Boss Key Room Upper Ledge",
+                "Water Temple Dragon Head Room",
+                "Water Temple Lower River",
+                "Water Temple Upper River",
+                "Water Temple Dark Link",
+                "Water Temple Alcove Ledge Clip",
+                "Water Temple East Column",
+                "Water Temple Lowered Water",
+                "Water Temple Compass Room",
+                "Water Temple Middle South Block",
+                "Water Temple Near Below Central Pillar",
+                "Water Temple Dragon Head Room",
+                "Water Temple River Chest Hallway"
             ]
         },
         "Spirit Temple": {
@@ -613,7 +639,13 @@ export const display_names: DisplayNames = {
                 "Shadow Temple Invisible Spikes Lower",
                 "Shadow Temple Stalfos Room",
                 "Shadow Temple Invisible Spikes Upper",
-                "Shadow Temple Spike Walls Room"
+                "Shadow Temple Spike Walls Room",
+                "Shadow Temple Aboard Boat",
+                "Shadow Temple Boat Dock",
+                "Shadow Temple Boat Area Balcony",
+                "Shadow Temple Aboard Boat",
+                "Shadow Temple Boat Dock",
+                "Shadow Temple Boat Area Balcony"
             ]
         },
         "Ice Cavern": {
@@ -629,7 +661,9 @@ export const display_names: DisplayNames = {
                 "Ice Cavern Compass Room",
                 "Ice Cavern Large Room",
                 "Ice Cavern Push Block Room",
-                "Ice Cavern Iron Boots Region"
+                "Ice Cavern Iron Boots Region",
+                "Ice Cavern End Hallway",
+                "Ice Cavern End Room"
             ]
         },
         "Bottom of the Well": {
@@ -644,7 +678,10 @@ export const display_names: DisplayNames = {
                 "Bottom of the Well Middle",
                 "Bottom of the Well Underwater",
                 "Bottom of the Well Near Map Chest",
-                "Bottom of the Well West Inner Room"
+                "Bottom of the Well West Inner Room",
+                "Bottom of the Well Deadhand Area",
+                "Bottom of the Well Like Like Cage Area",
+                "Bottom of the Well Central Locked Doors"
             ]
         },
         "Gerudo Training Ground": {
@@ -677,7 +714,8 @@ export const display_names: DisplayNames = {
                 "Gerudo Training Ground Back Areas",
                 "Gerudo Training Ground Central Maze Right",
                 "Gerudo Training Ground Lava Room Back Bubble",
-                "Gerudo Training Ground Lava Room Back Upper Ledge"
+                "Gerudo Training Ground Lava Room Back Upper Ledge",
+                "Gerudo Training Ground Stalfos Room Alcove"
             ]
         },
         "Ganon's Castle": {

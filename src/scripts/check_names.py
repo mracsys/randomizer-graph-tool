@@ -3,7 +3,7 @@ import os
 import sys
 import json
 from glob import glob
-sys.path.append('/Users/mracsys/git/OoT-Randomizer-Fork')
+sys.path.append('/home/mracsys/git/OoT-Randomizer-Fork')
 from LocationList import location_table
 from EntranceShuffle import entrance_shuffle_table
 from Utils import read_logic_file
@@ -35,12 +35,12 @@ for _, regions in aliases['region_groups'].items():
             grouped_regions.extend(subregions)
 
 new_regions = []
-for logic_file in glob('/Users/mracsys/git/OoT-Randomizer-Fork/data/World/*.json'):
+for logic_file in glob('/home/mracsys/git/OoT-Randomizer-Fork/data/World/*.json'):
     logic = read_logic_file(logic_file)
     for region in logic:
         if region['region_name'] not in grouped_regions and region['region_name'] not in screened['regions']:
             new_regions.append(region['region_name'])
-for logic_file in glob('/Users/mracsys/git/OoT-Randomizer-Fork/data/Glitched World/*.json'):
+for logic_file in glob('/home/mracsys/git/OoT-Randomizer-Fork/data/Glitched World/*.json'):
     logic = read_logic_file(logic_file)
     for region in logic:
         if region['region_name'] not in grouped_regions and region['region_name'] not in screened['regions']:

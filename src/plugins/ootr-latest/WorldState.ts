@@ -151,7 +151,8 @@ class WorldState {
 
     has_all_notes_for_song(song: string, { age = null, spot = null, tod = null }: kwargs = {}): boolean {
         if (song === 'Scarecrow Song') {
-            return this.has_ocarina_buttons(2) || (this.world.version.gt('8.2.0') && !!this.world.settings.free_scarecrow);
+            return this.has_ocarina_buttons(2) || (this.world.version.gt('8.2.0') && !!this.world.settings.free_scarecrow)
+                || (this.world.version.gt('8.3.0') && !!this.world.settings.scarecrow_behavior && this.world.settings.scarecrow_behavior == 'free');
         }
         let notes = this.world.song_notes[song];
         if (notes.includes('A')) {

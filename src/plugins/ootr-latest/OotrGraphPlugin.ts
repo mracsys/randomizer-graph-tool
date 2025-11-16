@@ -336,6 +336,12 @@ const option_to_item_names: {[option: string]: string[]} = {
 
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
+        '8.3.0 Release',
+        '8.3.56 Dev',
+        '8.3.41 Dev',
+        '8.3.33 Dev',
+        '8.3.41 Fenhl-2',
+        '8.3.56 Rob-3',
         '8.2.0 Release',
         '8.2.50 Dev',
         '8.2.69 Fenhl-7',
@@ -343,11 +349,6 @@ export class OotrGraphPlugin extends GraphPlugin {
         '8.2.52 Rob-132',
         '8.2.50 Rob-128',
         '8.2.46 Rob-125',
-        '8.1.0 Release',
-        '8.1.51 Dev',
-        '8.1.51 Fenhl-1',
-        '8.1.81 Rob-117',
-        '8.1.29 Rob-104',
     ];
 
     public worlds: World[];
@@ -3607,7 +3608,7 @@ export class OotrGraphPlugin extends GraphPlugin {
     set_blue_warps(world: World): void {
         // Determine blue warp targets
         let blue_warps: [Entrance, Entrance][];
-        if (this.version.branch !== 'Fenhl' || this.version.lt('8.2.50')) {
+        if ((this.version.branch !== 'Fenhl' && this.version.lte('8.3.0')) || this.version.lt('8.2.50')) {
             blue_warps = [
                 [world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'), world.get_entrance('Queen Gohma Boss Room -> Deku Tree Before Boss')],
                 [world.get_entrance('King Dodongo Boss Room -> Death Mountain'), world.get_entrance('King Dodongo Boss Room -> Dodongos Cavern Mouth')],
@@ -3654,7 +3655,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             'Twinrova Boss Room -> Spirit Temple Before Boss': world.get_entrance('Spirit Temple Lobby -> Desert Colossus From Spirit Lobby'),
         };
         let blue_warp_exits: {[e: string]: Entrance};
-        if (this.version.branch !== 'Fenhl' || this.version.lt('8.2.50')) {
+        if ((this.version.branch !== 'Fenhl' && this.version.lte('8.3.0')) || this.version.lt('8.2.50')) {
             blue_warp_exits = {
                 'Deku Tree Lobby -> KF Outside Deku Tree': world.get_entrance('Queen Gohma Boss Room -> KF Outside Deku Tree'),
                 'Dodongos Cavern Beginning -> Death Mountain': world.get_entrance('King Dodongo Boss Room -> Death Mountain'),
