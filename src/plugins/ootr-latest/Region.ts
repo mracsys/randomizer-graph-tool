@@ -81,4 +81,8 @@ export class Region implements GraphRegion {
     get local_locations(): Location[] {
         return this.locations;
     }
+
+    get nested_locations(): Location[] {
+        return this.locations;
+    }
 }

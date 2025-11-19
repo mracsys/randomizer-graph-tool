@@ -7,12 +7,13 @@ import { non_required_items } from '../plugins/ootr-latest/ItemList.js';
 import { compare_js_to_python, save_python_output_as_unit_test, get_plando_randomizer_version, test_settings, test_random_settings, test_specific_random_settings } from './generate_unit_tests.js';
 import type { PythonData } from './generate_unit_tests.js';
 
+
 async_wrapper();
 
 async function async_wrapper() {
     try {
         //test_new_version();
-        //test_hint_region_search();
+        test_hint_region_search();
         //test_preset();
         //test_collecting_checked_locations();
         //test_reimport_export();
@@ -27,7 +28,7 @@ async function async_wrapper() {
         //test_load(true);
         //test_spoiler(false, true);
         //test_remote_files();
-        test_random_settings(100, true);
+        //test_random_settings(100, true);
         //test_specific_random_settings({legacy_sphere_gen: true});
         //add_entrance_spheres_to_tests();
         //test_undisabling_settings();
@@ -37,6 +38,7 @@ async function async_wrapper() {
         //test_race_mode_inventory();
         //test_region_visibility();
         //await test_v8_settings_import();
+        //test_sim_hints();
     } catch (e) {
         console.log(e);
         if (e instanceof Error) {
@@ -46,6 +48,33 @@ async function async_wrapper() {
 }
 
 const localstorage_plando = {};
+
+async function test_sim_hints() {
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.56 Dev', {files: {}, subfolder: ''});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files: string;
+    let seed_path: string;
+    let spoiler_path: string;
+    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.3.56 f.LUM'});
+    global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
+    let plando = JSON.parse(readFileSync('/home/mracsys/git/OoT-Randomizer-Fork/Output/OoT_3DF09_70WIG35HQF_Spoiler.json', { encoding: 'utf8' }));
+    plando['settings']['graphplugin_simulator_mode'] = true;
+    graph.import(plando);
+    let hint_locations = graph.get_locations_for_world(graph.worlds[0]).filter(l => l.is_hint && !!l.hint && l.hint.type === 'foolish');
+    for (let hl of hint_locations) {
+        if (!!hl.hint && !!hl.hint.area) {
+            for (let l of hl.hint.area.nested_locations) {
+                if (!!l.item && l.item.major_item && !l.hint_locked) {
+                    console.log(l.item.name);
+                }
+            }
+        }
+    }
+
+    console.log(`Graph loaded in sim mode`);
+}
 
 async function test_new_version() {
     let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.0 Release', {files: {}, subfolder: ''});
@@ -65,7 +94,8 @@ async function test_hint_region_search() {
     let [version, local_files] = get_plando_randomizer_version({':version': '8.1.51 Fenhl-1'});
     let global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
     let graph = await WorldGraphRemoteFactory('ootr', {}, version, global_cache);
-    graph.worlds[0].get_region_group_from_hint_region('Temple of Time');
+    let hint_region = graph.worlds[0].get_region_group_from_hint_region('Temple of Time');
+    console.log(hint_region.alias);
 }
 
 async function test_v8_settings_import() {

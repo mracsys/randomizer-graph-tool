@@ -194,6 +194,14 @@ export type SettingsDictionary = {
     free_scarecrow?: boolean,
     shuffle_100_skulltula_rupee?: boolean,
     scarecrow_behavior?: string,
+    shuffle_smallkeys?: string,
+    shuffle_bosskeys?: string,
+    shuffle_silver_rupees?: string,
+    allowed_tricks?: string[],
+    shuffle_pots?: string,
+    shuffle_freestanding_items?: string,
+    bridge?: string,
+    lacs_condition?: string,
 };
 
 export type SettingsPresets = {

@@ -770,7 +770,8 @@ export const display_names: DisplayNames = {
     },
     "region_aliases": {
         "Zoras Domain": "Zora's Domain",
-        "Zoras Fountain": "Zora's Fountain"
+        "Zoras Fountain": "Zora's Fountain",
+        "Prelude of Light Warp -> Temple of Time": "Temple of Time"
     },
     "location_aliases": {
         "Links Pocket": "Link's Pocket",

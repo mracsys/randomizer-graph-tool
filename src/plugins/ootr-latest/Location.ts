@@ -8,6 +8,8 @@ import { display_names } from './DisplayNames.js';
 import { Hint } from "./Hints.js";
 import type { AccessRule, kwargs } from "./RuleParser.js";
 import { Boulder } from "./Boulders.js";
+import HintArea from "./HintArea.js";
+import Entrance from "./Entrance.js";
 
 const DisableType = {
     ENABLED: 0,
@@ -139,9 +141,60 @@ export class Location implements GraphLocation {
         return !!(this.parent_region) ? this.parent_region.dungeon : null; 
     }
 
-    hint_area(): string | null {
-        if (this.parent_region === null || this.parent_region.parent_group === null) return null;
-        return this.parent_region.parent_group.page === '' ? '' : this.parent_region.parent_group?.name;
+    get hint_area(): string {
+        if (this.parent_region === null || this.parent_region.parent_group === null) return '';
+        let hint_group = this.parent_region.parent_group.parent_group !== null ?
+            this.parent_region.parent_group.parent_group :
+            this.parent_region.parent_group;
+        if (hint_group.page === '') {
+            type Spot = Entrance | Location | Region;
+            let spot: Spot = this;
+            let already_checked: Array<Spot> = [];
+            let spot_queue: Array<Spot> = [spot];
+            let fallback_spot_queue: Array<Spot> = [];
+            let current_spot: Spot | undefined, parent_region: Region;
+    
+            while(spot_queue.length > 0 || fallback_spot_queue.length > 0) {
+                if (spot_queue.length <= 0) {
+                    spot_queue = fallback_spot_queue;
+                    fallback_spot_queue = [];
+                }
+                current_spot = spot_queue.pop();
+                if (!!current_spot) {
+                    already_checked.push(current_spot);
+    
+                    if (current_spot instanceof Region) {
+                        parent_region = current_spot;
+                    } else {
+                        if (!!(current_spot.parent_region)) {
+                            parent_region = current_spot.parent_region;
+                        } else {
+                            throw(`Null parent region found when searching hint region for spot ${spot.name}`);
+                        }
+                    }
+    
+                    if (!!parent_region.parent_group) {
+                        hint_group = parent_region.parent_group;
+                        if (!!hint_group.parent_group) hint_group = hint_group.parent_group;
+                        // Return the subgroup area name, but check the highest level group page
+                        if (hint_group.page !== '') return parent_region.parent_group.name;
+                    }
+    
+                    for (const entrance of parent_region.entrances) {
+                        if (!(already_checked.includes(entrance))) {
+                            if (!!(entrance.type) && ['OverworldOneWay', 'OwlDrop', 'Spawn', 'WarpSong'].includes(entrance.type)) {
+                                fallback_spot_queue.push(entrance);
+                            } else {
+                                spot_queue.push(entrance);
+                            }
+                        }
+                    }
+                }
+            }
+            return '';
+        } else {
+            return hint_group.name;
+        }
     }
 
     viewable(use_unshuffled_items_filter: boolean = false): boolean {
@@ -170,6 +223,13 @@ export class Location implements GraphLocation {
                 this.adult_visited = true;
             }
         }
+    }
+
+    get hint_locked(): boolean {
+        return this.locked
+            || !this.shuffled
+            || (this.name === 'Boss Key (Ganons Castle)' && (['ToT Light Arrows Cutscene', 'Gift from Sages'].includes(this.name)))
+            || (this.name === 'Song from Impa' && this.world.skip_child_zelda);
     }
 }
 

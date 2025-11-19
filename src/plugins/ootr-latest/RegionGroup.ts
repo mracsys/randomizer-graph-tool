@@ -29,6 +29,9 @@ export class RegionGroup implements GraphRegion {
         public num_major_items: number | null = null,
     ) {
         this.alias = this.name;
+        if (Object.keys(display_names.region_aliases).includes(this.alias)) {
+            this.alias = display_names.region_aliases[this.alias];
+        }
     }
 
     get child_regions(): RegionGroup[] {
@@ -77,6 +80,35 @@ export class RegionGroup implements GraphRegion {
 
     get local_locations(): Location[] {
         return [...this._locations];
+    }
+
+    // I was half awake writing this. Probably nonsense.
+    get nested_locations(): Location[] {
+        let all_locations = this.locations;
+        let visited_regions = this.sub_regions;
+        let exit_queue = this.exits;
+        let exit: Entrance | undefined;
+        while (exit_queue.length > 0) {
+            exit = exit_queue.pop();
+            if (!!exit && !!exit.connected_region && !(visited_regions.includes(exit.connected_region))
+                && exit.connected_region.parent_group?.page === ''
+                && (exit.connected_region.parent_group?.parent_group === null || exit.connected_region.parent_group?.parent_group?.page === '')) {
+                let visited_region: Region | RegionGroup | null = exit.connected_region;
+                if (!!visited_region && visited_region.exits.length > 0) {
+                    visited_region = visited_region.exits[0].connected_region;
+                } else {
+                    visited_region = null;
+                }
+                if (!!visited_region) visited_region = visited_region.parent_group;
+                if (!!visited_region && visited_region.parent_group !== null) visited_region = visited_region.parent_group;
+                if (visited_region === undefined || visited_region === null || visited_region.page === '' || visited_region.name === this.name) {
+                    visited_regions.push(exit.connected_region);
+                    exit_queue.push(...exit.connected_region.exits);
+                    all_locations.push(...exit.connected_region.locations);
+                }
+            }
+        }
+        return all_locations;
     }
 
     add_region(region: Region): void {

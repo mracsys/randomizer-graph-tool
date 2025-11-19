@@ -9,7 +9,7 @@ export interface GraphLocation {
     item: GraphItem | null;
     vanilla_item: GraphItem | null;
     parent_region: GraphRegion | null;
-    hint_area(): string | null;
+    hint_area: string;
     world: GraphWorld | null;
     boulders: GraphBoulder[];
     sphere: number;
@@ -25,6 +25,7 @@ export interface GraphLocation {
     hint: GraphHint | null;
     hint_text: string;
     hinted: boolean;
+    hint_locked: boolean;
     is_shop: boolean;
     holds_shop_refill: boolean;
     is_restricted: boolean;
@@ -38,6 +39,9 @@ export interface GraphItem {
     player?: number;
     price: number | null;
     advancement: boolean;
+    type: string;
+    major_item: boolean;
+    important_item: boolean;
 }
 
 export interface GraphEntrance {
@@ -88,6 +92,7 @@ export interface GraphRegion {
     local_exits: GraphEntrance[];
     local_entrances: GraphEntrance[];
     local_locations: GraphLocation[];
+    nested_locations: GraphLocation[];
     child_regions: GraphRegion[];
     parent_group: GraphRegion | null;
     world: GraphWorld;

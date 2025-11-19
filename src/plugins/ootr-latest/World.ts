@@ -167,6 +167,7 @@ class World implements GraphWorld {
     public shuffled_entrance_types: string[] = [];
 
     public skipped_items: Item[] = [];
+    public never_required_items: string[] = [];
 
     public boulders: Boulder[];
     public boulder_cache: {[boulder_name: string]: Boulder};
@@ -539,6 +540,72 @@ class World implements GraphWorld {
         } else if (!!this.settings.starting_inventory && typeof this.settings.starting_inventory === 'object') {
             this.set_adult_trade_starting_item(Object.keys(this.settings.starting_inventory));
         }
+
+        this.never_required_items = [
+            'Double Defense',
+        ];
+        if (this.settings['damage_multiplier'] !== 'ohko' && this.settings['damage_multiplier'] !== 'quadruple'
+            && this.settings['shuffle_scrubs'] === 'off' && this.settings['shuffle_grotto_entrances'] === false) {
+            this.never_required_items.push('Nayrus Love');
+        }
+        if (!!this.settings.allowed_tricks && this.settings.allowed_tricks.includes('logic_grottos_without_agony') && this.settings['hints'] !== 'agony') {
+            this.never_required_items.push('Stone of Agony');
+        }
+        if (!this.shuffle_special_interior_entrances && this.settings.shuffle_overworld_entrances === false && this.settings.warp_songs === false) {
+            this.never_required_items.push('Serenade of Water');
+            this.never_required_items.push('Prelude of Light');
+        }
+        if (this.settings['logic_rules'] === 'glitchless') {
+            this.never_required_items.push('Biggoron Sword');
+            this.never_required_items.push('Giants Knife');
+        }
+        if (this.settings['plant_beans'] === true) {
+            this.never_required_items.push('Magic Bean');
+            this.never_required_items.push('Buy Magic Bean');
+            this.never_required_items.push('Magic Bean Pack');
+        }
+        if (this.settings['blue_fire_arrows'] === false) {
+            this.never_required_items.push('Ice Arrows');
+        }
+        if ((!!this.settings.allowed_tricks && this.settings.allowed_tricks.includes('logic_lens_botw'))
+            || (!!this.settings.shuffle_pots && ['off', 'overworld'].includes(this.settings.shuffle_pots))) {
+            this.never_required_items.push('Silver Rupee (Bottom of the Well Basement)');
+            this.never_required_items.push('Silver Rupee Pouch (Bottom of the Well Basement)');
+        }
+        if (this.dungeon_mq['Shadow Temple'] && this.settings.shuffle_mapcompass === 'vanilla') {
+            this.never_required_items.push('Silver Rupee (Shadow Temple Scythe Shortcut)');
+            this.never_required_items.push('Silver Rupee Pouch (Shadow Temple Scythe Shortcut)');
+        }
+        if ((!!this.settings.allowed_tricks && this.settings.allowed_tricks.includes('logic_spirit_sun_chest_no_rupees'))
+            && !(this.settings.allowed_tricks.includes('logic_spirit_sun_chest_bow'))) {
+            this.never_required_items.push('Silver Rupee (Spirit Temple Sun Block)');
+            this.never_required_items.push('Silver Rupee Pouch (Spirit Temple Sun Block)');
+        }
+        if (!!this.settings.shuffle_pots && ['off', 'overworld'].includes(this.settings.shuffle_pots) && this.settings.graphplugin_trials_specific.length === 0) {
+            this.never_required_items.push('Silver Rupee (Ganons Castle Light Trial)');
+            this.never_required_items.push('Silver Rupee Pouch (Ganons Castle Light Trial)');
+            this.never_required_items.push('Silver Rupee (Ganons Castle Fire Trial)');
+            this.never_required_items.push('Silver Rupee Pouch (Ganons Castle Fire Trial)');
+            this.never_required_items.push('Silver Rupee (Ganons Castle Shadow Trial)');
+            this.never_required_items.push('Silver Rupee Pouch (Ganons Castle Shadow Trial)');
+            this.never_required_items.push('Silver Rupee (Ganons Castle Water Trial)');
+            this.never_required_items.push('Silver Rupee Pouch (Ganons Castle Water Trial)');
+            this.never_required_items.push('Silver Rupee (Ganons Castle Forest Trial)');
+            this.never_required_items.push('Silver Rupee Pouch (Ganons Castle Forest Trial)');
+            if (this.dungeon_mq['Ganons Castle']
+                && !!this.settings.shuffle_freestanding_items && ['off', 'overworld'].includes(this.settings.shuffle_freestanding_items)
+                && this.settings.shuffle_silver_rupees === 'vanilla') {
+                this.never_required_items.push('Small Key (Ganons Castle)');
+                this.never_required_items.push('Small Key Ring (Ganons Castle)');
+            }
+        }
+        if (!([this.settings.bridge, this.settings.shuffle_ganon_bosskey, this.settings.lacs_condition].some((e, i, a) => !!e && ['medallions', 'dungeons'].includes(e)))) {
+            this.never_required_items.push('Light Medallion');
+            if (this.settings.bridge !== 'vanilla' && this.settings.lacs_condition !== 'vanilla') {
+                this.never_required_items.push('Spirit Medallion');
+                this.never_required_items.push('Shadow Medallion');
+            }
+        }
     }
 
     initialize_fixed_item_area_hints(): void {
@@ -763,6 +830,13 @@ class World implements GraphWorld {
                     new_location.rule_string = 'true';
                     new_region.locations.push(new_location);
                 }
+                // Hack to bypass unlinked shuffled spawns so that logic makes
+                // sense coming from the opposite starting age through Temple of Time
+                let new_spawn_exit = new Entrance('Other Age from Pedestal of Time', new_region, this);
+                new_spawn_exit.original_connection_name = 'Beyond Door of Time';
+                new_spawn_exit.rule_string = "collect_checked_only && Time_Travel";
+                this.parser.parse_spot_rule(new_spawn_exit);
+                new_region.exits.push(new_spawn_exit);
             }
             if (!!region.locations) {
                 for (const [location, rule] of Object.entries(region.locations)) {
@@ -1334,7 +1408,7 @@ class World implements GraphWorld {
                 function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
                     return value !== null && value !== undefined;
                 }
-                hinted_regions = this.region_groups.flatMap(r => r.exits.filter(e => e.alias === hint_region).map(e => e.original_connection?.parent_group)).filter(notEmpty);
+                hinted_regions = this.region_groups.flatMap(r => r.exits.filter(e => e.alias === hint_region && !e.is_warp).map(e => e.original_connection?.parent_group)).filter(notEmpty);
             }
         }
         if (hinted_regions.length === 0) throw `No such hint region ${hint_region}`;

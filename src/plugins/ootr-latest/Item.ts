@@ -2,7 +2,7 @@ import { GraphItem } from "../GraphPlugin.js";
 
 import World from "./World.js";
 import { Location } from "./Location.js";
-import { ItemTable, ItemSpecial } from "./ItemList.js";
+import { ItemTable, ItemSpecial, non_required_items } from "./ItemList.js";
 
 export class _ItemInfo {
     constructor(
@@ -59,6 +59,23 @@ export type ItemInfo = {
     junk: {[name: string]: number | null},
 };
 
+const unhintable_woth_items = [
+    'Kokiri Emerald',
+    'Goron Ruby',
+    'Zora Sapphire',
+    'Light Medallion',
+    'Forest Medallion',
+    'Fire Medallion',
+    'Water Medallion',
+    'Shadow Medallion',
+    'Spirit Medallion',
+    'Triforce Piece',
+    'Gold Skulltula Token',
+    'Piece of Heart',
+    'Piece of Heart (Treasure Chest Game)',
+    'Heart Container'
+];
+
 export class Item implements GraphItem {
     public info: _ItemInfo;
 
@@ -97,6 +114,42 @@ export class Item implements GraphItem {
 
     copy(): Item {
         return ItemFactory(this.name, this.world, this.event)[0];
+    }
+
+    get base_major_item(): boolean {
+        if (this.world === null) return false;
+        if (this.type === 'Token') {
+            return this.world.settings['bridge'] === 'tokens' || this.world.settings['shuffle_ganon_bosskey'] === 'tokens'
+                || (this.world.settings['shuffle_ganon_bosskey'] === 'on_lacs' && this.world.settings['lacs_condition'] === 'tokens');
+        }
+        if (['Drop', 'Event', 'Shop'].includes(this.type) || this.event || !this.advancement || non_required_items.includes(this.name)) return false;
+        if (this.name.startsWith('Bombchus') && this.world.settings['free_bombchu_drops'] === false) return false;
+        if (this.name === 'Heart Container' || this.name.startsWith('Piece of Heart')) {
+            return this.world.settings['bridge'] === 'hearts' || this.world.settings['shuffle_ganon_bosskey'] === 'hearts'
+                || (this.world.settings['shuffle_ganon_bosskey'] === 'on_lacs' && this.world.settings['lacs_condition'] === 'hearts');
+        }
+        if (this.type === 'Map' || this.type === 'Compass') return false;
+        if (this.world.settings['shuffle_dungeon_rewards'] === undefined || (this.type === 'DungeonReward' && !!this.world.settings['shuffle_dungeon_rewards']
+            && ['vanilla', 'reward', 'dungeon'].includes(this.world.settings['shuffle_dungeon_rewards']))) return false;
+        if (['SmallKey', 'SmallKeyRing'].includes(this.type) && !!this.world.settings['shuffle_smallkeys'] && ['dungeon', 'vanilla'].includes(this.world.settings['shuffle_smallkeys'])) return false;
+        if (['HideoutSmallKey', 'HideoutSmallKeyRing'].includes(this.type) && this.world.settings['shuffle_hideoutkeys'] === 'vanilla') return false;
+        if (['TCGSmallKey', 'TCGSmallKeyRing'].includes(this.type) && this.world.settings['shuffle_tcgkeys'] === 'vanilla') return false;
+        if (this.type === 'BossKey' && !!this.world.settings['shuffle_bosskeys'] && ['dungeon', 'vanilla'].includes(this.world.settings['shuffle_bosskeys'])) return false;
+        if (this.type === 'GanonBossKey' && !!this.world.settings['shuffle_ganon_bosskey'] && ['dungeon', 'vanilla'].includes(this.world.settings['shuffle_ganon_bosskey'])) return false;
+        if (this.type === 'SilverRupee' && !!this.world.settings['shuffle_silver_rupees'] && ['dungeon', 'vanilla'].includes(this.world.settings['shuffle_silver_rupees'])) return false;
+        return true;
+    }
+
+    get major_item(): boolean {
+        return !!this.world && !(this.world.never_required_items.includes(this.name))
+            && !(unhintable_woth_items.includes(this.name))
+            && this.base_major_item;
+    }
+
+    get important_item(): boolean {
+        if (this.base_major_item && this.name !== 'Triforce Piece') return true;
+        if (['Biggoron Sword', 'Double Defense'].includes(this.name)) return true;
+        return false;
     }
 }
 
