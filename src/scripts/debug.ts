@@ -13,7 +13,7 @@ async_wrapper();
 async function async_wrapper() {
     try {
         //test_new_version();
-        test_hint_region_search();
+        //test_hint_region_search();
         //test_preset();
         //test_collecting_checked_locations();
         //test_reimport_export();
@@ -39,6 +39,7 @@ async function async_wrapper() {
         //test_region_visibility();
         //await test_v8_settings_import();
         //test_sim_hints();
+        test_nested_locations();
     } catch (e) {
         console.log(e);
         if (e instanceof Error) {
@@ -73,6 +74,25 @@ async function test_sim_hints() {
         }
     }
 
+    console.log(`Graph loaded in sim mode`);
+}
+
+async function test_nested_locations() {
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.56 Dev', {files: {}, subfolder: ''});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files: string;
+    let seed_path: string;
+    let spoiler_path: string;
+    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.3.56 f.LUM'});
+    global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
+    let plando = JSON.parse(readFileSync('/home/mracsys/git/OoT-Randomizer-Fork/Output/OoT_3DF09_70WIG35HQF_Spoiler.json', { encoding: 'utf8' }));
+    plando['settings']['graphplugin_simulator_mode'] = true;
+    graph.import(plando);
+    let castle_grounds = graph.worlds[0].region_groups.filter((r) => r.name === 'Castle Grounds')[0];
+    let hyrule_castle = castle_grounds.child_regions[0];
+    let nested_locations = hyrule_castle.nested_locations;
     console.log(`Graph loaded in sim mode`);
 }
 

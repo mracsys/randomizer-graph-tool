@@ -96,6 +96,7 @@ export interface GraphRegion {
     child_regions: GraphRegion[];
     parent_group: GraphRegion | null;
     world: GraphWorld;
+    is_hint_region: boolean;
     is_required: boolean;
     required_for: GraphHintGoal[];
     is_not_required: boolean;

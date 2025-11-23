@@ -44,6 +44,7 @@ export class Region implements GraphRegion {
         public child_regions: RegionGroup[] = [],
         public page: string = '',
         public viewable: boolean = false,
+        public is_hint_region: boolean = false,
         public is_required: boolean = false,
         public required_for: GraphHintGoal[] = [],
         public is_not_required: boolean = false,

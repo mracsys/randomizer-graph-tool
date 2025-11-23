@@ -22,6 +22,7 @@ export class RegionGroup implements GraphRegion {
         public alias: string = '',
         public page: string = 'Overworld',
         public viewable: boolean = false,
+        public hint_names: string[] = [],
         public is_required: boolean = false,
         public required_for: GraphHintGoal[] = [],
         public is_not_required: boolean = false,
@@ -82,6 +83,10 @@ export class RegionGroup implements GraphRegion {
         return [...this._locations];
     }
 
+    get is_hint_region(): boolean {
+        return this.hint_names.length > 0;
+    }
+
     // I was half awake writing this. Probably nonsense.
     get nested_locations(): Location[] {
         let all_locations = this.locations;
@@ -91,17 +96,26 @@ export class RegionGroup implements GraphRegion {
         while (exit_queue.length > 0) {
             exit = exit_queue.pop();
             if (!!exit && !!exit.connected_region && !(visited_regions.includes(exit.connected_region))
+                // indoors region
                 && exit.connected_region.parent_group?.page === ''
-                && (exit.connected_region.parent_group?.parent_group === null || exit.connected_region.parent_group?.parent_group?.page === '')) {
+                // indoors subregion (does not exist yet, added for completeness)
+                && (exit.connected_region.parent_group?.parent_group === null || exit.connected_region.parent_group?.parent_group?.page === '')
+                // Hack to prevent Temple of Time regions from getting added to Market group
+                && (exit.connected_region.hint_name === '' || exit.connected_region.hint_name === null || this.hint_names.includes(exit.connected_region.hint_name))) {
+                // Check if the first exit from the target leads to a top-level group
                 let visited_region: Region | RegionGroup | null = exit.connected_region;
                 if (!!visited_region && visited_region.exits.length > 0) {
                     visited_region = visited_region.exits[0].connected_region;
                 } else {
                     visited_region = null;
                 }
+                // Convert the exit group to from a subgroup to top-level if necessary
                 if (!!visited_region) visited_region = visited_region.parent_group;
                 if (!!visited_region && visited_region.parent_group !== null) visited_region = visited_region.parent_group;
-                if (visited_region === undefined || visited_region === null || visited_region.page === '' || visited_region.name === this.name) {
+                // Only add nested regions that aren't already in a top-level group,
+                // or that are in this top-level group.
+                let this_region_name = !!this.parent_group ? this.parent_group.name : this.name;
+                if (visited_region === undefined || visited_region === null || visited_region.page === '' || visited_region.name === this_region_name) {
                     visited_regions.push(exit.connected_region);
                     exit_queue.push(...exit.connected_region.exits);
                     all_locations.push(...exit.connected_region.locations);
@@ -134,6 +148,9 @@ export class RegionGroup implements GraphRegion {
             if ((location.type !== 'Event' || location.public_event) && location.type !== 'Drop') {
                 this._locations.push(location);
             }
+        }
+        if (!!region.hint_name && !(this.hint_names.includes(region.hint_name))) {
+            this.hint_names.push(region.hint_name);
         }
     }
 

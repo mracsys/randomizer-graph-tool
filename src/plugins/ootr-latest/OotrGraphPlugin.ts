@@ -337,18 +337,14 @@ const option_to_item_names: {[option: string]: string[]} = {
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '8.3.0 Release',
-        '8.3.56 Dev',
+        '8.3.59 Dev',
         '8.3.41 Dev',
         '8.3.33 Dev',
         '8.3.41 Fenhl-2',
         '8.3.56 Rob-3',
         '8.2.0 Release',
-        '8.2.50 Dev',
         '8.2.69 Fenhl-7',
-        '8.2.50 Fenhl-1',
         '8.2.52 Rob-132',
-        '8.2.50 Rob-128',
-        '8.2.46 Rob-125',
     ];
 
     public worlds: World[];
@@ -963,7 +959,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                         if (!!hinted_group) {
                             if (hint.text.includes('a foolish choice')) {
                                 this.hint_unrequired_area(hint_location, hinted_group, (sim_mode && !hint_location.checked));
-                            } else if (hint.text.includes('major items')) {
+                            } else if (hint.text.includes('major item')) {
                                 try {
                                     let num_majors = parseInt(color_split[3]);
                                     if (num_majors === undefined || num_majors === null) throw(`Could not parse integer from ${color_split[3]}`);
