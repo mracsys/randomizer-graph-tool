@@ -151,6 +151,139 @@ export class Item implements GraphItem {
         if (['Biggoron Sword', 'Double Defense'].includes(this.name)) return true;
         return false;
     }
+
+    get is_big_chest(): boolean {
+        if (this.name.includes('Bombchu')) {
+            if (this.world.settings['free_bombchu_drops'] === true) return true;
+            if (!!this.world.settings['minor_items_as_major_chest'] && this.world.settings['minor_items_as_major_chest'].includes('bombchus')) return true;
+            return false;
+        }
+        if (['Deku Shield', 'Hylian Shield'].includes(this.name)) {
+            if (!!this.world.settings['minor_items_as_major_chest'] && this.world.settings['minor_items_as_major_chest'].includes('shields')) return true;
+            return false;
+        }
+        if (['Deku Nut Capacity', 'Deku Stick Capacity'].includes(this.name)) {
+            if (!!this.world.settings['minor_items_as_major_chest'] && this.world.settings['minor_items_as_major_chest'].includes('capacity')) return true;
+            return false;
+        }
+        return this.advancement;
+    }
+
+    get peek(): string {
+        if (!!this.location) {
+            switch (this.location.type) {
+                case 'Beehive':
+                    return this.is_big_chest ? 'Gilded Chest' : 'Wooden Chest';
+                    break;
+                case 'Chest':
+                    if (this.world.settings.correct_chest_appearances === 'off') {
+                        return 'Wooden Chest';
+                    }
+                    if (['SmallKey', 'TCGSmallKey', 'HideoutSmallKey', 'SmallKeyRing', 'TCGSmallKeyRing', 'HideoutSmallKeyRing'].includes(this.type)
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('keys'))) {
+                        return 'Small Key Chest';
+                    }
+                    if (['BossKey', 'GanonBossKey'].includes(this.type)
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('bosskeys'))) {
+                        return 'Boss Key Chest';
+                    }
+                    if (!!this.world.settings.correct_chest_appearances && this.world.settings.correct_chest_appearances !== 'classic') {
+                        if (this.type === 'Token' && (this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('tokens'))) {
+                            return 'Webbed Chest';
+                        }
+                        if (['Piece of Heart', 'Piece of Heart (Out of Logic)', 'Heart Container', 'Piece of Heart (Treasure Chest Game)'].includes(this.name)
+                        && (this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('hearts'))) {
+                            return 'Heart Chest';
+                        }
+                    }
+                    if (this.is_big_chest
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('major'))) {
+                        return 'Gilded Chest';
+                    }
+                    return 'Wooden Chest';
+                    break;
+                case 'Pot':
+                case 'FlyingPot':
+                case 'Crate':
+                case 'SmallCrate':
+                    let breakable_type = '';
+                    switch(this.location.type) {
+                        case 'Pot':
+                        case 'FlyingPot':
+                            breakable_type = 'Pot';
+                            break;
+                        case 'Crate':
+                        case 'SmallCrate':
+                            breakable_type = 'Crate';
+                            break;
+                    }
+                    if (!!this.world.settings.correct_potcrate_appearances && this.world.settings.correct_potcrate_appearances !== 'textures_content') {
+                        return `Regular ${breakable_type}`;
+                    }
+                    if (['SmallKey', 'TCGSmallKey', 'HideoutSmallKey', 'SmallKeyRing', 'TCGSmallKeyRing', 'HideoutSmallKeyRing'].includes(this.type)
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('keys'))) {
+                        return `Small Key ${breakable_type}`;
+                    }
+                    if (['BossKey', 'GanonBossKey'].includes(this.type)
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('bosskeys'))) {
+                        return `Boss Key ${breakable_type}`;
+                    }
+                    if (!!this.world.settings.correct_chest_appearances && this.world.settings.correct_chest_appearances !== 'classic') {
+                        if (this.type === 'Token' && (this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('tokens'))) {
+                            return `Webbed ${breakable_type}`;
+                        }
+                        if (['Piece of Heart', 'Piece of Heart (Out of Logic)', 'Heart Container', 'Piece of Heart (Treasure Chest Game)'].includes(this.name)
+                        && (this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('hearts'))) {
+                            return `Heart ${breakable_type}`;
+                        }
+                    }
+                    if (this.is_big_chest
+                    && (this.world.settings.correct_chest_appearances === 'classic' || this.world.settings.chest_textures_specific === undefined || this.world.settings.chest_textures_specific.includes('major'))) {
+                        return `Gilded ${breakable_type}`;
+                    }
+                    return `Regular ${breakable_type}`;
+                    break;
+            }
+        }
+        if (['SmallKey', 'TCGSmallKey', 'HideoutSmallKey'].includes(this.type)) {
+            if (!!this.world.settings['key_appearance_match_dungeon']) {
+                return this.name;
+            } else {
+                return 'Small Key (???)';
+            }
+        }
+        if (['SmallKeyRing', 'TCGSmallKeyRing', 'HideoutSmallKeyRing'].includes(this.type)) {
+            if (!!this.world.settings['key_appearance_match_dungeon']) {
+                return this.name;
+            } else {
+                return 'Small Key Ring (???)';
+            }
+        }
+        if (['BossKey', 'GanonBossKey'].includes(this.type)) {
+            if (!!this.world.settings['key_appearance_match_dungeon']) {
+                return this.name;
+            } else {
+                return 'Small Key (???)';
+            }
+        }
+        if (this.type === 'SilverRupee') {
+            if (this.name.includes('Pouch')) {
+                return 'Silver Rupee Pouch (???)';
+            } else {
+                return 'Silver Rupee (???)';
+            }
+        }
+        if (this.type === 'Soul') {
+            return 'Soul (???)';
+        }
+        if (this.type === 'Map') {
+            return 'Map (???)';
+        }
+        if (this.type === 'Compass') {
+            return 'Compass (???)';
+        }
+        return this.name;
+    }
 }
 
 export function ItemFactory(items: string | string[], world: World, event: boolean = false): Item[] {

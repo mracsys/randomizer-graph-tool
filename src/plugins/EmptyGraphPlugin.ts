@@ -76,9 +76,10 @@ export default class EmptyGraphPlugin extends GraphPlugin {
     get_required_locations_for_items(world: GraphWorld, goal_items: GraphItem[]): GraphLocation[] { return [] };
     get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number} { return {} };
     get_player_inventory_for_world(world: GraphWorld): {[item_name: string]: number} { return {} };
+    get_starting_region_for_world(world: GraphWorld): [GraphRegion, GraphEntrance] | null { return null };
 
     // World building interface
-    get_item(world: GraphWorld, item_name: string): GraphItem { return { name: '', price: null, advancement: false, type: '', major_item: false, important_item: false } };
+    get_item(world: GraphWorld, item_name: string): GraphItem { return { name: '', price: null, advancement: false, type: '', major_item: false, important_item: false, peek: '' } };
     set_location_item(location: GraphLocation, item: GraphItem, price?: number): void { return };
     get_full_exit_pool(world: GraphWorld) { return {} };
     get_full_entrance_pool(world: GraphWorld) { return {} };

@@ -395,7 +395,7 @@ class Search {
         this.check_pending_starting_items();
         // search world for items and events to collect
         for (let location of this.iter_reachable_locations(l)) {
-            if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable(race_mode)) || location.skipped)) {
+            if (!!location.item && ((location.checked && !race_mode) || !location.world.collect_checked_only || !(location.viewable(true)) || (!location.shuffled && location.vanilla_item_name === 'Gold Skulltula Token') || location.skipped)) {
                 if (!location.checked && location.explicitly_collect_item && !location.shuffled && !location.skipped) {
                     this.collect(location.item, true, false);
                     this._cache.pending_collection_locations.push(location);

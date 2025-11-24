@@ -1402,6 +1402,17 @@ export class OotrGraphPlugin extends GraphPlugin {
         return this.search.state_list[world.id].player_inventory;
     }
 
+    get_starting_region_for_world(world: GraphWorld): [GraphRegion | null, GraphEntrance] | null {
+        let w = world as World;
+        let exit: Entrance;
+        if (w.settings.starting_age === 'adult') {
+            exit = w.get_entrance('Adult Spawn -> Temple of Time');
+        } else {
+            exit = w.get_entrance('Child Spawn -> KF Links House');
+        }
+        return [exit.connected_region, exit];
+    }
+
     get_item(world: World, item_name: string): GraphItem {
         return ItemFactory(item_name, world)[0];
     }
@@ -1606,7 +1617,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 }
                 break;
             case 'graphplugin_viewable_unshuffled_items':
-                world.viewable_unshuffled_items = [];
+                world.viewable_unshuffled_items = ['Triforce'];
                 if (!!new_setting_value && Array.isArray(new_setting_value)) {
                     for (let option of new_setting_value) {
                         if (Object.keys(option_to_item_names).includes(option)) {
@@ -2790,7 +2801,7 @@ export class OotrGraphPlugin extends GraphPlugin {
             // second loop for target region groups, which requires all entrance metadata to be set
             for (let [type, forward_entry, return_entry] of this.entrance_list.entrances) {
                 let source_region_name = forward_entry[0].split(' -> ')[0];
-                if (this.version.branch !== 'Fenhl') {
+                if (this.version.branch !== 'Fenhl' && this.version.lt('8.2.37')) {
                     if (world.dungeon_mq['Ganons Castle'] && source_region_name === 'Ganons Castle Lobby') continue;
                     if (!(world.dungeon_mq['Ganons Castle']) && source_region_name === 'Ganons Castle Main') continue;
                 }
@@ -3221,6 +3232,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                 // don't override vanilla items
                 if (world_location.item === null) {
                     world_location.item = world_item;
+                    world_item.location = world_location;
                     if (typeof(item) !== 'string' && !!item.price) {
                         world_location.price = world_item.price;
                     }
@@ -3235,6 +3247,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                     }
                 } else {
                     world_location.user_item = world_item;
+                    world_item.location = world_location;
                 }
             }
             if (world.adult_trade_starting_item && !adult_trade_placed) {

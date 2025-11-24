@@ -42,6 +42,7 @@ export interface GraphItem {
     type: string;
     major_item: boolean;
     important_item: boolean;
+    peek: string;
 }
 
 export interface GraphEntrance {
@@ -302,6 +303,7 @@ export abstract class GraphPlugin {
     abstract get_collected_items_for_world(world: GraphWorld): {[item_name: string]: number};
     // filters collected items for some unshuffled items like skull tokens
     abstract get_player_inventory_for_world(world: GraphWorld): {[item_name: string]: number};
+    abstract get_starting_region_for_world(world: GraphWorld): [GraphRegion | null, GraphEntrance] | null;
 
     // World building interface
     abstract set_location_item(location: GraphLocation, item: GraphItem | null, price?: number): void;

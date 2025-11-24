@@ -191,7 +191,7 @@ class World implements GraphWorld {
         }
     } = {}
 
-    public viewable_unshuffled_items: string[] = [];
+    public viewable_unshuffled_items: string[] = ['Triforce'];
     public explicitly_collected_unshuffled_items: string[] = [
         'Gold Skulltula Token',
         "Pocket Egg",
@@ -215,6 +215,7 @@ class World implements GraphWorld {
         "Mask of Truth",
         "Ocarina",
         "Bombchus (10)",
+        "Triforce",
     ];
 
     public collect_checked_only: boolean = false;

@@ -37,6 +37,7 @@ const viewable_events = [
     'Death Mountain Soil Patch 1',
     'DMC Central Nearby Soil Patch 1',
     'Zora River Soil Patch 1',
+    'Ganon',
 ];
 
 export class Location implements GraphLocation {

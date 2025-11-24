@@ -202,6 +202,10 @@ export type SettingsDictionary = {
     shuffle_freestanding_items?: string,
     bridge?: string,
     lacs_condition?: string,
+    minor_items_as_major_chest?: string[],
+    correct_chest_appearances?: string,
+    chest_textures_specific?: string[],
+    starting_age?: string,
 };
 
 export type SettingsPresets = {
