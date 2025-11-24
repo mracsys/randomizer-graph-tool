@@ -1037,16 +1037,6 @@ export class OotrGraphPlugin extends GraphPlugin {
                         return eLink.target_alias;
                     }
                 }
-                const buildHintRegionName = (hintRegion: GraphRegion | null): string => {
-                    if (hintRegion === null) return '';
-                    if (hintRegion.name.includes('->')) {
-                        let hintEntrance = hintRegion.exits[0].reverse;
-                        if (!!hintEntrance) return buildExitName(hintEntrance);
-                        throw `Could not build hint region name for region with no exits: ${hintRegion.name}`;
-                    } else {
-                        return hintRegion.name;
-                    }
-                }
                 for (let location of locations) {
                     if (location.type !== 'Event' && !!(location.item)) {
                         if (location.shuffled) {
@@ -1075,7 +1065,7 @@ export class OotrGraphPlugin extends GraphPlugin {
                             let plando_hint: PlandoHint = { type: 'undefined' };
                             let location_item: PlandoItem | string;
                             let hintRegion = '';
-                            if (!!location.hint.area) hintRegion = buildHintRegionName(location.hint.area);
+                            if (!!location.hint.area) hintRegion = location.hint.area.alias;
                             switch (location.hint.type) {
                                 case 'location':
                                     if (location.hint.location === undefined || location.hint.location === null) throw `Can't save location hint with undefined location ${location.name}`;
