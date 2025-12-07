@@ -426,11 +426,19 @@ class Search {
         for (let state of this.state_list) {
             let sim_mode = state.world.settings.graphplugin_simulator_mode === undefined ? false : state.world.settings.graphplugin_simulator_mode;
             if (sim_mode) {
+                let compass_hint = state.world.settings.enhance_map_compass === undefined ? false : state.world.settings.enhance_map_compass;
+                let map_dungeon_hint = false;
+                let compass_boss_hint = false;
+                if (Array.isArray(compass_hint)) {
+                    map_dungeon_hint = compass_hint.includes('map_dungeon_location') && state.world.settings.shuffle_mapcompass === 'startwith';
+                    compass_boss_hint = compass_hint.includes('compass_boss_location') && state.world.settings.shuffle_mapcompass === 'startwith';
+                    compass_hint = compass_hint.includes('compass_reward');
+                }
                 for (let hint_data of Object.values(state.world.fixed_item_area_hints)) {
                     if (hint_data.hint === 'FREE'
                     && (!(Object.keys(state.world.settings).includes('skip_reward_from_rauru')) || state.world.settings.skip_reward_from_rauru || !hint_data.hint_locations.includes('ToT Reward from Rauru'))) {
                         hint_data.hinted = true;
-                    } else if (state.world.settings.shuffle_mapcompass === 'startwith' && state.world.settings.enhance_map_compass) {
+                    } else if (state.world.settings.shuffle_mapcompass === 'startwith' && compass_hint) {
                         hint_data.hinted = true;
                     } else {
                         hint_data.hinted = false;
@@ -438,6 +446,19 @@ class Search {
                             let hl = state.world.get_location(hint_location);
                             if (hl.checked) {
                                 hint_data.hinted = true;
+                            }
+                        }
+                    }
+                }
+                // No need to check for each type separately as hints will be null from import if one is off.
+                if (map_dungeon_hint || compass_boss_hint) {
+                    for (let map_compass_area_hint of state.world.map_compass_area_hints) {
+                        map_compass_area_hint.checked = true;
+                        if (!!map_compass_area_hint.hint) {
+                            let hinted_entrance = map_compass_area_hint.hint.entrance;
+                            if (!!hinted_entrance) {
+                                hinted_entrance.hinted = true;
+                                if (!!hinted_entrance.reverse && hinted_entrance.coupled) hinted_entrance.reverse.hinted = true;
                             }
                         }
                     }

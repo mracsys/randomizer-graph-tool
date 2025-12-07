@@ -11,7 +11,7 @@ import WorldState from "./WorldState.js";
 import { HintAreas } from './Hints.js';
 import HintArea from "./HintArea.js";
 import OotrVersion from "./OotrVersion.js";
-import { OotrGraphPlugin, entranceToBossRewardMap } from "./OotrGraphPlugin.js";
+import { OotrGraphPlugin, entranceToBossRewardMap, compassHintToEntranceMap, mapHintToEntranceMap } from "./OotrGraphPlugin.js";
 import SettingsList, { global_settings_overrides } from "./SettingsList.js";
 import type { SettingsDictionary } from "./SettingsList.js";
 import { RegionGroup } from "./RegionGroup.js";
@@ -190,6 +190,7 @@ class World implements GraphWorld {
             hint_locations: string[],
         }
     } = {}
+    public map_compass_area_hints: Location[] = []
 
     public viewable_unshuffled_items: string[] = ['Triforce'];
     public explicitly_collected_unshuffled_items: string[] = [
@@ -838,6 +839,23 @@ class World implements GraphWorld {
                 new_spawn_exit.rule_string = "collect_checked_only && Time_Travel";
                 this.parser.parse_spot_rule(new_spawn_exit);
                 new_region.exits.push(new_spawn_exit);
+                // internal locations for map/compass dungeon/boss area hints introduced
+                // in 8.3.60. For now, implemented as entrance hints instead of area.
+                // Needs to be updated later for mixed pools, if it's compatible.
+                for (let l of Object.keys(compassHintToEntranceMap)) {
+                    let new_location = LocationFactory(l, this)[0];
+                    new_location.parent_region = new_region;
+                    new_location.rule_string = 'true';
+                    new_region.locations.push(new_location);
+                    this.map_compass_area_hints.push(new_location);
+                }
+                for (let l of Object.keys(mapHintToEntranceMap)) {
+                    let new_location = LocationFactory(l, this)[0];
+                    new_location.parent_region = new_region;
+                    new_location.rule_string = 'true';
+                    new_region.locations.push(new_location);
+                    this.map_compass_area_hints.push(new_location);
+                }
             }
             if (!!region.locations) {
                 for (const [location, rule] of Object.entries(region.locations)) {

@@ -143,7 +143,7 @@ const dungeonToCompassMap: {[dungeonName: string]: string} = {
     "WATR": "Compass (Water Temple)",
     "SPRT": "Compass (Spirit Temple)",
     "SHDW": "Compass (Shadow Temple)",
-}
+};
 const compassToItemMap: {[dungeonName: string]: string} = {
     "Compass (Deku Tree)": "Kokiri Emerald",
     "Compass (Dodongos Cavern)": "Goron Ruby",
@@ -153,7 +153,7 @@ const compassToItemMap: {[dungeonName: string]: string} = {
     "Compass (Water Temple)": "Water Medallion",
     "Compass (Spirit Temple)": "Spirit Medallion",
     "Compass (Shadow Temple)": "Shadow Medallion",
-}
+};
 const dungeonToEntranceMap: {[dungeonName: string]: string} = {
     "DEKU": "Deku Tree Before Boss -> Queen Gohma Boss Room",
     "DCVN": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
@@ -175,7 +175,7 @@ const entranceToDungeonMap: {[entrance: string]: string} = {
     "Spirit Temple Before Boss -> Twinrova Boss Room": "SPRT",
     "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "SHDW",
     "Ganons Castle Main -> Ganons Castle Tower": "CAST",
-}
+};
 const dungeonNameToBossRewardMap: {[dungeonName: string]: string} = {
     'Deku Tree':              "Queen Gohma",
     'Dodongos Cavern':        "King Dodongo",
@@ -185,7 +185,7 @@ const dungeonNameToBossRewardMap: {[dungeonName: string]: string} = {
     'Water Temple':           "Morpha",
     'Shadow Temple':          "Bongo Bongo",
     'Spirit Temple':          "Twinrova",
-}
+};
 const dungeonNameToEntranceMap: {[dungeonName: string]: string} = {
     "Deku Tree": "Deku Tree Before Boss -> Queen Gohma Boss Room",
     "Dodongos Cavern": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
@@ -195,7 +195,7 @@ const dungeonNameToEntranceMap: {[dungeonName: string]: string} = {
     "Water Temple": "Water Temple Before Boss -> Morpha Boss Room",
     "Spirit Temple": "Spirit Temple Before Boss -> Twinrova Boss Room",
     "Shadow Temple": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
-}
+};
 const bossRegionToBossRewardMap: {[bossRoomName: string]: string} = {
     "Queen Gohma Boss Room": "Queen Gohma",
     "King Dodongo Boss Room": "King Dodongo",
@@ -205,7 +205,7 @@ const bossRegionToBossRewardMap: {[bossRoomName: string]: string} = {
     "Morpha Boss Room": "Morpha",
     "Twinrova Boss Room": "Twinrova",
     "Bongo Bongo Boss Room": "Bongo Bongo",
-}
+};
 export const entranceToBossRewardMap: {[entranceName: string]: string} = {
     "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma",
     "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo",
@@ -225,7 +225,76 @@ const bossRewardToEntranceMap: {[bossName: string]: string} = {
     "Morpha": "Water Temple Before Boss -> Morpha Boss Room",
     "Twinrova": "Spirit Temple Before Boss -> Twinrova Boss Room",
     "Bongo Bongo": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
-}
+};
+export const compassHintToEntranceMap: {[compassName: string]: string} = {
+    "Queen Gohma Entrance Hint": "Deku Tree Before Boss -> Queen Gohma Boss Room",
+    "King Dodongo Entrance Hint": "Dodongos Cavern Before Boss -> King Dodongo Boss Room",
+    "Barinade Entrance Hint": "Jabu Jabus Belly Before Boss -> Barinade Boss Room",
+    "Phantom Ganon Entrance Hint": "Forest Temple Before Boss -> Phantom Ganon Boss Room",
+    "Volvagia Entrance Hint": "Fire Temple Before Boss -> Volvagia Boss Room",
+    "Morpha Entrance Hint": "Water Temple Before Boss -> Morpha Boss Room",
+    "Twinrova Entrance Hint": "Spirit Temple Before Boss -> Twinrova Boss Room",
+    "Bongo Bongo Entrance Hint": "Shadow Temple Before Boss -> Bongo Bongo Boss Room",
+};
+const entranceToCompassHintMap: {[compassName: string]: string} = {
+    "Deku Tree Before Boss -> Queen Gohma Boss Room": "Queen Gohma Entrance Hint",
+    "Dodongos Cavern Before Boss -> King Dodongo Boss Room": "King Dodongo Entrance Hint",
+    "Jabu Jabus Belly Before Boss -> Barinade Boss Room": "Barinade Entrance Hint",
+    "Forest Temple Before Boss -> Phantom Ganon Boss Room": "Phantom Ganon Entrance Hint",
+    "Fire Temple Before Boss -> Volvagia Boss Room": "Volvagia Entrance Hint",
+    "Water Temple Before Boss -> Morpha Boss Room": "Morpha Entrance Hint",
+    "Spirit Temple Before Boss -> Twinrova Boss Room": "Twinrova Entrance Hint",
+    "Shadow Temple Before Boss -> Bongo Bongo Boss Room": "Bongo Bongo Entrance Hint",
+};
+const compassToHintMap: {[compassName: string]: string} = {
+    "Compass (Deku Tree)": "Queen Gohma Entrance Hint",
+    "Compass (Dodongos Cavern)": "King Dodongo Entrance Hint",
+    "Compass (Jabu Jabus Belly)": "Barinade Entrance Hint",
+    "Compass (Forest Temple)": "Phantom Ganon Entrance Hint",
+    "Compass (Fire Temple)": "Volvagia Entrance Hint",
+    "Compass (Water Temple)": "Morpha Entrance Hint",
+    "Compass (Spirit Temple)": "Twinrova Entrance Hint",
+    "Compass (Shadow Temple)": "Bongo Bongo Entrance Hint",
+};
+export const mapHintToEntranceMap: {[mapName: string]: string} = {
+    "Deku Tree Entrance Hint": "KF Outside Deku Tree -> Deku Tree Lobby",
+    "Dodongos Cavern Entrance Hint": "Death Mountain -> Dodongos Cavern Beginning",
+    "Jabu Jabus Belly Entrance Hint": "Zoras Fountain -> Jabu Jabus Belly Beginning",
+    "Forest Temple Entrance Hint": "SFM Forest Temple Entrance Ledge -> Forest Temple Lobby",
+    "Fire Temple Entrance Hint": "DMC Fire Temple Entrance -> Fire Temple Lower",
+    "Water Temple Entrance Hint": "Lake Hylia -> Water Temple Lobby",
+    "Spirit Temple Entrance Hint": "Desert Colossus -> Spirit Temple Lobby",
+    "Shadow Temple Entrance Hint": "Graveyard Warp Pad Region -> Shadow Temple Entryway",
+    "Bottom of the Well Entrance Hint": "Kakariko Village -> Bottom of the Well",
+    "Ice Cavern Entrance Hint": "ZF Ice Ledge -> Ice Cavern Beginning",
+    "Gerudo Training Ground Entrance Hint": "Gerudo Fortress -> Gerudo Training Ground Lobby",
+};
+const entranceToMapHintMap: {[mapName: string]: string} = {
+    "KF Outside Deku Tree -> Deku Tree Lobby": "Deku Tree Entrance Hint",
+    "Death Mountain -> Dodongos Cavern Beginning": "Dodongos Cavern Entrance Hint",
+    "Zoras Fountain -> Jabu Jabus Belly Beginning": "Jabu Jabus Belly Entrance Hint",
+    "SFM Forest Temple Entrance Ledge -> Forest Temple Lobby": "Forest Temple Entrance Hint",
+    "DMC Fire Temple Entrance -> Fire Temple Lower": "Fire Temple Entrance Hint",
+    "Lake Hylia -> Water Temple Lobby": "Water Temple Entrance Hint",
+    "Desert Colossus -> Spirit Temple Lobby": "Spirit Temple Entrance Hint",
+    "Graveyard Warp Pad Region -> Shadow Temple Entryway": "Shadow Temple Entrance Hint",
+    "Kakariko Village -> Bottom of the Well": "Bottom of the Well Entrance Hint",
+    "ZF Ice Ledge -> Ice Cavern Beginning": "Ice Cavern Entrance Hint",
+    "Gerudo Fortress -> Gerudo Training Ground Lobby": "Gerudo Training Ground Entrance Hint",
+};
+const mapToHintMap: {[mapName: string]: string} = {
+    "Map (Deku Tree)": "Deku Tree Entrance Hint",
+    "Map (Dodongos Cavern)": "Dodongos Cavern Entrance Hint",
+    "Map (Jabu Jabus Belly)": "Jabu Jabus Belly Entrance Hint",
+    "Map (Forest Temple)": "Forest Temple Entrance Hint",
+    "Map (Fire Temple)": "Fire Temple Entrance Hint",
+    "Map (Water Temple)": "Water Temple Entrance Hint",
+    "Map (Spirit Temple)": "Spirit Temple Entrance Hint",
+    "Map (Shadow Temple)": "Shadow Temple Entrance Hint",
+    "Map (Bottom of the Well)": "Bottom of the Well Entrance Hint",
+    "Map (Ice Cavern)": "Ice Cavern Entrance Hint",
+    "Map (Gerudo Training Ground)": "Gerudo Training Ground Entrance Hint",
+};
 
 const option_to_item_names: {[option: string]: string[]} = {
     'Gold Skulltula Tokens': [
@@ -337,7 +406,7 @@ const option_to_item_names: {[option: string]: string[]} = {
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '8.3.0 Release',
-        '8.3.63 Dev',
+        '8.3.65 Dev',
         '8.3.41 Dev',
         '8.3.33 Dev',
         '8.3.41 Fenhl-2',
@@ -545,6 +614,18 @@ export class OotrGraphPlugin extends GraphPlugin {
                     randomized_settings = plando.randomized_settings[`World ${world.id+1}`];
                 } else {
                     randomized_settings = plando.randomized_settings;
+                }
+            }
+            if (Object.keys(plando).includes('settings') && Object.keys(plando).includes(':randomized_starting_items')) {
+                if (!(Object.keys(plando.settings).includes('starting_items'))) {
+                    plando.settings.starting_items = {}
+                }
+                for (let [item, count] of Object.entries(plando[':randomized_starting_items'])) {
+                    if (Object.keys(plando.settings.starting_items).includes(item)) {
+                        plando.settings.starting_items[item] += count;
+                    } else {
+                        plando.settings.starting_items[item] = count;
+                    }
                 }
             }
             for (let [setting, def] of Object.entries(graph_settings)) {
@@ -778,6 +859,32 @@ export class OotrGraphPlugin extends GraphPlugin {
                         default:
                             throw `Unknown hint type in import data: ${hint_data.type}`;
                     }
+                }
+            }
+        }
+        // Internal hints for map/compass dungeon/boss regions
+        let enhance_map_compass = this.worlds[0].settings.enhance_map_compass === undefined ? false : this.worlds[0].settings.enhance_map_compass;
+        if (!Array.isArray(enhance_map_compass)) enhance_map_compass = [];
+        let map_hint = enhance_map_compass.includes('map_dungeon_location');
+        let compass_hint = enhance_map_compass.includes('compass_boss_location');
+        let locations_checked = this.worlds[0].settings.shuffle_mapcompass === 'startwith';
+        if (map_hint) {
+            for (let hinted_entrance_name of Object.values(mapHintToEntranceMap)) {
+                let hinted_entrance = this.worlds[0].get_entrance(hinted_entrance_name);
+                if (hinted_entrance.shuffled && !!hinted_entrance.replaces) {
+                    let target = hinted_entrance.replaces;
+                    let hint_location = this.worlds[0].get_location(entranceToMapHintMap[target.name]);
+                    this.hint_entrance(hint_location, hinted_entrance, target, (sim_mode && !locations_checked));
+                }
+            }
+        }
+        if (compass_hint) {
+            for (let hinted_entrance_name of Object.values(compassHintToEntranceMap)) {
+                let hinted_entrance = this.worlds[0].get_entrance(hinted_entrance_name);
+                if (hinted_entrance.shuffled && !!hinted_entrance.replaces) {
+                    let target = hinted_entrance.replaces;
+                    let hint_location = this.worlds[0].get_location(entranceToCompassHintMap[target.name]);
+                    this.hint_entrance(hint_location, hinted_entrance, target, (sim_mode && !locations_checked));
                 }
             }
         }
@@ -2269,9 +2376,10 @@ export class OotrGraphPlugin extends GraphPlugin {
         if (!!l.item && !!l.world && !unhint) {
             if (l.item.name.includes('Compass')) {
                 let world = this.worlds[l.world.id];
-                let tricked_state = this.all_tricks_search.state_list[world.id];
-                if (tricked_state === null || tricked_state === undefined) tricked_state = new WorldState(world);
                 let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+                if (Array.isArray(compass_hint)) {
+                    compass_hint = compass_hint.includes('compass_reward');
+                }
                 if (compass_hint) {
                     if ((!!(world.settings.shuffle_dungeon_rewards) &&
                     !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) ||
@@ -2292,9 +2400,10 @@ export class OotrGraphPlugin extends GraphPlugin {
         } else if (!!l.item && !!l.world) {
             if (l.item.name.includes('Compass')) {
                 let world = this.worlds[l.world.id];
-                let tricked_state = this.all_tricks_search.state_list[world.id];
-                if (tricked_state === null || tricked_state === undefined) tricked_state = new WorldState(world);
                 let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+                if (Array.isArray(compass_hint)) {
+                    compass_hint = compass_hint.includes('compass_reward');
+                }
                 if (compass_hint) {
                     if ((!!(world.settings.shuffle_dungeon_rewards) &&
                     !(['vanilla', 'reward'].includes(world.settings.shuffle_dungeon_rewards))) ||
@@ -2844,6 +2953,7 @@ export class OotrGraphPlugin extends GraphPlugin {
         for (let world of this.worlds) {
             world.skipped_items = [];
             let compass_hint = world.settings.enhance_map_compass === undefined ? false : world.settings.enhance_map_compass;
+            if (Array.isArray(compass_hint)) compass_hint = compass_hint.includes('compass_reward');
             let misc_hints = world.settings.misc_hints === undefined ? ['altar', 'ganondorf', 'warp_songs_and_owls'] : world.settings.misc_hints;
             let sim_mode = world.settings.graphplugin_simulator_mode === undefined ? false : world.settings.graphplugin_simulator_mode;
             for (let hint_data of Object.values(world.fixed_item_area_hints)) {

@@ -1,6 +1,7 @@
 import OotrVersion from "./OotrVersion.js";
 import ExternalFileCache from "../ExternalFileCache.js";
 import { replace_python_tuples } from "./Utils.js";
+import { compassHintToEntranceMap, mapHintToEntranceMap } from "./OotrGraphPlugin.js";
 
 type LocationTableEntry = [
     type: string,
@@ -127,6 +128,20 @@ export default class LocationList {
         for (let l of empty_reward_location_names) {
             this.locations[l] = [
                 'GraphEvent',
+                null,
+                null,
+            ]
+        }
+        for (let l of Object.keys(mapHintToEntranceMap)) {
+            this.locations[l] = [
+                'HintInternal',
+                null,
+                null,
+            ]
+        }
+        for (let l of Object.keys(compassHintToEntranceMap)) {
+            this.locations[l] = [
+                'HintInternal',
                 null,
                 null,
             ]

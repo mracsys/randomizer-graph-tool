@@ -39,7 +39,8 @@ async function async_wrapper() {
         //test_region_visibility();
         //await test_v8_settings_import();
         //test_sim_hints();
-        test_nested_locations();
+        //test_nested_locations();
+        test_sim_entrance_hints();
     } catch (e) {
         console.log(e);
         if (e instanceof Error) {
@@ -49,6 +50,37 @@ async function async_wrapper() {
 }
 
 const localstorage_plando = {};
+
+async function test_sim_entrance_hints() {
+    let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.65 Dev', {files: {}, subfolder: ''});
+    let global_cache: ExternalFileCache;
+    let version: string;
+    let local_files: string;
+    let seed_path: string;
+    let spoiler_path: string;
+    [version, local_files, seed_path, spoiler_path] = get_plando_randomizer_version({':version': '8.3.65 f.LUM'});
+    global_cache = await ExternalFileCacheFactory('ootr', version, { local_files: local_files });
+    graph = await WorldGraphRemoteFactory('ootr', localstorage_plando, version, global_cache);
+    let plando = JSON.parse(readFileSync('/Users/mracsys/Downloads/OoTR_2016546_GDK61KHEKX_Spoilers.json', { encoding: 'utf8' }));
+    plando['settings']['graphplugin_simulator_mode'] = true;
+    graph.import(plando);
+    let spawn = graph.get_starting_region_for_world(graph.worlds[0]);
+    if (!!spawn) {
+        let [spawn_region, spawn_entrance] = spawn;
+        if (!!spawn_region) {
+            graph.check_entrance(spawn_entrance);
+        }
+    }
+    graph.collect_locations();
+    let hint_locations = graph.get_locations_for_world(graph.worlds[0]).filter(l => l.is_hint && !!l.hint && l.hint.type === 'entrance');
+    for (let hl of hint_locations) {
+        if (!!hl.hint && !!hl.hint.entrance && !!hl.hint.target) {
+            console.log(`Hinted: ${hl.hint.entrance.hinted} ${hl.hint.entrance.name} connected to ${hl.hint.target.name}`);
+        }
+    }
+
+    console.log(`Graph loaded in sim mode`);
+}
 
 async function test_sim_hints() {
     let graph: GraphPlugin = WorldGraphFactory('ootr', {}, '8.3.56 Dev', {files: {}, subfolder: ''});

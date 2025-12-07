@@ -178,7 +178,7 @@ export type SettingsDictionary = {
     starting_equipment?: string[],
     starting_songs?: string[],
     graphplugin_simulator_mode?: boolean,
-    enhance_map_compass?: boolean,
+    enhance_map_compass?: boolean | string[],
     misc_hints?: string[],
     shuffle_mapcompass?: string,
     shuffle_boulders?: boolean,
@@ -206,6 +206,7 @@ export type SettingsDictionary = {
     correct_chest_appearances?: string,
     chest_textures_specific?: string[],
     starting_age?: string,
+    user_message?: string,
 };
 
 export type SettingsPresets = {
@@ -777,91 +778,135 @@ class SettingsList {
     }
 
     create_rsl_preset() {
-        let rsl_preset = Object.assign({}, rsl_preset_template);
-        if (Object.keys(this.setting_definitions).includes('mix_entrance_pools')) {
-            rsl_preset.mix_entrance_pools = [];
-        }
-        if (Object.keys(this.setting_definitions).includes('decouple_entrances')) {
-            rsl_preset.decouple_entrances = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('fix_broken_actors')) {
-            delete rsl_preset.fix_broken_drops;
-            rsl_preset.fix_broken_actors = true;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_enemy_spawns')) {
-            rsl_preset.shuffle_enemy_spawns = 'off';
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_enemy_drops')) {
-            rsl_preset.shuffle_enemy_drops = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_empty_pots')) {
-            rsl_preset.shuffle_empty_pots = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_empty_crates')) {
-            rsl_preset.shuffle_empty_crates = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_wonderitems')) {
-            rsl_preset.shuffle_wonderitems = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_grass')) {
-            rsl_preset.shuffle_grass = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_gossipstones')) {
-            rsl_preset.shuffle_gossipstones = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_fishies')) {
-            rsl_preset.shuffle_fishies = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_boulders')) {
-            rsl_preset.shuffle_boulders = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('prevent_guay_respawns')) {
-            rsl_preset.prevent_guay_respawns = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('dogs_anywhere')) {
-            rsl_preset.dogs_anywhere = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('minimap_enemy_tracker')) {
-            rsl_preset.minimap_enemy_tracker = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_dungeon_rewards')) {
-            rsl_preset.shuffle_dungeon_rewards = 'reward';
-        }
-        if (Object.keys(this.setting_definitions).includes('skip_reward_from_rauru')) {
-            rsl_preset.skip_reward_from_rauru = true;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_ganon_tower')) {
-            rsl_preset.shuffle_ganon_tower = false;
-        }
-        if (Object.keys(this.setting_definitions).includes('shuffle_gerudo_fortress_heart_piece')) {
-            rsl_preset.shuffle_gerudo_fortress_heart_piece = 'vanilla';
-        }
+        let custom_presets = {
+            'Random Settings League': rsl_preset_template,
+        };
+        for (let [preset_name, custom_preset] of Object.entries(custom_presets)) {
+            let rsl_preset = Object.assign({}, custom_preset);
+            if (Object.keys(this.setting_definitions).includes('mix_entrance_pools')) {
+                rsl_preset.mix_entrance_pools = [];
+            }
+            if (Object.keys(this.setting_definitions).includes('decouple_entrances')) {
+                rsl_preset.decouple_entrances = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('fix_broken_actors')) {
+                delete rsl_preset.fix_broken_drops;
+                if (preset_name === 'S9 Tournament') {
+                    rsl_preset.fix_broken_actors = false;
+                } else {
+                    rsl_preset.fix_broken_actors = true;
+                }
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_enemy_spawns')) {
+                rsl_preset.shuffle_enemy_spawns = 'off';
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_enemy_drops')) {
+                rsl_preset.shuffle_enemy_drops = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_empty_pots')) {
+                rsl_preset.shuffle_empty_pots = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_empty_crates')) {
+                rsl_preset.shuffle_empty_crates = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_wonderitems')) {
+                rsl_preset.shuffle_wonderitems = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_grass')) {
+                rsl_preset.shuffle_grass = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_gossipstones')) {
+                rsl_preset.shuffle_gossipstones = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_fishies')) {
+                rsl_preset.shuffle_fishies = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_boulders')) {
+                rsl_preset.shuffle_boulders = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('prevent_guay_respawns')) {
+                rsl_preset.prevent_guay_respawns = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('dogs_anywhere')) {
+                rsl_preset.dogs_anywhere = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('minimap_enemy_tracker')) {
+                rsl_preset.minimap_enemy_tracker = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_dungeon_rewards')) {
+                rsl_preset.shuffle_dungeon_rewards = 'reward';
+            }
+            if (Object.keys(this.setting_definitions).includes('skip_reward_from_rauru')) {
+                rsl_preset.skip_reward_from_rauru = true;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_ganon_tower')) {
+                rsl_preset.shuffle_ganon_tower = false;
+            }
+            if (Object.keys(this.setting_definitions).includes('shuffle_gerudo_fortress_heart_piece')) {
+                rsl_preset.shuffle_gerudo_fortress_heart_piece = 'vanilla';
+            }
+            if (Object.keys(this.setting_definitions).includes('scarecrow_behavior')) {
+                delete rsl_preset.free_scarecrow;
+                if (preset_name === 'S9 Tournament') {
+                    rsl_preset.scarecrow_behavior = 'fast';
+                } else {
+                    rsl_preset.scarecrow_behavior = 'vanilla';
+                }
+            }
 
-        if (this.ootr_version.branch === 'Fenhl') {
-            rsl_preset.shuffle_hideout_entrances = 'off';
-            rsl_preset.shuffle_gerudo_valley_river_exit = 'balanced';
-            delete rsl_preset.spawn_positions;
-            rsl_preset.shuffle_adult_spawn = 'balanced';
-            rsl_preset.shuffle_child_spawn = 'balanced';
-            rsl_preset.owl_drops = 'balanced';
-            rsl_preset.warp_songs = 'balanced';
-            rsl_preset.blue_warps = 'dungeon';
-            rsl_preset.open_forest = true;
-            rsl_preset.open_deku = false;
-            rsl_preset.require_gohma = false;
-            delete rsl_preset.shopsanity_prices;
-            rsl_preset.special_deal_price_distribution = 'betavariate';
-            rsl_preset.special_deal_price_min = 0;
-            rsl_preset.special_deal_price_max = 300;
-            rsl_preset.shuffle_items = true;
-            rsl_preset.shuffle_base_item_pool = true;
-            rsl_preset.triforce_hunt_mode = 'normal';
-            rsl_preset.exclusive_one_ways = false;
-            rsl_preset.dungeon_back_access = false;
-            rsl_preset.logic_water_gold_scale_no_entry = false;
-            rsl_preset.ocarina_songs = [];
+            if (this.ootr_version.lt('8.3.60') && preset_name === 'S9 Tournament') {
+                rsl_preset.enhance_map_compass = true;
+            }
+
+            if (this.ootr_version.branch === 'Fenhl' && preset_name !== 'S9 Tournament') {
+                rsl_preset.shuffle_hideout_entrances = 'off';
+                rsl_preset.shuffle_gerudo_valley_river_exit = 'balanced';
+                delete rsl_preset.spawn_positions;
+                rsl_preset.shuffle_adult_spawn = 'balanced';
+                rsl_preset.shuffle_child_spawn = 'balanced';
+                rsl_preset.owl_drops = 'balanced';
+                rsl_preset.warp_songs = 'balanced';
+                rsl_preset.blue_warps = 'dungeon';
+                rsl_preset.open_forest = true;
+                rsl_preset.open_deku = false;
+                rsl_preset.require_gohma = false;
+                delete rsl_preset.shopsanity_prices;
+                rsl_preset.special_deal_price_distribution = 'betavariate';
+                rsl_preset.special_deal_price_min = 0;
+                rsl_preset.special_deal_price_max = 300;
+                rsl_preset.shuffle_items = true;
+                rsl_preset.shuffle_base_item_pool = true;
+                rsl_preset.triforce_hunt_mode = 'normal';
+                rsl_preset.exclusive_one_ways = false;
+                rsl_preset.dungeon_back_access = false;
+                rsl_preset.logic_water_gold_scale_no_entry = false;
+                rsl_preset.ocarina_songs = [];
+            } else if (this.ootr_version.branch === 'Fenhl') {
+                rsl_preset.shuffle_hideout_entrances = 'off';
+                rsl_preset.shuffle_gerudo_valley_river_exit = 'off';
+                delete rsl_preset.spawn_positions;
+                rsl_preset.shuffle_adult_spawn = 'off';
+                rsl_preset.shuffle_child_spawn = 'balanced';
+                rsl_preset.owl_drops = 'off';
+                rsl_preset.warp_songs = 'off';
+                rsl_preset.blue_warps = 'dungeon';
+                rsl_preset.open_forest = true;
+                rsl_preset.open_deku = false;
+                rsl_preset.require_gohma = false;
+                delete rsl_preset.shopsanity_prices;
+                rsl_preset.special_deal_price_distribution = 'betavariate';
+                rsl_preset.special_deal_price_min = 0;
+                rsl_preset.special_deal_price_max = 300;
+                rsl_preset.shuffle_items = true;
+                rsl_preset.shuffle_base_item_pool = true;
+                rsl_preset.triforce_hunt_mode = 'normal';
+                rsl_preset.exclusive_one_ways = false;
+                rsl_preset.dungeon_back_access = false;
+                rsl_preset.logic_water_gold_scale_no_entry = false;
+                rsl_preset.ocarina_songs = [];
+            }
+            this.settings_presets[preset_name] = rsl_preset;
         }
-        this.settings_presets['Random Settings League'] = rsl_preset;
     }
 
     readSettingsList_7_1_143(file_cache: ExternalFileCache): void {

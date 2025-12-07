@@ -207,6 +207,11 @@ export function get_plando_randomizer_version(plando: {[key: string]: any}): [st
                 seed_path = './tests/seeds/main-8-3-56/';
                 spoiler_path = './tests/spoilers/main-8-3-56/';
                 break;
+            case '8.3.65 f.LUM':
+                local_files = 'tests/ootr-local-Dev-8-3-65-0';
+                seed_path = './tests/seeds/main-8-3-65/';
+                spoiler_path = './tests/spoilers/main-8-3-65/';
+                break;
             case '7.1.198 R-1':
             case '7.1.195 R-1':
                 local_files = 'tests/ootr-local-roman-195';
