@@ -32,6 +32,7 @@ class OotrVersion implements GameVersion {
         '8.3.59': 'ab672d7a6fbe91a06ee2a7dbfb9b6982659f4277',
         '8.3.63': 'ad46d9f352664f3aacb0be753bdf54de23e7c532',
         '8.3.65': 'b9e69dd0ba0afd942be9a9e6b0ea306917fd33c6',
+        '8.3.67': 'ce53b35a21709d8eb378ba43a6d72a41b859657c',
     }
 
     static devr_version_commit_ids: VersionCommitMap = {
@@ -50,6 +51,7 @@ class OotrVersion implements GameVersion {
         '8.2.50 Rob-128': '2030053144ce99f3364244117db64ba9585a1513',
         '8.2.52 Rob-132': '464b5184646694ec422a7dfe2a757725d73a7e1b',
         '8.3.56 Rob-3':   'b95a13428661cae571bb228f264b93730d59faeb',
+        '8.3.56 Rob-4':   '1f97a7714d778c4c4ef9abe32981ad2585dca0b7',
     }
     static devfenhl_version_commit_ids: VersionCommitMap = {
         '8.1.45 Fenhl-3': '1f36c6b7f37951e515b94e65cbddc8cd45c3ab13',
