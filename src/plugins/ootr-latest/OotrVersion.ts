@@ -35,7 +35,8 @@ class OotrVersion implements GameVersion {
         '8.3.67': 'ce53b35a21709d8eb378ba43a6d72a41b859657c',
         '8.3.68': '7fbc0dbe4a515b2300cdd7ac0517335586895573',
         '8.3.69': 'a2c87b2c7eea38a8fbd4dd1f790955c06d69b86e',
-        '9.0.0':  '5a97d1815d20b8d7c24aaf03431b041e23cd534c',
+        '9.0.0':  '89ce741f4de36d964c5ff26b76f5e66ca8cc6240',
+        '9.0.1':  'd0b31d9256a65fe4b9ca56cf45aac12bbca8114f',
     }
 
     static devr_version_commit_ids: VersionCommitMap = {
