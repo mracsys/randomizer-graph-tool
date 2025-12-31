@@ -35,6 +35,7 @@ class OotrVersion implements GameVersion {
         '8.3.67': 'ce53b35a21709d8eb378ba43a6d72a41b859657c',
         '8.3.68': '7fbc0dbe4a515b2300cdd7ac0517335586895573',
         '8.3.69': 'a2c87b2c7eea38a8fbd4dd1f790955c06d69b86e',
+        '9.0.0':  '5a97d1815d20b8d7c24aaf03431b041e23cd534c',
     }
 
     static devr_version_commit_ids: VersionCommitMap = {
@@ -62,6 +63,7 @@ class OotrVersion implements GameVersion {
         '8.2.50 Fenhl-1': '9bb3f11bb4ae7f07b96f60c86243bbb1545b8995',
         '8.2.69 Fenhl-7': '6ea07c8b61e8ddb716faabc78822671dd1757e7f',
         '8.3.41 Fenhl-2': '7c6baf0f1afc1c7a4a272a40b4b7d1ee663cff92',
+        '8.3.68 Fenhl-2': '514f5304a2aa37077ca1d3ffa5ab03169238f177',
     }
 
     constructor(ootr_version: string, generate_files: boolean = true) {

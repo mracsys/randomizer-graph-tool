@@ -405,15 +405,12 @@ const option_to_item_names: {[option: string]: string[]} = {
 
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
-        '8.3.0 Release',
-        '8.3.69 Dev',
-        '8.3.41 Dev',
-        '8.3.33 Dev',
-        '8.3.41 Fenhl-2',
-        '8.3.56 Rob-4',
-        '8.2.0 Release',
-        '8.2.69 Fenhl-7',
-        '8.2.52 Rob-132',
+        '9.0.0 Release',  // Latest Stable
+        '8.3.69 Dev',     // Latest Dev
+        '8.3.68 Fenhl-2', // Latest Fenhl
+        '8.3.56 Rob-4',   // Latest RealRob
+        '8.3.41 Dev',     // Current Standard League
+        '8.2.52 Rob-132', // Current Random Settings League
     ];
 
     public worlds: World[];
