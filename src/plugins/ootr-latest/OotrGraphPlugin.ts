@@ -406,7 +406,7 @@ const option_to_item_names: {[option: string]: string[]} = {
 export class OotrGraphPlugin extends GraphPlugin {
     public static version_list = [
         '9.0.0 Release',  // Latest Stable
-        '9.0.1 Dev',      // Latest Dev
+        '9.0.2 Dev',      // Latest Dev
         '8.3.68 Fenhl-2', // Latest Fenhl
         '8.3.56 Rob-4',   // Latest RealRob
         '8.3.41 Dev',     // Current Standard League
